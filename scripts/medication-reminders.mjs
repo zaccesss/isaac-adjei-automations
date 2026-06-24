@@ -1,13 +1,16 @@
 // Sends due medication reminders. Runs every 30 minutes: for each active reminder within its date range
-// it fires any time that has just come due (a 30-minute window absorbs cron jitter), to Discord, email or
-// SMS. Each send is logged so a dose is never sent twice and adherence can be charted. Node only, no deps.
+// it fires any time that has just come due (a 30-minute window absorbs cron jitter), to any of its
+// channels - Discord, email, SMS - and it can use several at once. Each due time is logged once so a dose
+// is never sent twice and adherence can be charted. Node only, no deps.
+//
+// A workflow_dispatch with TEST_TO set sends one test SMS to that number and exits.
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const discordWebhook = process.env.DISCORD_WEBHOOK_REMINDERS
 const resendKey = process.env.RESEND_API_KEY
 const fromEmail = process.env.REMINDER_FROM_EMAIL || "Medication Reminder <hello@isaacadjei.me>"
-const WINDOW = 30 // minutes - how far back a just-due time still counts, to absorb cron delays
+const WINDOW = 30
 const TZ = "Europe/London"
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -20,7 +23,7 @@ const parts = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", 
 const hh = Number(parts.find((p) => p.type === "hour")?.value ?? 0) % 24
 const mm = Number(parts.find((p) => p.type === "minute")?.value ?? 0)
 const nowMin = hh * 60 + mm
-const today = now.toLocaleDateString("en-CA", { timeZone: TZ }) // YYYY-MM-DD local
+const today = now.toLocaleDateString("en-CA", { timeZone: TZ })
 
 async function db(path, opts) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -42,8 +45,8 @@ async function sendDiscord(content) {
   return res.ok
 }
 
-async function sendEmail(r, t) {
-  if (!resendKey || !r.recipient) return false
+async function sendEmail(to, r, t) {
+  if (!resendKey || !to) return false
   const subject = `Medication reminder: ${r.name} at ${t}`
   const html = [
     `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#111">`,
@@ -60,7 +63,7 @@ async function sendEmail(r, t) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: fromEmail, to: r.recipient, subject, html, text }),
+    body: JSON.stringify({ from: fromEmail, to, subject, html, text }),
   })
   if (!res.ok) console.error("resend:", res.status, await res.text())
   return res.ok
@@ -86,45 +89,49 @@ async function sendSms(to, text) {
   return res.ok
 }
 
+// Manual test path: a workflow_dispatch with TEST_TO set sends one SMS and exits.
+if (process.env.TEST_TO) {
+  const ok = await sendSms(process.env.TEST_TO, "Test from your medication reminder system. If you received this, SMS is working.")
+  console.log(ok ? `Test SMS sent to ${process.env.TEST_TO}.` : "Test SMS failed - check the Twilio secrets and sender.")
+  process.exit(ok ? 0 : 1)
+}
+
 const reminders = await db("medication_reminders?select=*&active=eq.true")
-let sent = 0
+let sentDoses = 0
 
 for (const r of reminders) {
   if (r.start_date && today < r.start_date) continue
   if (r.end_date && today > r.end_date) continue
+  // Fall back to the old single channel/recipient for any row not yet migrated.
+  const channels = Array.isArray(r.channels) && r.channels.length ? r.channels : r.channel ? [r.channel] : []
+  const emailTo = r.email || (r.channel === "email" ? r.recipient : null)
+  const phoneTo = r.phone || (r.channel === "sms" ? r.recipient : null)
+
   for (const t of r.times || []) {
     const tMin = toMin(t)
-    // Due if the time falls in the window ending now.
     if (!(tMin <= nowMin && tMin > nowMin - WINDOW)) continue
-    // Skip if this reminder + time has already gone out today.
     const dup = await db(`medication_doses?select=id&reminder_id=eq.${r.id}&scheduled_time=eq.${encodeURIComponent(t)}&sent_at=gte.${today}T00:00:00`)
     if (dup && dup.length > 0) continue
 
-    const body = [
-      `\u{1F48A} ${r.name}${r.label ? ` - ${r.label}` : ""}`,
-      r.dose ? `Dose: ${r.dose}` : "",
-      `Time: ${t}`,
-      r.notes || "",
-    ]
-      .filter(Boolean)
-      .join("\n")
+    const smsBody = [`\u{1F48A} ${r.name}${r.label ? ` - ${r.label}` : ""}`, r.dose ? `Dose: ${r.dose}` : "", `Time: ${t}`, r.notes || ""].filter(Boolean).join("\n")
+    const discordBody = `\u{1F48A} **${r.name}**${r.label ? ` - ${r.label}` : ""}\n${[r.dose ? `Dose: ${r.dose}` : "", `Time: ${t}`, r.notes || ""].filter(Boolean).join("\n")}`
 
-    let ok = false
-    if (r.channel === "discord") ok = await sendDiscord(`\u{1F48A} **${r.name}**${r.label ? ` - ${r.label}` : ""}\n${[r.dose ? `Dose: ${r.dose}` : "", `Time: ${t}`, r.notes || ""].filter(Boolean).join("\n")}`)
-    else if (r.channel === "email") ok = await sendEmail(r, t)
-    else if (r.channel === "sms") ok = await sendSms(r.recipient, body)
+    let anyOk = false
+    if (channels.includes("discord")) anyOk = (await sendDiscord(discordBody)) || anyOk
+    if (channels.includes("email")) anyOk = (await sendEmail(emailTo, r, t)) || anyOk
+    if (channels.includes("sms")) anyOk = (await sendSms(phoneTo, smsBody)) || anyOk
 
-    if (ok) {
+    if (anyOk) {
       await db("medication_doses", {
         method: "POST",
-        body: JSON.stringify({ reminder_id: r.id, label: r.label, name: r.name, channel: r.channel, scheduled_time: t, status: "sent" }),
+        body: JSON.stringify({ reminder_id: r.id, label: r.label, name: r.name, channel: channels.join(","), scheduled_time: t, status: "sent" }),
       })
-      sent++
-      console.log(`sent: ${r.label}/${r.name} @ ${t} via ${r.channel}`)
+      sentDoses++
+      console.log(`sent: ${r.label}/${r.name} @ ${t} via ${channels.join(",")}`)
     } else {
-      console.log(`not sent (channel unconfigured or failed): ${r.label}/${r.name} @ ${t} via ${r.channel}`)
+      console.log(`not sent (no channel succeeded): ${r.label}/${r.name} @ ${t}`)
     }
   }
 }
 
-console.log(`Done at ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${TZ}. ${sent} reminder(s) sent.`)
+console.log(`Done at ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")} ${TZ}. ${sentDoses} dose(s) sent.`)

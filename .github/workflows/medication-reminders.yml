@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: "*/30 * * * *"
   workflow_dispatch:
+    inputs:
+      test_to:
+        description: "Send one test SMS to this E.164 number and exit"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -29,3 +34,4 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          TEST_TO: ${{ github.event.inputs.test_to }}
