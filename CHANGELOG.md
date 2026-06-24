@@ -11,3 +11,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Repository scaffold - gitleaks secret scanning, Dependabot for the action versions, a security policy, a code of conduct and a PolyForm Noncommercial licence
 - Morning routine job - reads the day's habits and streaks from the database and posts a checklist to Discord at 07:00 Europe/London, with a British Summer Time guard so it fires at the right local hour year round
+- Medication reminders job - sends due medication reminders to Discord, email or SMS every 30 minutes, de-duplicated against a dose log, firing at the right local time through BST and GMT

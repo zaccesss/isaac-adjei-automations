@@ -9,6 +9,7 @@ Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows
 | Workflow | Schedule | Purpose |
 | --- | --- | --- |
 | [routine](.github/workflows/routine.yml) | 07:00 Europe/London | Reads the day's habits and streaks and posts a morning checklist to Discord |
+| [medication-reminders](.github/workflows/medication-reminders.yml) | every 30 min | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 
 ## Conventions
 
