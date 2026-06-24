@@ -89,11 +89,17 @@ async function sendSms(to, text) {
   return res.ok
 }
 
-// Manual test path: a workflow_dispatch with TEST_TO set sends one SMS and exits.
-if (process.env.TEST_TO) {
-  const ok = await sendSms(process.env.TEST_TO, "Test from your medication reminder system. If you received this, SMS is working.")
-  console.log(ok ? `Test SMS sent to ${process.env.TEST_TO}.` : "Test SMS failed - check the Twilio secrets and sender.")
-  process.exit(ok ? 0 : 1)
+// Manual test path: a workflow_dispatch with TEST_EMAIL or TEST_TO sends one test message and exits.
+if (process.env.TEST_EMAIL || process.env.TEST_TO) {
+  if (process.env.TEST_EMAIL) {
+    const ok = await sendEmail(process.env.TEST_EMAIL, { name: "Test reminder", dose: "1 drop - test", notes: "If you got this, email reminders are working." }, "now")
+    console.log(ok ? `Test email sent to ${process.env.TEST_EMAIL}.` : "Test email failed - check RESEND_API_KEY and the from address.")
+  }
+  if (process.env.TEST_TO) {
+    const ok = await sendSms(process.env.TEST_TO, "Test from your medication reminder system. If you received this, SMS is working.")
+    console.log(ok ? `Test SMS sent to ${process.env.TEST_TO}.` : "Test SMS failed - check the Twilio secrets and sender.")
+  }
+  process.exit(0)
 }
 
 const reminders = await db("medication_reminders?select=*&active=eq.true")

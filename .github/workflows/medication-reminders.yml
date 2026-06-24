@@ -12,6 +12,10 @@ on:
         description: "Send one test SMS to this E.164 number and exit"
         required: false
         default: ""
+      test_email:
+        description: "Send one test email to this address and exit"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -35,3 +39,4 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
           TEST_TO: ${{ github.event.inputs.test_to }}
+          TEST_EMAIL: ${{ github.event.inputs.test_email }}
