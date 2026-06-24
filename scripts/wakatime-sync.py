@@ -23,9 +23,9 @@ FETCH_DAYS = 14
 # that have hours = null (catches rows created before this column existed).
 BACKFILL_DAYS = 90
 
-WAKATIME_API_KEY = os.environ.get("WAKATIME_API_KEY", "")
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+WAKATIME_API_KEY = os.environ.get("WAKATIME_API_KEY", "").strip()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 
 def fetch_summaries(start: date, end: date) -> list[dict]:
