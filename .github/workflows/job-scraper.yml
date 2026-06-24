@@ -1,0 +1,100 @@
+# Scrapes graduate and internship sources and upserts them into the applications table.
+# Runs every 2 days at midnight UTC. API sources and the Playwright browser source run as two
+# parallel jobs so the browser install never holds up the faster API job.
+
+name: Job Scraper
+
+on:
+  schedule:
+    - cron: "0 0 */2 * *"
+  workflow_dispatch:
+
+# Cancel any in-progress run when a new one starts so two runs never write the DB at once.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # API-only sources. SCRAPER_MODE=api makes main() skip the browser source.
+  api-sources:
+    runs-on: ubuntu-latest
+    # Public repo = free Actions minutes, so give the run room to finish. The script's own
+    # SCRAPER_BUDGET_MIN (default 110) exits cleanly first.
+    timeout-minutes: 120
+    env:
+      SCRAPER_MODE: api
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
+      REED_API_KEY: ${{ secrets.REED_API_KEY }}
+      ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+      ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+      JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Run API scrapers
+        run: python scripts/job-scraper.py
+
+      - name: Write source summary
+        if: always()
+        run: |
+          if [ -f source-stats.md ]; then
+            cat source-stats.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # Browser source (Playwright) in its own job so the browser install does not delay the API job.
+  browser-sources:
+    # ubuntu-22.04 avoids the libasound2 removal in 24.04 that breaks playwright install-deps.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    env:
+      SCRAPER_MODE: browser
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r scripts/requirements.txt
+
+      # Cache the Playwright browser binary so repeated runs skip the ~80 MB download.
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('scripts/requirements.txt') }}
+
+      - name: Install Playwright browser
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            python -m playwright install-deps chromium
+          else
+            python -m playwright install --with-deps chromium
+          fi
+
+      - name: Run browser scrapers
+        run: python scripts/job-scraper.py
+
+      - name: Write source summary
+        if: always()
+        run: |
+          if [ -f source-stats.md ]; then
+            cat source-stats.md >> "$GITHUB_STEP_SUMMARY"
+          fi

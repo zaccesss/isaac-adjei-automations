@@ -1,0 +1,29 @@
+# Posts a morning Discord reminder of streaks not yet logged, at 08:00 UTC daily.
+
+name: Daily Streak Reminder
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Send morning streak reminder to Discord
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_STREAKS: ${{ secrets.DISCORD_WEBHOOK_STREAKS }}
+        run: node scripts/send-streak-reminder.mjs

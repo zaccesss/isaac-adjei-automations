@@ -1,0 +1,29 @@
+# Posts a nightly Discord coding summary at 23:30 UTC, after the WakaTime sync at 23:00.
+
+name: Daily Coding Summary
+
+on:
+  schedule:
+    - cron: "30 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Send daily coding summary to Discord
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_CODING: ${{ secrets.DISCORD_WEBHOOK_CODING }}
+        run: node scripts/daily-coding-summary.mjs

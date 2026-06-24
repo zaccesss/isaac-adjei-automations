@@ -1,0 +1,30 @@
+# Checks the vault and inventory_items tables for upcoming or past expiry dates and posts a
+# Discord alert if any are found. Runs daily at 08:00 UTC.
+
+name: Vault Expiry Check
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run vault expiry check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_VAULT: ${{ secrets.DISCORD_WEBHOOK_VAULT }}
+        run: node scripts/vault-expiry-check.mjs
