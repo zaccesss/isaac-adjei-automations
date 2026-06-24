@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# env / secrets - never commit
+.env
+.env.*
+*.pem
+*.key
+secrets.*
+
+# os / logs
+.DS_Store
+*.log
