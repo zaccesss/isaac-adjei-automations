@@ -1,0 +1,28 @@
+# Posts a morning habit and streak checklist to Discord at 07:00 Europe/London.
+# Two UTC crons (06:00 and 07:00) cover BST and GMT; the script posts only at 07:00 local.
+
+name: Routine checklist
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/routine.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_ROUTINE: ${{ secrets.DISCORD_WEBHOOK_ROUTINE }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}

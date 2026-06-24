@@ -8,7 +8,7 @@ Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows
 
 | Workflow | Schedule | Purpose |
 | --- | --- | --- |
-| _added as each job lands_ | | |
+| [routine](.github/workflows/routine.yml) | 07:00 Europe/London | Reads the day's habits and streaks and posts a morning checklist to Discord |
 
 ## Conventions
 
