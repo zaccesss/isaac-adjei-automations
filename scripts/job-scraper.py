@@ -68,8 +68,8 @@ _SENIOR_ROLE_RE = re.compile(
 
 # I read credentials from environment variables set by GitHub Actions secrets
 # so nothing sensitive ever touches the repository.
-SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ["SUPABASE_ANON_KEY"]
+SUPABASE_URL = os.environ["SUPABASE_URL"].strip()
+SUPABASE_KEY = os.environ["SUPABASE_ANON_KEY"].strip()
 
 # I create the client at module level so it is shared across all scraper
 # functions rather than re-initialising a new connection for every company.
