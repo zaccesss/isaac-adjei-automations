@@ -19,5 +19,5 @@ You can expect a response within 72 hours.
 
 ## Out of Scope
 
-- Third-party services the jobs rely on (GitHub Actions, and any databases or APIs they talk to) — report those directly to the respective provider
-- Dependency issues — open a Dependabot alert instead
+- Third-party services the jobs rely on (GitHub Actions, and any databases or APIs they talk to) - report those directly to the respective provider
+- Dependency issues - open a Dependabot alert instead
