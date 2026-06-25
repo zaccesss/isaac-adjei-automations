@@ -25,7 +25,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
 DRY_RUN = bool(os.environ.get("RECATEGORISE_DRY_RUN", "").strip())
-BATCH = 25
+BATCH = 40
 
 CATEGORIES = {
     "AI and Machine Learning", "Cyber Security", "Data Science", "DevOps and Infrastructure",
@@ -202,7 +202,10 @@ def main() -> None:
         sys.exit("Set at least one of GROQ_API_KEY / GOOGLE_AI_API_KEY / OPENROUTER_API_KEY.")
 
     rows = fetch_scraped()
-    print(f"Loaded {len(rows)} scraped rows. DRY_RUN={DRY_RUN}")
+    # Only touch the "Software Engineering" catch-all - rows already sorted into a specific tab are
+    # left exactly as they are, so a category that is already correct can never be changed.
+    rows = [r for r in rows if (r.get("category") or "") == "Software Engineering"]
+    print(f"Loaded {len(rows)} 'Software Engineering' rows to re-categorise. DRY_RUN={DRY_RUN}")
 
     changed = 0
     pending = []
