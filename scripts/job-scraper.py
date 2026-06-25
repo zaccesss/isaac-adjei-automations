@@ -748,6 +748,224 @@ def _cover_letter_label(v):
     return None
 
 
+# ─── AI FIELD EXTRACTION (Groq -> Gemini -> OpenRouter, optional) ────────────
+# When a new role carries a description, I ask an LLM to pick the correct category tab and extract
+# the fields the ATS did not provide (salary, work mode, deadline, visa sponsorship, cover letter).
+# It only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant
+# categories from the regex, never overrides an ATS value and never touches user-owned columns. Groq
+# is tried first, then Gemini, then OpenRouter, so a rate limit or outage on one still leaves a
+# working fallback. The whole step is skipped when none of the three keys is set.
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+AI_BUDGET = int(os.environ.get("SCRAPER_AI_BUDGET", "150"))
+_ai_calls = 0
+
+# The exact category tabs the dashboard groups by - the model must pick one of these or null.
+AI_CATEGORIES = {
+    "AI and Machine Learning", "Cyber Security", "Data Science", "DevOps and Infrastructure",
+    "Embedded", "FAANG+", "Hardware", "IT", "Quant Developer", "Software Engineering",
+    "Startups", "Tech Consulting",
+}
+_AI_WORK_MODES = {
+    "remote": "Remote", "hybrid": "Hybrid", "on-site": "On-site",
+    "on site": "On-site", "onsite": "On-site", "in-office": "On-site", "in office": "On-site",
+}
+_AI_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_AI_NULLISH = {"", "null", "none", "n/a", "na", "not specified", "unspecified", "not stated"}
+
+
+def _ai_label(v):
+    """Coerce a model value to the 'Yes'/'No'/'Optional' labels the app stores, or None."""
+    if isinstance(v, bool):
+        return "Yes" if v else "No"
+    if isinstance(v, str):
+        s = v.strip().lower()
+        if s in ("yes", "true", "required"):
+            return "Yes"
+        if s in ("no", "false", "not required"):
+            return "No"
+        if s == "optional":
+            return "Optional"
+    return None
+
+
+def _validate_ai(data: dict) -> dict:
+    """Validate and coerce raw model output into clean, scraper-owned values."""
+    out = {}
+    if not isinstance(data, dict):
+        return out
+    cat = data.get("category")
+    if isinstance(cat, str) and cat.strip() in AI_CATEGORIES:
+        out["category"] = cat.strip()
+    if isinstance(data.get("sponsors_visa"), bool):
+        out["sponsors_visa"] = data["sponsors_visa"]
+    sal = data.get("salary")
+    if isinstance(sal, str) and sal.strip().lower() not in _AI_NULLISH:
+        out["salary_range"] = sal.strip()[:120]
+    wm = data.get("work_mode")
+    if isinstance(wm, str) and wm.strip().lower() in _AI_WORK_MODES:
+        out["work_mode"] = _AI_WORK_MODES[wm.strip().lower()]
+    dl = data.get("deadline")
+    if isinstance(dl, str) and _AI_DATE_RE.match(dl.strip()):
+        out["deadline"] = dl.strip()
+    cl = _ai_label(data.get("cover_letter_required"))
+    if cl is not None:
+        out["cover_letter_required"] = cl
+    return out
+
+
+def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
+    return (
+        "From the job advert below, extract these facts and reply with a JSON object using exactly "
+        "these keys. Use null whenever the advert does not state a value - never guess.\n"
+        '{"category": one of ["AI and Machine Learning","Cyber Security","Data Science",'
+        '"DevOps and Infrastructure","Embedded","FAANG+","Hardware","IT","Quant Developer",'
+        '"Software Engineering","Startups","Tech Consulting"], '
+        '"sponsors_visa": true|false|null, "salary": string|null, '
+        '"work_mode": "Remote"|"Hybrid"|"On-site"|null, "deadline": "YYYY-MM-DD"|null, '
+        '"cover_letter_required": true|false|null}\n'
+        "category is the single best-fit tab: Embedded for firmware/FPGA/RTOS, Hardware for "
+        "circuit/electronics/chip design, Quant Developer for trading or quant roles, FAANG+ only "
+        "for Google/Meta/Amazon/Apple/Microsoft/Netflix/OpenAI/Anthropic/DeepMind. sponsors_visa is "
+        "true only if it explicitly offers visa sponsorship, false only if it explicitly rules it "
+        "out. salary is the stated pay verbatim. deadline is the closing date.\n\n"
+        f"ROLE: {title}\nCOMPANY: {company}\n\nADVERT:\n{snippet}"
+    )
+
+
+def _call_groq(prompt: str):
+    if not GROQ_API_KEY:
+        return None
+    resp = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+        json={
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0,
+            "max_tokens": 220,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+def _call_gemini(prompt: str):
+    if not GOOGLE_AI_API_KEY:
+        return None
+    resp = requests.post(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        params={"key": GOOGLE_AI_API_KEY},
+        json={
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+
+def _call_openrouter(prompt: str):
+    if not OPENROUTER_API_KEY:
+        return None
+    resp = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"},
+        json={
+            "model": "meta-llama/llama-3.3-70b-instruct:free",
+            "messages": [
+                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0,
+            "max_tokens": 220,
+        },
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+_AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter))
+
+
+def ai_extract(text: str, title: str = "", company: str = "") -> dict:
+    """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter in turn.
+    Returns {} on exhausted budget, no key or total failure, so the scraper degrades gracefully."""
+    global _ai_calls
+    if _ai_calls >= AI_BUDGET:
+        return {}
+    snippet = (text or "").strip()[:6000]
+    if len(snippet) < 80:
+        return {}
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY):
+        return {}
+    _ai_calls += 1
+    prompt = _build_ai_prompt(snippet, title, company)
+    for name, fn in _AI_PROVIDERS:
+        try:
+            content = fn(prompt)
+        except Exception as e:
+            print(f"  ~ AI provider {name} failed: {e}")
+            continue
+        if not content:
+            continue
+        try:
+            result = _validate_ai(json.loads(content))
+        except Exception:
+            continue
+        time.sleep(1.5)
+        return result
+    time.sleep(1.5)
+    return {}
+
+
+def _ai_fill(job: dict) -> None:
+    """Categorise a new job and fill its empty scraper-owned fields from the description, in place.
+    The reliable company-based FAANG+/Quant categories from the regex are kept; the model sets the
+    rest of the tabs and never overrides a value the ATS already provided."""
+    regex_cat = detect_category(job["company"], job["role"])
+    fields_complete = (
+        job.get("sponsors_visa") is not None
+        and job.get("salary_range")
+        and job.get("work_mode")
+        and job.get("deadline")
+        and job.get("cover_letter_required") is not None
+    )
+    # Skip the call only when the company-based category is high-confidence and nothing is missing.
+    if regex_cat in ("FAANG+", "Quant Developer") and fields_complete:
+        job["category"] = regex_cat
+        return
+    ai = ai_extract(job.get("description", ""), job.get("role", ""), job.get("company", ""))
+    # Keep the reliable company-based regex categories, otherwise take the model's tab.
+    if regex_cat in ("FAANG+", "Quant Developer"):
+        job["category"] = regex_cat
+    elif ai.get("category"):
+        job["category"] = ai["category"]
+    if not ai:
+        return
+    if ai.get("sponsors_visa") is not None and job.get("sponsors_visa") is None:
+        job["sponsors_visa"] = ai["sponsors_visa"]
+    if ai.get("salary_range") and not job.get("salary_range"):
+        job["salary_range"] = ai["salary_range"]
+    if ai.get("work_mode") and not job.get("work_mode"):
+        job["work_mode"] = ai["work_mode"]
+    if ai.get("deadline") and not job.get("deadline"):
+        job["deadline"] = ai["deadline"]
+    if ai.get("cover_letter_required") is not None and job.get("cover_letter_required") is None:
+        job["cover_letter_required"] = ai["cover_letter_required"]
+    print(f"  * AI enriched {job.get('company')} | {job.get('role')} -> {job.get('category')} | {ai}")
+
+
 def insert_job(job: dict, existing_keys: set) -> bool:
     # I use a different date cutoff for full-time jobs (Jan 2026) vs internships (Sep 2025)
     cutoff = JOB_CUTOFF if job.get("type") == "Full-time Job" else CYCLE_CUTOFF
@@ -761,6 +979,11 @@ def insert_job(job: dict, existing_keys: set) -> bool:
     url = job.get("url", "")
     if url and url not in _existing_urls and not is_url_alive(url):
         return False
+
+    # New role with a description: let Groq fill any fields the ATS did not provide (bounded by
+    # AI_BUDGET, never overriding an ATS value or touching user-owned columns).
+    if url and url not in _existing_urls and job.get("description"):
+        _ai_fill(job)
 
     key = dedupe_key(job["company"], job["role"], job.get("url", ""))
 
@@ -788,7 +1011,7 @@ def insert_job(job: dict, existing_keys: set) -> bool:
         "starred":      False,
         "last_scraped_at": datetime.now(timezone.utc).isoformat(),
         "sponsors_visa": job.get("sponsors_visa", None),
-        "category":     detect_category(job["company"], job["role"]),
+        "category":     job.get("category") or detect_category(job["company"], job["role"]),
         # The app stores these as the text labels "Yes"/"No"/"Optional", so I write matching
         # strings rather than a Python bool that PostgREST would coerce to "true".
         "cv_required":            job.get("cv_required") or "Yes",
@@ -1613,6 +1836,7 @@ def scrape_greenhouse(
                     "deadline":             deadline,
                     "sponsors_visa":        detect_sponsors_visa(description_text),
                     "cover_letter_required": detect_cover_letter_required(description_text),
+                    "description":          description_text,
                 }, existing_keys):
                     count += 1
             elif is_relevant_job(title, company_name, location):
@@ -1627,6 +1851,7 @@ def scrape_greenhouse(
                     "deadline":             deadline,
                     "sponsors_visa":        detect_sponsors_visa(description_text),
                     "cover_letter_required": detect_cover_letter_required(description_text),
+                    "description":          description_text,
                 }, existing_keys):
                     count += 1
 
@@ -1735,6 +1960,7 @@ def scrape_ashby(
                     "opening_date":          opening_date,
                     "sponsors_visa":         detect_sponsors_visa(description_text),
                     "cover_letter_required": detect_cover_letter_required(description_text),
+                    "description":          description_text,
                 }, existing_keys):
                     count += 1
             elif is_relevant_job(title, company_name, location):
@@ -1748,6 +1974,7 @@ def scrape_ashby(
                     "opening_date":          opening_date,
                     "sponsors_visa":         detect_sponsors_visa(description_text),
                     "cover_letter_required": detect_cover_letter_required(description_text),
+                    "description":          description_text,
                 }, existing_keys):
                     count += 1
         # I sleep 0.6 s between slugs to stay well under Ashby's rate limit.
@@ -2376,6 +2603,7 @@ def scrape_reed(existing_keys: set) -> int:
                     "location": normalize_location(location),
                     "source":   "Reed",
                     "deadline": expiry,
+                    "description": job.get("jobDescription", ""),
                 }, existing_keys):
                     count += 1
 
@@ -2468,6 +2696,7 @@ def scrape_adzuna(existing_keys: set) -> int:
                     "location": normalize_location(location),
                     "source":   "Adzuna",
                     "deadline": expiry[:10] if expiry else None,
+                    "description": job.get("description", ""),
                 }, existing_keys):
                     count += 1
 
@@ -2707,6 +2936,19 @@ def main():
     global _seen_urls, _new_jobs
     _seen_urls = set()
     _new_jobs = []
+
+    # Quick AI self-test: SCRAPER_AI_TEST runs the extractor on a sample advert and exits, so I can
+    # confirm the providers and JSON parsing work without a full scrape.
+    if os.environ.get("SCRAPER_AI_TEST", "").strip():
+        sample = (
+            "Graduate Embedded Software Engineer at a London fintech startup. We design custom FPGA "
+            "and firmware for low-latency trading hardware in C++ and Rust. Salary GBP 50,000 to "
+            "60,000. Hybrid, three days in the office. We sponsor Skilled Worker visas for strong "
+            "candidates. A cover letter is required. Apply by 2026-09-30."
+        )
+        print("AI keys present -> groq:", bool(GROQ_API_KEY), "gemini:", bool(GOOGLE_AI_API_KEY), "openrouter:", bool(OPENROUTER_API_KEY))
+        print("AI test result:", ai_extract(sample, "Graduate Embedded Software Engineer", "FinTech Startup"))
+        return
 
     print(f"Job scraper starting at {datetime.now().isoformat()} (SCRAPER_MODE={SCRAPER_MODE})")
 
