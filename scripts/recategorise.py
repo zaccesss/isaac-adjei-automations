@@ -118,7 +118,7 @@ def _call_gemini(prompt: str):
     if not GOOGLE_AI_API_KEY:
         return None
     resp = requests.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
         params={"key": GOOGLE_AI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
@@ -230,7 +230,7 @@ def main() -> None:
                 changed += 1
                 print(f"  {c.get('company')} | {c.get('role')}: {c.get('category')} -> {cat}")
         print(f"  ...processed {min(start + BATCH, len(pending))}/{len(pending)}")
-        time.sleep(2)
+        time.sleep(5)
 
     print(f"Done. {changed} categor{'y' if changed == 1 else 'ies'} {'would change' if DRY_RUN else 'changed'}.")
 
