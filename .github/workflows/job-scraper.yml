@@ -1,12 +1,12 @@
 # Scrapes graduate and internship sources and upserts them into the applications table.
-# Runs every 2 days at midnight UTC. API sources and the Playwright browser source run as two
+# Runs daily at midnight UTC. API sources and the Playwright browser source run as two
 # parallel jobs so the browser install never holds up the faster API job.
 
 name: Job Scraper
 
 on:
   schedule:
-    - cron: "0 0 */2 * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       ai_test:
