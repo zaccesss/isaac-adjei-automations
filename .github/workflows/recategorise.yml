@@ -4,6 +4,11 @@
 name: Re-categorise jobs
 
 on:
+  schedule:
+    # Nightly mop-up on fresh Groq quota: re-categorises any "Software Engineering" catch-all rows.
+    # Idempotent, so it changes nothing once everything is already sorted. A scheduled run applies for
+    # real (dry-run only defaults on for the manual trigger).
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
