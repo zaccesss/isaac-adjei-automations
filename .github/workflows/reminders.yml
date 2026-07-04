@@ -1,0 +1,42 @@
+# Sends due appointment, meeting and general reminders every 30 minutes. Each reminder fires once, a set
+# lead time before its event, then stamps reminded_at so the frequent schedule never double-sends.
+
+name: Reminders
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: "Send one test email to this address and exit"
+        required: false
+        default: ""
+      test_to:
+        description: "Send one test SMS to this E.164 number and exit"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/reminders.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_REMINDERS: ${{ secrets.DISCORD_WEBHOOK_REMINDERS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          REMINDER_FROM_EMAIL: ${{ secrets.REMINDER_FROM_EMAIL }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
+          TEST_EMAIL: ${{ github.event.inputs.test_email }}
+          TEST_TO: ${{ github.event.inputs.test_to }}
