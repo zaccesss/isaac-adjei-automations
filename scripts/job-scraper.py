@@ -1018,8 +1018,14 @@ def insert_job(job: dict, existing_keys: set) -> bool:
         "cover_letter_required":  _cover_letter_label(job.get("cover_letter_required")),
         "written_answers":        job.get("written_answers"),
     }
-    # Only the scraper-owned columns are written to an existing row.
-    patch = {k: v for k, v in record.items() if k in SCRAPER_FIELDS}
+    # Only the scraper-owned columns are written to an existing row, and on a refresh I never overwrite
+    # an AI-enriched field with an empty or regex value. category is left untouched (it is set on insert
+    # or by the re-categorise backfill), and an empty value never clobbers one already there. This stops
+    # the daily re-scrape from quietly reverting the AI categorisation and salary/work mode.
+    patch = {
+        k: v for k, v in record.items()
+        if k in SCRAPER_FIELDS and k != "category" and v not in (None, "", [])
+    }
 
     # Known URL -> refresh the scraper-owned fields in place. I never delete and never duplicate, and
     # status/notes/starred/applied_date stay exactly as I left them in the app.
