@@ -24,7 +24,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-GITHUB_MODELS_TOKEN = os.environ.get("GITHUB_MODELS_TOKEN", "").strip()
+GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
 DRY_RUN = bool(os.environ.get("RECATEGORISE_DRY_RUN", "").strip())
 BATCH = 40
 
@@ -154,11 +154,11 @@ def _call_openrouter(prompt: str):
 
 
 def _call_github(prompt: str):
-    if not GITHUB_MODELS_TOKEN:
+    if not GH_MODELS_TOKEN:
         return None
     resp = requests.post(
         "https://models.github.ai/inference/chat/completions",
-        headers={"Authorization": f"Bearer {GITHUB_MODELS_TOKEN}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {GH_MODELS_TOKEN}", "Content-Type": "application/json"},
         json={
             "model": "openai/gpt-4o-mini",
             "messages": [
@@ -221,7 +221,7 @@ def ai_categorise(batch: list[tuple]) -> dict:
 def main() -> None:
     if not SUPABASE_URL or not SUPABASE_KEY:
         sys.exit("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GITHUB_MODELS_TOKEN):
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GH_MODELS_TOKEN):
         sys.exit("Set at least one AI key (Groq / Google / OpenRouter / GitHub Models).")
 
     rows = fetch_scraped()

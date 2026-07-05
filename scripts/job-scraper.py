@@ -759,7 +759,7 @@ def _cover_letter_label(v):
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-GITHUB_MODELS_TOKEN = os.environ.get("GITHUB_MODELS_TOKEN", "").strip()
+GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
 AI_BUDGET = int(os.environ.get("SCRAPER_AI_BUDGET", "150"))
 _ai_calls = 0
 
@@ -897,11 +897,11 @@ def _call_openrouter(prompt: str):
 
 
 def _call_github(prompt: str):
-    if not GITHUB_MODELS_TOKEN:
+    if not GH_MODELS_TOKEN:
         return None
     resp = requests.post(
         "https://models.github.ai/inference/chat/completions",
-        headers={"Authorization": f"Bearer {GITHUB_MODELS_TOKEN}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {GH_MODELS_TOKEN}", "Content-Type": "application/json"},
         json={
             "model": "openai/gpt-4o-mini",
             "messages": [
@@ -930,7 +930,7 @@ def ai_extract(text: str, title: str = "", company: str = "") -> dict:
     snippet = (text or "").strip()[:6000]
     if len(snippet) < 80:
         return {}
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GITHUB_MODELS_TOKEN):
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GH_MODELS_TOKEN):
         return {}
     _ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)
