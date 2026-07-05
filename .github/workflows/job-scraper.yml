@@ -109,3 +109,17 @@ jobs:
           if [ -f source-stats.md ]; then
             cat source-stats.md >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  # If either scraper job fails, I post an alert to the #errors Discord channel so I know at once.
+  notify-failure:
+    needs: [api-sources, browser-sources]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Alert on failure
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -z "$WEBHOOK" ] && exit 0
+          curl -s -H "Content-Type: application/json" -d "{\"content\": \"🚨 Job scraper failed. $RUN_URL\"}" "$WEBHOOK" >/dev/null
