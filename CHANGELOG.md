@@ -7,15 +7,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-07-05
 
+### Added
+
+- Spotify history job - a 30-minute job records my recently-played tracks into the `listening_history` table, de-duplicated by `played_at`, so the analytics can show real play counts and active hours (the Spotify API alone only returns top-N and the last 50 plays). It skips cleanly until the Spotify secrets are set (#5)
+- Scraper failure alert - a notify-failure job runs when either scraper job fails and posts the run link to the `#errors` Discord channel, so a broken scrape surfaces at once instead of days later (#4)
+- GitHub Models added as a fourth AI fallback for the scraper and re-categorisation chain (Groq, then Gemini, then OpenRouter, then GitHub Models), so a Groq rate limit no longer stalls a run; whatever a single run cannot categorise is retried by the nightly schedule. The prompt also routes robotics roles to Embedded and PCB roles to Hardware
+- Midday WakaTime sync at 12:30 Europe/London so the coding stats reflect the morning's hours during the day, alongside the end-of-day sync that now runs inside the coding recap
+- Cron idempotency guard - the jobs that post to Discord (coding recap, streak reminder, vault expiry) claim the day in the shared `cron_runs` table (portfolio migration 043) before sending, so a run that GitHub delayed into its target hour cannot double-post. A manual `workflow_dispatch` sets `FORCE=1` to bypass both the gate and the guard
+- Documentation - a README for the workflows folder (every workflow, its schedule and the UK-time two-cron pattern), a README for the scripts folder (each script and the secrets it needs), a root `.env.example` listing every secret name with placeholders, and a workflow guide in `.github` describing how changes are made here (#4, #6, #7)
+
 ### Changed
 
-- All scheduled jobs now hold a fixed UK wall-clock time year round. GitHub Actions is UTC only and does not observe British Summer Time, so each time-of-day job fires from two crons (a GMT branch and a BST branch one hour apart) and a gate step (`TZ=Europe/London date`) runs it only at the intended local hour. A shared `scripts/lib/uk-cron.mjs` provides the London-time helpers and a `cron_runs` idempotency claim. Retimed to true UK time: the streak reminder to 08:00, the vault expiry check to 08:00 and the nightly re-categorisation to 06:00, each with a `:10`/`:12` minute offset so a delayed run still lands inside the target hour
-- Coding recap consolidated into one workflow at 00:30 Europe/London - it syncs WakaTime first (after midnight, so the previous day is complete) then posts the summary, which now reports the day that just ended rather than the UTC "today". This removes the timing race between the old separate 23:00 sync and 23:30 summary
+- All scheduled jobs now hold a fixed UK wall-clock time year round. GitHub Actions is UTC only and does not observe British Summer Time, so each time-of-day job fires from two crons (a GMT branch and a BST branch one hour apart) and a gate step (`TZ=Europe/London date`) runs it only at the intended local hour. A shared `scripts/lib/uk-cron.mjs` provides the London-time helpers and a `cron_runs` idempotency claim. Retimed to true UK time: the streak reminder to 08:00, the vault expiry check to 08:00 and the nightly re-categorisation to 06:00, each with a `:10`/`:12` minute offset so a delayed run still lands inside the target hour (#3)
+- Coding recap consolidated into one workflow at 00:30 Europe/London - it syncs WakaTime first (after midnight, so the previous day is complete) then posts the summary, which now reports the day that just ended rather than the UTC "today". This removes the timing race between the old separate 23:00 sync and 23:30 summary (#3)
+
+### Fixed
+
+- The GitHub Models secret is read as `GH_MODELS_TOKEN`, because GitHub Actions reserves the `GITHUB_` prefix for its own secrets (#2)
+
+## 2026-07-04
 
 ### Added
 
-- Midday WakaTime sync at 12:30 Europe/London so the coding dashboard reflects the morning's hours during the day, alongside the end-of-day sync that now runs inside the coding recap
-- Cron idempotency guard - the jobs that post to Discord (coding recap, streak reminder, vault expiry) claim the day in the shared `cron_runs` table (portfolio migration 043) before sending, so a run that GitHub delayed into its target hour cannot double-post. A manual `workflow_dispatch` sets `FORCE=1` to bypass both the gate and the guard
+- Reminders delivery job - sends one-off appointment, meeting and general reminders from the `reminders` table (portfolio migration 042) every 30 minutes. A reminder can carry several lead times and each fires once when its moment arrives, to any of Discord, email and SMS, recorded in `sent_leads` so none repeats. Reuses the Resend, Discord webhook and Twilio setup from the medication reminders job, and a `workflow_dispatch` with `test_email` or `test_to` sends one test message (#1)
+
+### Changed
+
+- The re-categorisation now runs nightly to mop up any "Software Engineering" catch-all rows the daily scrape adds. It is idempotent, so it changes nothing once everything is already sorted, and a scheduled run applies for real (dry-run only defaults on the manual trigger)
+
+### Fixed
+
+- The daily re-scrape no longer reverts the AI categories and enrichment. A refresh had rebuilt `category` from the regex and blanked salary and work mode, because the AI enrichment only runs for brand-new rows, so it washed out the categorisation every day. The refresh now leaves `category` untouched and never overwrites an existing value with an empty one
+
+## 2026-06-25
+
+### Added
+
+- AI field extraction and categorisation for the job scraper - a role that carries a description is sent to an LLM (Groq first, then Gemini, then OpenRouter) that picks the correct category tab and fills any missing salary, work mode, deadline, visa sponsorship or cover letter. It only fills empty scraper-owned fields, keeps the reliable company-based FAANG+ and Quant categories from the regex and never touches user-owned columns like status or notes. A `workflow_dispatch` `ai_test` input runs a quick self-test
+- One-off AI re-categorisation backfill - re-sorts existing scraped applications with the same Groq to Gemini to OpenRouter chain, from title and company since old rows have no stored description. It updates only the `category` column and defaults to a dry run (the old regex put 74% of roles in Software Engineering and never produced the Hardware or Startups tabs)
+
+### Changed
+
+- The job scraper runs daily at 00:00 UTC instead of every two days, now that it is on the free public repo. Adzuna stays well under its 1000-request monthly trial limit at roughly 420 a month
+- The backfill re-categorises only the "Software Engineering" catch-all and leaves any already-sorted row untouched, so a correct category can never change; batch size widened to 40 for fewer AI calls per run
+
+### Fixed
+
+- The AI fallback uses `gemini-2.5-flash`. The retired `gemini-1.5-flash` endpoint returned 404, so when Groq hit its rate limit the fallback was dead. The backfill also waits longer between batches to stay within the free-tier rate limits
 
 ## 2026-06-24
 
@@ -23,4 +61,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Repository scaffold - gitleaks secret scanning, Dependabot for the action versions, a security policy, a code of conduct and a PolyForm Noncommercial licence
 - Morning routine job - reads the day's habits and streaks from the database and posts a checklist to Discord at 07:00 Europe/London, with a British Summer Time guard so it fires at the right local hour year round
-- Medication reminders job - sends due medication reminders to Discord, email or SMS every 30 minutes, de-duplicated against a dose log, firing at the right local time through BST and GMT
+- Medication reminders job - sends due medication reminders every 30 minutes, de-duplicated against a dose log and firing at the right local time through BST and GMT. A reminder can go to Discord, email and SMS at once via a channels array (email through Resend, SMS through Twilio), and a `workflow_dispatch` with `TEST_TO` or `TEST_EMAIL` sends one test message
+- Migrated the scheduled data jobs from the portfolio repo - the WakaTime sync, the daily coding summary, the morning streak reminder, the vault and inventory expiry check and the job scraper, each a workflow wrapping a self-contained script. The three Node scripts were rewritten dependency-free to match the routine and medication style, and the Python jobs share one requirements file
+- Repo hygiene workflows - a CI compile-check (`python compileall` and `node --check`) on every push and pull request, Dependabot auto-merge once checks pass, and a scheduled Repo maintenance job that deletes merged branches the merge did not clean up
+
+### Fixed
+
+- Strip whitespace from the credential environment variables in the Python jobs - a trailing newline in the `SUPABASE_URL` secret broke httpx (it rejects a newline in a URL, while the Node fetch parser silently stripped it)

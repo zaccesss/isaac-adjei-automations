@@ -1,6 +1,6 @@
 # automations
 
-A collection of scheduled jobs - data syncs, timed reminders and digests - that run on GitHub Actions and back my dashboard at [isaacadjei.me](https://isaacadjei.me).
+A collection of scheduled jobs - data syncs, timed reminders and digests - that run on GitHub Actions.
 
 Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows) wrapping a short, self-contained script in [`scripts`](scripts). The scripts are deliberately generic and take all of their runtime settings from the environment, so the repository can stay public (and free to run) without carrying anything sensitive.
 
