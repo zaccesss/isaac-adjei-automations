@@ -9,7 +9,7 @@ repo-automation workflows that keep the repository itself healthy.
 | Workflow | Schedule | Script | Purpose |
 | --- | --- | --- | --- |
 | [daily-coding-summary](daily-coding-summary.yml) | 00:30 UK | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data (after midnight, so the day is complete) then posts a Discord recap comparing it to the 30-day average |
-| [wakatime-sync](wakatime-sync.yml) | 12:30 UK | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Midday WakaTime sync so the coding dashboard shows the morning's hours during the day |
+| [wakatime-sync](wakatime-sync.yml) | 12:30 UK | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Midday WakaTime sync so the coding stats reflect the morning's hours during the day |
 | [routine](routine.yml) | 07:00 UK | [`routine.mjs`](../../scripts/routine.mjs) | Posts the morning habit and streak checklist to Discord |
 | [streak-reminder](streak-reminder.yml) | 08:00 UK | [`send-streak-reminder.mjs`](../../scripts/send-streak-reminder.mjs) | Reminds me on Discord which streaks are not yet logged today |
 | [vault-expiry-check](vault-expiry-check.yml) | 08:00 UK | [`vault-expiry-check.mjs`](../../scripts/vault-expiry-check.mjs) | Alerts on Discord when vault or inventory items are near their expiry date |
