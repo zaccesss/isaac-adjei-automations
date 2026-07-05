@@ -24,6 +24,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+GITHUB_MODELS_TOKEN = os.environ.get("GITHUB_MODELS_TOKEN", "").strip()
 DRY_RUN = bool(os.environ.get("RECATEGORISE_DRY_RUN", "").strip())
 BATCH = 40
 
@@ -152,7 +153,29 @@ def _call_openrouter(prompt: str):
     return resp.json()["choices"][0]["message"]["content"]
 
 
-_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter))
+def _call_github(prompt: str):
+    if not GITHUB_MODELS_TOKEN:
+        return None
+    resp = requests.post(
+        "https://models.github.ai/inference/chat/completions",
+        headers={"Authorization": f"Bearer {GITHUB_MODELS_TOKEN}", "Content-Type": "application/json"},
+        json={
+            "model": "openai/gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "You categorise job adverts and reply with JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0,
+            "max_tokens": 900,
+        },
+        timeout=45,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter), ("GitHub", _call_github))
 
 
 def ai_categorise(batch: list[tuple]) -> dict:
@@ -163,7 +186,7 @@ def ai_categorise(batch: list[tuple]) -> dict:
         '["AI and Machine Learning","Cyber Security","Data Science","DevOps and Infrastructure",'
         '"Embedded","FAANG+","Hardware","IT","Quant Developer","Software Engineering","Startups",'
         '"Tech Consulting"]\n'
-        "Embedded for firmware/FPGA/RTOS roles, Hardware for circuit/electronics/chip design, Quant "
+        "Embedded for firmware/FPGA/RTOS/robotics roles, Hardware for circuit/electronics/PCB/chip design, Quant "
         "Developer for trading or quant roles, Startups for clearly early-stage startup roles, FAANG+ "
         "only for Google/Meta/Amazon/Apple/Microsoft/Netflix/OpenAI/Anthropic/DeepMind.\n"
         'Reply with JSON {"results": [{"i": <number>, "category": <tab>}, ...]} covering every job.\n\n'
@@ -198,8 +221,8 @@ def ai_categorise(batch: list[tuple]) -> dict:
 def main() -> None:
     if not SUPABASE_URL or not SUPABASE_KEY:
         sys.exit("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY):
-        sys.exit("Set at least one of GROQ_API_KEY / GOOGLE_AI_API_KEY / OPENROUTER_API_KEY.")
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GITHUB_MODELS_TOKEN):
+        sys.exit("Set at least one AI key (Groq / Google / OpenRouter / GitHub Models).")
 
     rows = fetch_scraped()
     # Only touch the "Software Engineering" catch-all - rows already sorted into a specific tab are

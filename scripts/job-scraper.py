@@ -759,6 +759,7 @@ def _cover_letter_label(v):
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
+GITHUB_MODELS_TOKEN = os.environ.get("GITHUB_MODELS_TOKEN", "").strip()
 AI_BUDGET = int(os.environ.get("SCRAPER_AI_BUDGET", "150"))
 _ai_calls = 0
 
@@ -826,7 +827,7 @@ def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
         '"sponsors_visa": true|false|null, "salary": string|null, '
         '"work_mode": "Remote"|"Hybrid"|"On-site"|null, "deadline": "YYYY-MM-DD"|null, '
         '"cover_letter_required": true|false|null}\n'
-        "category is the single best-fit tab: Embedded for firmware/FPGA/RTOS, Hardware for "
+        "category is the single best-fit tab: Embedded for firmware/FPGA/RTOS/robotics, Hardware for "
         "circuit/electronics/chip design, Quant Developer for trading or quant roles, FAANG+ only "
         "for Google/Meta/Amazon/Apple/Microsoft/Netflix/OpenAI/Anthropic/DeepMind. sponsors_visa is "
         "true only if it explicitly offers visa sponsorship, false only if it explicitly rules it "
@@ -895,7 +896,29 @@ def _call_openrouter(prompt: str):
     return resp.json()["choices"][0]["message"]["content"]
 
 
-_AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter))
+def _call_github(prompt: str):
+    if not GITHUB_MODELS_TOKEN:
+        return None
+    resp = requests.post(
+        "https://models.github.ai/inference/chat/completions",
+        headers={"Authorization": f"Bearer {GITHUB_MODELS_TOKEN}", "Content-Type": "application/json"},
+        json={
+            "model": "openai/gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0,
+            "max_tokens": 220,
+        },
+        timeout=45,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+_AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter), ("GitHub", _call_github))
 
 
 def ai_extract(text: str, title: str = "", company: str = "") -> dict:
@@ -907,7 +930,7 @@ def ai_extract(text: str, title: str = "", company: str = "") -> dict:
     snippet = (text or "").strip()[:6000]
     if len(snippet) < 80:
         return {}
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY):
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GITHUB_MODELS_TOKEN):
         return {}
     _ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)
