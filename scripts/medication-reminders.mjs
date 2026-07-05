@@ -31,7 +31,9 @@ async function db(path, opts) {
     ...opts,
   })
   if (!res.ok) throw new Error(`${res.status} ${await res.text()} (${path})`)
-  return res.status === 204 ? null : res.json()
+  // A POST insert returns 201 with an empty body, so parse only when there is one.
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 
 const toMin = (t) => {
