@@ -1,11 +1,13 @@
-# Fetches the latest WakaTime coding stats and upserts them into the wakatime_daily
-# table. Runs nightly at 23:00 UTC so the previous day is fully settled before fetch.
+# Midday WakaTime sync so the coding dashboard shows the morning's hours during the day. Runs at 12:30
+# Europe/London (two UTC crons cover BST and GMT; a gate step runs it only at 12:xx UK). The full
+# previous day is synced separately by the 00:30 coding recap workflow before it posts.
 
 name: WakaTime Sync
 
 on:
   schedule:
-    - cron: "0 23 * * *"
+    - cron: "30 11 * * *" # BST -> 12:30 UK
+    - cron: "30 12 * * *" # GMT -> 12:30 UK
   workflow_dispatch:
 
 concurrency:
@@ -20,22 +22,39 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Gate to 12:30 UK
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          H=$(TZ=Europe/London date +%H)
+          if [ "$H" = "12" ]; then
+            echo "go=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "not 12:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+          fi
 
-      - uses: actions/setup-python@v5
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/checkout@v4
+
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Cache pip
+      - if: steps.gate.outputs.go == '1'
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('scripts/requirements.txt') }}
           restore-keys: ${{ runner.os }}-pip-
 
-      - run: pip install -r scripts/requirements.txt
+      - if: steps.gate.outputs.go == '1'
+        run: pip install -r scripts/requirements.txt
 
       - name: Sync WakaTime data to Supabase
+        if: steps.gate.outputs.go == '1'
         env:
           WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

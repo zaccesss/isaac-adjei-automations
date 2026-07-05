@@ -1,11 +1,13 @@
-# Checks the vault and inventory_items tables for upcoming or past expiry dates and posts a
-# Discord alert if any are found. Runs daily at 08:00 UTC.
+# Checks the vault and inventory_items tables for upcoming or past expiry dates and posts a Discord
+# alert if any are found. Runs at 08:00 Europe/London. Two UTC crons (07:12 and 08:12) cover BST and
+# GMT; a gate step runs it only at 08:xx UK. The :12 minute leaves room for GitHub's scheduling delay.
 
 name: Vault Expiry Check
 
 on:
   schedule:
-    - cron: "0 8 * * *"
+    - cron: "12 7 * * *" # BST -> 08:12 UK
+    - cron: "12 8 * * *" # GMT -> 08:12 UK
   workflow_dispatch:
 
 permissions:
@@ -16,15 +18,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Gate to 08:00 UK
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          H=$(TZ=Europe/London date +%H)
+          if [ "$H" = "08" ]; then
+            echo "go=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "not 08:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+          fi
 
-      - uses: actions/setup-node@v4
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/checkout@v4
+
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Run vault expiry check
+        if: steps.gate.outputs.go == '1'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_VAULT: ${{ secrets.DISCORD_WEBHOOK_VAULT }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: node scripts/vault-expiry-check.mjs
