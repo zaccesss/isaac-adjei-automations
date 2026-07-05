@@ -9,6 +9,7 @@ __pycache__/
 # env / secrets - never commit
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 secrets.*
