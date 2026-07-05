@@ -5,10 +5,12 @@ name: Re-categorise jobs
 
 on:
   schedule:
-    # Nightly mop-up on fresh Groq quota: re-categorises any "Software Engineering" catch-all rows.
-    # Idempotent, so it changes nothing once everything is already sorted. A scheduled run applies for
-    # real (dry-run only defaults on for the manual trigger).
-    - cron: "0 6 * * *"
+    # Nightly mop-up on fresh Groq quota at 06:00 Europe/London: re-categorises any "Software
+    # Engineering" catch-all rows. Two UTC crons (05:00 and 06:00) cover BST and GMT; a gate step runs
+    # it only at 06:xx UK. Idempotent, so it changes nothing once everything is already sorted. A
+    # scheduled run applies for real (dry-run only defaults on for the manual trigger).
+    - cron: "0 5 * * *" # BST -> 06:00 UK
+    - cron: "0 6 * * *" # GMT -> 06:00 UK
   workflow_dispatch:
     inputs:
       dry_run:
@@ -32,12 +34,29 @@ jobs:
       GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       RECATEGORISE_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Gate to 06:00 UK
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          H=$(TZ=Europe/London date +%H)
+          if [ "$H" = "06" ]; then
+            echo "go=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "not 06:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+          fi
 
-      - uses: actions/setup-python@v5
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/checkout@v4
+
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - run: pip install requests
+      - if: steps.gate.outputs.go == '1'
+        run: pip install requests
 
-      - run: python scripts/recategorise.py
+      - if: steps.gate.outputs.go == '1'
+        run: python scripts/recategorise.py

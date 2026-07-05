@@ -1,5 +1,7 @@
-// Checks passport, warranty, API key and card expiry dates in the vault and inventory_items
-// tables and posts a Discord alert if anything is due to expire soon. Node only, no deps.
+// Checks passport, warranty, API key and card expiry dates in the vault and inventory_items tables and
+// posts a Discord alert if anything is due to expire soon. Runs at 08:00 Europe/London (gated in the
+// workflow). Node only, no deps.
+import { alreadyRanToday } from "./lib/uk-cron.mjs"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -106,6 +108,12 @@ async function main() {
   }))
 
   const colour = expiring.some((i) => i.daysLeft <= 7) ? 0xe74c3c : 0xf39c12
+
+  // Belt-and-braces: a run that GitHub delayed into the target hour cannot double-post (FORCE bypasses).
+  if (await alreadyRanToday("vault-expiry")) {
+    console.log("Vault expiry alert already sent today - skipping.")
+    process.exit(0)
+  }
 
   const res = await fetch(webhookUrl, {
     method: "POST",
