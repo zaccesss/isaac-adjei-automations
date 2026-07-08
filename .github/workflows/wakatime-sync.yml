@@ -6,8 +6,9 @@ name: WakaTime Sync
 
 on:
   schedule:
-    - cron: "30 11 * * *" # BST -> 12:30 UK
-    - cron: "30 12 * * *" # GMT -> 12:30 UK
+    # The sync is idempotent, so run it every 3 hours to keep the coding dashboard fresh and to survive
+    # GitHub dropping any single scheduled run. No time gate needed.
+    - cron: "19 */3 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -22,18 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Gate to 12:30 UK
+      - name: Proceed (idempotent sync, safe to run often)
         id: gate
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-          H=$(TZ=Europe/London date +%H)
-          if [ "$H" = "12" ]; then
-            echo "go=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "not 12:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "go=1" >> "$GITHUB_OUTPUT"
 
       - if: steps.gate.outputs.go == '1'
         uses: actions/checkout@v4

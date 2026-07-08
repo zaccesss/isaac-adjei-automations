@@ -6,6 +6,8 @@
 // it only posts when it is actually 07:00 in Europe/London and exits quietly otherwise. A manual run
 // (workflow_dispatch sets FORCE=1) always posts, for testing.
 
+import { londonHour, alreadyRanToday } from "./lib/uk-cron.mjs"
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const webhook = process.env.DISCORD_WEBHOOK_ROUTINE
@@ -16,14 +18,17 @@ if (!SUPABASE_URL || !SERVICE_KEY || !webhook) {
   process.exit(1)
 }
 
-// Collapse the two UTC crons to a single 07:00 Europe/London send, unless forced (manual test run).
+// GitHub Actions cron is unreliable (it delays and drops runs), so the workflow now fires every 30 min
+// across the morning. Post once, on the first run at or after 07:00 UK, and claim (job, UK-day) so a later
+// run in the window never repeats it. A manual run (FORCE=1) always posts, for testing.
 if (process.env.FORCE !== "1") {
-  const part = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false })
-    .formatToParts(new Date())
-    .find((p) => p.type === "hour")
-  const londonHour = parseInt(part?.value ?? "99", 10) % 24
-  if (londonHour !== TARGET_HOUR) {
-    console.log(`London hour is ${londonHour}, not ${TARGET_HOUR} - skipping.`)
+  const h = londonHour()
+  if (h < TARGET_HOUR || h > TARGET_HOUR + 2) {
+    console.log(`London hour is ${h}, outside ${TARGET_HOUR}-${TARGET_HOUR + 2} - skipping.`)
+    process.exit(0)
+  }
+  if (await alreadyRanToday("routine")) {
+    console.log("Already posted today - skipping.")
     process.exit(0)
   }
 }

@@ -1,12 +1,12 @@
-# Posts a morning habit and streak checklist to Discord at 07:00 Europe/London.
-# Two UTC crons (06:00 and 07:00) cover BST and GMT; the script posts only at 07:00 local.
+# Posts a morning habit and streak checklist to Discord, once, around 07:00 Europe/London.
+# GitHub Actions cron drops many runs, so this fires every 30 min across 06:00-09:30 UTC (the 07:00-09:00
+# UK window in BST and GMT) and the script posts once and claims (job, UK-day) so it never repeats.
 
 name: Routine checklist
 
 on:
   schedule:
-    - cron: "0 6 * * *"
-    - cron: "0 7 * * *"
+    - cron: "9,39 6-9 * * *"
   workflow_dispatch:
 
 permissions:
