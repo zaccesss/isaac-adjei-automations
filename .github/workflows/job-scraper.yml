@@ -6,7 +6,10 @@ name: Job Scraper
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # Two off-peak tries (GitHub drops top-of-hour runs), so a dropped run does not cost a day of scraping.
+    # The scrape upserts and de-duplicates, so running twice is harmless.
+    - cron: "23 1 * * *"
+    - cron: "41 4 * * *"
   workflow_dispatch:
     inputs:
       ai_test:
