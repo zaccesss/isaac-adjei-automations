@@ -6,8 +6,9 @@ name: Daily Streak Reminder
 
 on:
   schedule:
-    - cron: "10 7 * * *" # BST -> 08:10 UK
-    - cron: "10 8 * * *" # GMT -> 08:10 UK
+    # Fire every 30 min across 07:00-10:00 UTC (covers the 08:00-10:00 UK window in BST and GMT). GitHub
+    # drops many scheduled runs, so several tries guarantee one lands; the script claims once per day.
+    - cron: "13,43 7-10 * * *"
   workflow_dispatch:
 
 permissions:
@@ -18,17 +19,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Gate to 08:00 UK
+      - name: Gate to the 08:00-10:00 UK window
         id: gate
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          H=$(TZ=Europe/London date +%H)
-          if [ "$H" = "08" ]; then
+          H=$((10#$(TZ=Europe/London date +%H)))
+          if [ "$H" -ge 8 ] && [ "$H" -le 10 ]; then
             echo "go=1" >> "$GITHUB_OUTPUT"
           else
-            echo "not 08:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+            echo "outside 08-10 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.gate.outputs.go == '1'

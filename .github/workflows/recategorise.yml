@@ -9,8 +9,7 @@ on:
     # Engineering" catch-all rows. Two UTC crons (05:00 and 06:00) cover BST and GMT; a gate step runs
     # it only at 06:xx UK. Idempotent, so it changes nothing once everything is already sorted. A
     # scheduled run applies for real (dry-run only defaults on for the manual trigger).
-    - cron: "0 5 * * *" # BST -> 06:00 UK
-    - cron: "0 6 * * *" # GMT -> 06:00 UK
+    - cron: "11,41 5-8 * * *" # every 30 min, 05:00-08:30 UTC (covers 06:00-09:00 UK in BST and GMT); idempotent
   workflow_dispatch:
     inputs:
       dry_run:
@@ -34,17 +33,17 @@ jobs:
       GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       RECATEGORISE_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
     steps:
-      - name: Gate to 06:00 UK
+      - name: Gate to the 06:00-09:00 UK window
         id: gate
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          H=$(TZ=Europe/London date +%H)
-          if [ "$H" = "06" ]; then
+          H=$((10#$(TZ=Europe/London date +%H)))
+          if [ "$H" -ge 6 ] && [ "$H" -le 9 ]; then
             echo "go=1" >> "$GITHUB_OUTPUT"
           else
-            echo "not 06:xx UK (is ${H}:xx) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+            echo "outside 06-09 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.gate.outputs.go == '1'

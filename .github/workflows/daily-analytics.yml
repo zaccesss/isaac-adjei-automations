@@ -1,0 +1,33 @@
+# Posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness, Music)
+# for the day that just ended. GitHub Actions cron drops many runs, so this fires every 30 min across the UK
+# morning; the script gates to >= 08:00 UK and claims (job, UK-day), so it posts exactly once per day
+# whenever a run lands. Each channel is optional - a page is skipped if its webhook secret is unset.
+
+name: Daily Analytics
+
+on:
+  schedule:
+    - cron: "23,53 6-10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analytics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DISCORD_WEBHOOK_POSTS: ${{ secrets.DISCORD_WEBHOOK_POSTS }}
+      DISCORD_WEBHOOK_FITNESS: ${{ secrets.DISCORD_WEBHOOK_FITNESS }}
+      DISCORD_WEBHOOK_APPLICATIONS: ${{ secrets.DISCORD_WEBHOOK_APPLICATIONS }}
+      DISCORD_WEBHOOK_MUSIC: ${{ secrets.DISCORD_WEBHOOK_MUSIC }}
+      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node scripts/daily-analytics.mjs

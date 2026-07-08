@@ -10,7 +10,6 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const discordWebhook = process.env.DISCORD_WEBHOOK_REMINDERS
 const resendKey = process.env.RESEND_API_KEY
 const fromEmail = process.env.REMINDER_FROM_EMAIL || "Medication Reminder <hello@isaacadjei.me>"
-const WINDOW = 30
 const TZ = "Europe/London"
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -117,7 +116,11 @@ for (const r of reminders) {
 
   for (const t of r.times || []) {
     const tMin = toMin(t)
-    if (!(tMin <= nowMin && tMin > nowMin - WINDOW)) continue
+    // Send any dose whose time has passed today and has not been logged yet. GitHub Actions cron is
+    // unreliable - it delays runs and drops many of them - so a fixed match window silently missed doses
+    // that fell in the gaps. Catching up on every due-but-unsent dose (deduped below, once per day) means
+    // the next run that does fire delivers the reminder, so a dose is never skipped, only ever a bit late.
+    if (tMin > nowMin) continue
     const dup = await db(`medication_doses?select=id&reminder_id=eq.${r.id}&scheduled_time=eq.${encodeURIComponent(t)}&sent_at=gte.${today}T00:00:00`)
     if (dup && dup.length > 0) continue
 
