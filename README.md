@@ -1,5 +1,7 @@
 # automations
 
+[![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](https://healthchecks.io)
+
 A collection of scheduled jobs - data syncs, timed reminders and digests - that run on GitHub Actions.
 
 Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows) wrapping a short, self-contained script in [`scripts`](scripts). The scripts are deliberately generic and take all of their runtime settings from the environment, so the repository can stay public (and free to run) without carrying anything sensitive.
