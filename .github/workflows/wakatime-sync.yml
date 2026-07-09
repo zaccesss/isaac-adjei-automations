@@ -30,6 +30,14 @@ jobs:
       - if: steps.gate.outputs.go == '1'
         uses: actions/checkout@v4
 
+      - name: Healthcheck start
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: wakatime-sync
+          status: start
+
       - if: steps.gate.outputs.go == '1'
         uses: actions/setup-python@v5
         with:
@@ -52,3 +60,18 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/wakatime-sync.py
+
+      - name: Healthcheck success
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: wakatime-sync
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: wakatime-sync
+          status: fail

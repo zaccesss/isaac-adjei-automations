@@ -30,4 +30,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-analytics
+          status: start
       - run: node scripts/daily-analytics.mjs
+      - name: Healthcheck success
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-analytics
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-analytics
+          status: fail

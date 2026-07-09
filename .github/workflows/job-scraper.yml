@@ -56,6 +56,13 @@ jobs:
 
       - run: pip install -r scripts/requirements.txt
 
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: job-scraper
+          status: start
+
       - name: Run API scrapers
         run: python scripts/job-scraper.py
 
@@ -126,3 +133,25 @@ jobs:
         run: |
           [ -z "$WEBHOOK" ] && exit 0
           curl -s -H "Content-Type: application/json" -d "{\"content\": \"🚨 Job scraper failed. $RUN_URL\"}" "$WEBHOOK" >/dev/null
+
+  # Ping Healthchecks once both scraper jobs settle: success only if both succeeded, otherwise fail. A
+  # dropped or failing scrape then shows up on the status page and in the #monitoring alerts.
+  healthcheck:
+    needs: [api-sources, browser-sources]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Healthcheck success
+        if: needs.api-sources.result == 'success' && needs.browser-sources.result == 'success'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: job-scraper
+      - name: Healthcheck fail
+        if: needs.api-sources.result != 'success' || needs.browser-sources.result != 'success'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: job-scraper
+          status: fail

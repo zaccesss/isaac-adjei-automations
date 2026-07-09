@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-09
+
+### Added
+
+- Healthchecks.io monitoring on every scheduled job. A shared composite action (`.github/actions/healthcheck`) pings `hc-ping.com/<key>/<slug>` on start, success and fail, one slug per job, so a job that stops running, fails or hangs raises an alert instead of failing silently for days. Guarded on the `HEALTHCHECK_PING_KEY` secret: with no key set every ping is a no-op and the jobs run unchanged. The job-scraper reports success only when both its parallel jobs succeed (#16)
+
+---
+
+## 2026-07-08
+
+### Added
+
+- Daily analytics summary - a new job posts a per-page summary (Applications, Posts, Fitness, Music) to each dashboard analytics Discord channel for the day that just ended, each channel optional and skipped if its webhook is unset (#15)
+
+### Changed
+
+- Reliable scheduling for every daily job. GitHub Actions drops scheduled runs, worst at the top of the hour, so each daily job now fires every 30 minutes across a morning window at off-peak minutes rather than from one slot, gates to its target UK hour and claims the day in `cron_runs` so it acts exactly once whenever a run lands. The routine checklist and daily analytics join the coding recap, streak reminder and vault check in claiming the day. WakaTime sync runs every 3 hours (idempotent), and the job-scraper fires from two off-peak tries (#15)
+
+### Fixed
+
+- Medication reminders catch up on any dose that came due while runs were being dropped, rather than only firing inside a fixed window, so a delayed run still sends and the per-dose dedup keeps it from repeating (#15)
+
+---
+
 ## 2026-07-05
 
 ### Added
