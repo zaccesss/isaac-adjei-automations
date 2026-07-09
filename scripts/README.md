@@ -15,6 +15,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`routine.mjs`](routine.mjs) | Node | routine | Reads the day's habits and streaks and posts a morning checklist to Discord |
 | [`send-streak-reminder.mjs`](send-streak-reminder.mjs) | Node | streak-reminder | Posts which active streaks are not yet logged today |
 | [`vault-expiry-check.mjs`](vault-expiry-check.mjs) | Node | vault-expiry-check | Alerts when vault or `inventory_items` entries are near their expiry date |
+| [`daily-analytics.mjs`](daily-analytics.mjs) | Node | daily-analytics | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel for the day that just ended |
 | [`medication-reminders.mjs`](medication-reminders.mjs) | Node | medication-reminders | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
 | [`spotify-history.mjs`](spotify-history.mjs) | Node | spotify-history | Records recent Spotify plays into `listening_history` for the listening analytics |
@@ -27,7 +28,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 `londonHour()` / `londonDate()` for the gate, and `alreadyRanToday(job)`, which claims `(job, run_date)`
 in the `cron_runs` table so a delayed run cannot double-post. `FORCE=1` (set on a manual
 `workflow_dispatch`) bypasses the claim. See the
-[workflows README](../.github/workflows/README.md#uk-time-and-the-two-cron-pattern) for the full pattern.
+[workflows README](../.github/workflows/README.md#uk-time-and-the-windowed-schedule) for the full pattern.
 
 ## Environment
 
@@ -43,6 +44,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `routine.mjs` | `DISCORD_WEBHOOK_ROUTINE` |
 | `send-streak-reminder.mjs` | `DISCORD_WEBHOOK_STREAKS` |
 | `vault-expiry-check.mjs` | `DISCORD_WEBHOOK_VAULT` |
+| `daily-analytics.mjs` | `DISCORD_WEBHOOK_APPLICATIONS`, `DISCORD_WEBHOOK_POSTS`, `DISCORD_WEBHOOK_FITNESS`, `DISCORD_WEBHOOK_MUSIC` (each optional; a channel is skipped if its webhook is unset) |
 | `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL`, and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` / `GH_MODELS_TOKEN` |
@@ -55,6 +57,11 @@ the workflows set them and the code has sensible defaults. These are `SCRAPER_MO
 `TEST_TO` (a one-off test send from the reminder jobs). They are listed, commented, at the bottom of
 [`.env.example`](../.env.example). The authoritative environment for each job is the `env:` block in its
 [workflow](../.github/workflows/README.md).
+
+Monitoring is handled at the workflow level, not in the scripts: each workflow pings Healthchecks.io on
+start, success and fail through the shared [`../.github/actions/healthcheck`](../.github/actions/healthcheck/action.yml)
+action, guarded on the `HEALTHCHECK_PING_KEY` secret. See
+[Monitoring](../.github/workflows/README.md#monitoring).
 
 ## Running one locally
 

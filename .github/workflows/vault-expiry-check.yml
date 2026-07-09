@@ -40,6 +40,14 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Healthcheck start
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: vault-expiry-check
+          status: start
+
       - name: Run vault expiry check
         if: steps.gate.outputs.go == '1'
         env:
@@ -48,3 +56,18 @@ jobs:
           DISCORD_WEBHOOK_VAULT: ${{ secrets.DISCORD_WEBHOOK_VAULT }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: node scripts/vault-expiry-check.mjs
+
+      - name: Healthcheck success
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: vault-expiry-check
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: vault-expiry-check
+          status: fail
