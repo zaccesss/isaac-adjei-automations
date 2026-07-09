@@ -40,6 +40,14 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Healthcheck start
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: streak-reminder
+          status: start
+
       - name: Send morning streak reminder to Discord
         if: steps.gate.outputs.go == '1'
         env:
@@ -48,3 +56,18 @@ jobs:
           DISCORD_WEBHOOK_STREAKS: ${{ secrets.DISCORD_WEBHOOK_STREAKS }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: node scripts/send-streak-reminder.mjs
+
+      - name: Healthcheck success
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: streak-reminder
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: streak-reminder
+          status: fail

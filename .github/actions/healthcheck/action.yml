@@ -1,0 +1,29 @@
+name: Healthcheck ping
+description: Best-effort ping to Healthchecks.io using the ping-key + slug scheme. A no-op with no key set.
+
+inputs:
+  ping-key:
+    description: The HEALTHCHECK_PING_KEY secret. When empty the ping is skipped so the job runs unchanged.
+    required: false
+  slug:
+    description: The check slug, one per job (for example routine or job-scraper).
+    required: true
+  status:
+    description: start, success or fail. success pings the bare slug; start and fail add the suffix.
+    required: false
+    default: success
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        PING_KEY: ${{ inputs.ping-key }}
+        SLUG: ${{ inputs.slug }}
+        STATUS: ${{ inputs.status }}
+      run: |
+        [ -z "$PING_KEY" ] && exit 0
+        suffix=""
+        [ "$STATUS" = "start" ] && suffix="/start"
+        [ "$STATUS" = "fail" ] && suffix="/fail"
+        curl -fsS -m 10 --retry 3 "https://hc-ping.com/$PING_KEY/$SLUG$suffix" || true

@@ -6,18 +6,23 @@ repo-automation workflows that keep the repository itself healthy.
 
 ## Scheduled jobs
 
-| Workflow | Schedule | Script | Purpose |
+Every scheduled job fires from a frequent window rather than a single slot, because GitHub Actions cron
+delays and drops runs (worst at the top of the hour). The job then gates itself to the intended UK hour
+and claims the day so it acts exactly once. See [UK time and the windowed schedule](#uk-time-and-the-windowed-schedule).
+
+| Workflow | Schedule (UK) | Script | Purpose |
 | --- | --- | --- | --- |
-| [daily-coding-summary](daily-coding-summary.yml) | 00:30 UK | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data (after midnight, so the day is complete) then posts a Discord recap comparing it to the 30-day average |
-| [wakatime-sync](wakatime-sync.yml) | 12:30 UK | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Midday WakaTime sync so the coding stats reflect the morning's hours during the day |
-| [routine](routine.yml) | 07:00 UK | [`routine.mjs`](../../scripts/routine.mjs) | Posts the morning habit and streak checklist to Discord |
-| [streak-reminder](streak-reminder.yml) | 08:00 UK | [`send-streak-reminder.mjs`](../../scripts/send-streak-reminder.mjs) | Reminds me on Discord which streaks are not yet logged today |
-| [vault-expiry-check](vault-expiry-check.yml) | 08:00 UK | [`vault-expiry-check.mjs`](../../scripts/vault-expiry-check.mjs) | Alerts on Discord when vault or inventory items are near their expiry date |
-| [recategorise](recategorise.yml) | 06:00 UK | [`recategorise.py`](../../scripts/recategorise.py) | Re-categorises "Software Engineering" catch-all applications with the AI (idempotent mop-up) |
+| [daily-coding-summary](daily-coding-summary.yml) | once, 07:00-10:00 window | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data then posts a Discord recap comparing it to the 30-day average |
+| [wakatime-sync](wakatime-sync.yml) | every 3 hours | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Keeps the coding stats fresh through the day (idempotent, so a dropped run is harmless) |
+| [routine](routine.yml) | once, 07:00-09:00 window | [`routine.mjs`](../../scripts/routine.mjs) | Posts the morning habit and streak checklist to Discord |
+| [streak-reminder](streak-reminder.yml) | once, 08:00-10:00 window | [`send-streak-reminder.mjs`](../../scripts/send-streak-reminder.mjs) | Reminds me on Discord which streaks are not yet logged today |
+| [vault-expiry-check](vault-expiry-check.yml) | once, 08:00-10:00 window | [`vault-expiry-check.mjs`](../../scripts/vault-expiry-check.mjs) | Alerts on Discord when vault or inventory items are near their expiry date |
+| [daily-analytics](daily-analytics.yml) | once, 08:00-10:00 window | [`daily-analytics.mjs`](../../scripts/daily-analytics.mjs) | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel |
+| [recategorise](recategorise.yml) | once, 06:00-09:00 window | [`recategorise.py`](../../scripts/recategorise.py) | Re-categorises "Software Engineering" catch-all applications with the AI (idempotent mop-up) |
 | [medication-reminders](medication-reminders.yml) | every 30 min | [`medication-reminders.mjs`](../../scripts/medication-reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [reminders](reminders.yml) | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
 | [spotify-history](spotify-history.yml) | every 30 min | [`spotify-history.mjs`](../../scripts/spotify-history.mjs) | Records my Spotify plays into `listening_history` so the analytics build up real history |
-| [job-scraper](job-scraper.yml) | 00:00 UTC (daily) | [`job-scraper.py`](../../scripts/job-scraper.py) | Scrapes graduate and internship sources and upserts them into the applications table |
+| [job-scraper](job-scraper.yml) | 01:23 and 04:41 UTC (two tries) | [`job-scraper.py`](../../scripts/job-scraper.py) | Scrapes graduate and internship sources and upserts them into the applications table |
 
 ## Repo automation
 
@@ -28,22 +33,31 @@ repo-automation workflows that keep the repository itself healthy.
 | [automerge-dependabot](automerge-dependabot.yml) | PR | Enables squash auto-merge on Dependabot PRs and anything labelled `automerge` |
 | [update-pr-branches](update-pr-branches.yml) | every 2h, push to main | Deletes merged PR branches the merge itself failed to clean up |
 
-## UK time and the two-cron pattern
+## UK time and the windowed schedule
 
-Every time-of-day job holds a fixed UK wall-clock time year-round. GitHub Actions is UTC only and does
-not observe British Summer Time, so each such job fires from **two crons** - a GMT branch and a BST
-branch one hour apart - and a **gate step** (`TZ=Europe/London date +%H`) lets the job run only at the
-intended local hour, skipping the other branch. The two crons and the gate hour are noted in each
-workflow.
+Every time-of-day job holds a fixed UK wall-clock time year-round. GitHub Actions is UTC only, does not
+observe British Summer Time and (worse) delays or drops scheduled runs, especially at the top of the
+hour. So instead of one fragile slot, each daily job fires **every 30 minutes across a morning window**
+that covers its target hour in both GMT and BST. A **gate** (either a workflow step running
+`TZ=Europe/London date +%H` or the same check in the script) lets it act only once the local hour has
+reached the target, and it **claims the day** in the shared `cron_runs` table via
+[`../../scripts/lib/uk-cron.mjs`](../../scripts/lib/uk-cron.mjs) so whichever run lands first does the work
+and later runs in the window skip. A manual `workflow_dispatch` sets `FORCE=1`, which bypasses both the
+gate and the claim so a test run always acts.
 
-Jobs that post a user-facing message (the coding recap, streak reminder and vault expiry check) also
-claim the day in the shared `cron_runs` table via [`../../scripts/lib/uk-cron.mjs`](../../scripts/lib/uk-cron.mjs),
-so a run that GitHub delayed into the target hour cannot double-post. A manual `workflow_dispatch` sets
-`FORCE=1`, which bypasses both the gate and the idempotency claim so a test run always sends.
+The every-30-minute jobs (medication, reminders, Spotify) do not gate to an hour: they run all day and
+de-duplicate their own work. `job-scraper` fires from two off-peak UTC crons (a dropped one does not cost
+a day, and the scrape upserts so running twice is harmless).
 
-Two jobs deliberately opt out: the every-30-minute jobs are already `Europe/London`-aware in their own
-scripts (with a window that absorbs cron jitter), and `job-scraper` stays on a single UTC midnight cron
-because its cadence does not need a fixed local hour.
+## Monitoring
+
+Every scheduled job is watched by [Healthchecks.io](https://healthchecks.io). A shared composite action
+[`../actions/healthcheck`](../actions/healthcheck/action.yml) pings `hc-ping.com/<key>/<slug>` on **start**,
+**success** and **fail**, with one slug per job (for example `routine`, `daily-analytics`, `job-scraper`).
+A job that stops running, fails or hangs then shows as down or late on the status page and alerts the
+`#monitoring` Discord channel, instead of failing silently for days. The ping is guarded on the
+`HEALTHCHECK_PING_KEY` secret, so with no key set it is a no-op and the jobs run unchanged. `job-scraper`
+reports success only when both its parallel jobs succeed.
 
 ## Conventions
 

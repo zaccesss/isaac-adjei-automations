@@ -28,6 +28,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: reminders
+          status: start
       - run: node scripts/reminders.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -40,3 +46,15 @@ jobs:
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
           TEST_EMAIL: ${{ github.event.inputs.test_email }}
           TEST_TO: ${{ github.event.inputs.test_to }}
+      - name: Healthcheck success
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: reminders
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: reminders
+          status: fail

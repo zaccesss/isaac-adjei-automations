@@ -43,6 +43,14 @@ jobs:
       - if: steps.gate.outputs.go == '1'
         uses: actions/checkout@v4
 
+      - name: Healthcheck start
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-coding-summary
+          status: start
+
       - if: steps.gate.outputs.go == '1'
         uses: actions/setup-python@v5
         with:
@@ -67,3 +75,18 @@ jobs:
         env:
           DISCORD_WEBHOOK_CODING: ${{ secrets.DISCORD_WEBHOOK_CODING }}
         run: node scripts/daily-coding-summary.mjs
+
+      - name: Healthcheck success
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-coding-summary
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: daily-coding-summary
+          status: fail

@@ -20,9 +20,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: routine
+          status: start
       - run: node scripts/routine.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_ROUTINE: ${{ secrets.DISCORD_WEBHOOK_ROUTINE }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+      - name: Healthcheck success
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: routine
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: routine
+          status: fail

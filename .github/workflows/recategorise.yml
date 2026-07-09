@@ -49,6 +49,14 @@ jobs:
       - if: steps.gate.outputs.go == '1'
         uses: actions/checkout@v4
 
+      - name: Healthcheck start
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: recategorise
+          status: start
+
       - if: steps.gate.outputs.go == '1'
         uses: actions/setup-python@v5
         with:
@@ -59,3 +67,18 @@ jobs:
 
       - if: steps.gate.outputs.go == '1'
         run: python scripts/recategorise.py
+
+      - name: Healthcheck success
+        if: steps.gate.outputs.go == '1'
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: recategorise
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: recategorise
+          status: fail

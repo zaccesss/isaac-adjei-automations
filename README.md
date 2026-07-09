@@ -6,14 +6,15 @@ Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows
 
 ## Contents
 
-- [`.github/workflows/README.md`](.github/workflows/README.md) - every workflow, its schedule and how the UK-time two-cron pattern works.
+- [`.github/workflows/README.md`](.github/workflows/README.md) - every workflow, its schedule, the UK-time windowed schedule and the Healthchecks.io monitoring.
 - [`scripts/README.md`](scripts/README.md) - what each script does and the environment it needs.
 
 ## Conventions
 
 - One workflow per job, named for what it does; the workflow is a thin wrapper and the logic lives in the script.
 - Scripts are configured entirely through the environment; nothing configurable is committed.
-- Time-of-day jobs hold a fixed UK wall-clock time year-round via a two-cron GMT/BST gate; see the [workflows README](.github/workflows/README.md#uk-time-and-the-two-cron-pattern).
+- Time-of-day jobs hold a fixed UK wall-clock time year-round: each fires across a morning window, gates to its target UK hour and claims the day so it acts once; see the [workflows README](.github/workflows/README.md#uk-time-and-the-windowed-schedule).
+- Every scheduled job pings [Healthchecks.io](https://healthchecks.io) on start, success and fail, so a job that stops running or fails alerts instead of failing silently; see [Monitoring](.github/workflows/README.md#monitoring).
 - A gitleaks scan runs on every push and pull request.
 - Dependabot keeps the action versions current.
 
