@@ -30,8 +30,8 @@ and claims the day so it acts exactly once. See [UK time and the windowed schedu
 | --- | --- | --- |
 | [ci](ci.yml) | push, PR | Syntax-checks the Python and Node scripts so a broken change cannot land (no build step - the scripts are standalone) |
 | [gitleaks](gitleaks.yml) | push, PR | Scans for hard-coded secrets |
-| [automerge-dependabot](automerge-dependabot.yml) | PR | Enables squash auto-merge on Dependabot PRs and anything labelled `automerge` |
-| [update-pr-branches](update-pr-branches.yml) | every 2h, push to main | Deletes merged PR branches the merge itself failed to clean up |
+
+Dependabot PR auto-merge and merged-branch cleanup are handled centrally by repo-ops, so this repo carries no auto-merge or branch-maintenance workflow of its own.
 
 ## UK time and the windowed schedule
 
