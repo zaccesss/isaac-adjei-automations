@@ -59,6 +59,10 @@ A job that stops running, fails or hangs then shows as down or late on the statu
 `HEALTHCHECK_PING_KEY` secret, so with no key set it is a no-op and the jobs run unchanged. `job-scraper`
 reports success only when both its parallel jobs succeed.
 
+The overall status badge is in the [root README](../../README.md), and the down/late/fail alert is wired
+in the Healthchecks.io project itself (Integrations, then Discord) rather than in this repo, so the alert
+routing stays out of the code. Only the read-only Healthchecks API key is used to read check status.
+
 ## Conventions
 
 - One workflow per job, named for what it does; the workflow is a thin wrapper and the logic lives in the script.
