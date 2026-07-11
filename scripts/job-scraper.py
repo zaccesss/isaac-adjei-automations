@@ -863,7 +863,8 @@ def _call_gemini(prompt: str):
         return None
     resp = requests.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        params={"key": GOOGLE_AI_API_KEY},
+        # The key travels in a header so an exception's URL text can never carry it.
+        headers={"x-goog-api-key": GOOGLE_AI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0},

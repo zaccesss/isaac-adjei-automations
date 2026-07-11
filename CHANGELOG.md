@@ -13,6 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The job-scraper now reads its database key from `SUPABASE_SERVICE_ROLE_KEY` like every other job, retiring the mislabelled anon-key variable (#44)
 - Workflow secrets are scoped to the script steps that need them instead of being visible to every step in the job (#44)
 - Every first-party action is pinned to a full commit SHA that Dependabot keeps fresh and the gitleaks binary download is verified against its published checksum before it runs (#44)
+- The Gemini key now travels in the `x-goog-api-key` header rather than the request URL, so no exception text can ever carry it (#51)
 
 ### Added
 
