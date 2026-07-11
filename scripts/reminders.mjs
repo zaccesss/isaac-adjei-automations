@@ -93,7 +93,7 @@ async function sendEmail(to, r) {
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: fromEmail, to, subject, html, text }),
   })
-  if (!res.ok) console.error("resend:", res.status, await res.text())
+  if (!res.ok) console.error("resend:", res.status)
   return res.ok
 }
 
@@ -113,7 +113,7 @@ async function sendSms(to, body) {
     },
     body: new URLSearchParams({ To: to, From: from, Body: body }),
   })
-  if (!res.ok) console.error("twilio:", res.status, await res.text())
+  if (!res.ok) console.error("twilio:", res.status)
   return res.ok
 }
 
@@ -127,11 +127,11 @@ if (process.env.TEST_EMAIL || process.env.TEST_TO) {
       location: "Nowhere",
       notes: "If you got this, email reminders are working.",
     })
-    console.log(ok ? `Test email sent to ${process.env.TEST_EMAIL}.` : "Test email failed - check RESEND_API_KEY and the from address.")
+    console.log(ok ? "Test email sent." : "Test email failed - check RESEND_API_KEY and the from address.")
   }
   if (process.env.TEST_TO) {
     const ok = await sendSms(process.env.TEST_TO, "Test from your reminders system. If you received this, SMS is working.")
-    console.log(ok ? `Test SMS sent to ${process.env.TEST_TO}.` : "Test SMS failed - check the Twilio secrets and sender.")
+    console.log(ok ? "Test SMS sent." : "Test SMS failed - check the Twilio secrets and sender.")
   }
   process.exit(0)
 }
@@ -175,9 +175,10 @@ for (const r of rows) {
     if (firedOk) {
       sentLeads.add(toFire)
       sent++
-      console.log(`sent ${r.kind}: ${r.title} @ ${when} (lead ${toFire}m) via ${channels.join(",")}`)
+      // Run logs are public, so print the row id only, never the title or recipient.
+      console.log(`sent ${r.kind} ${r.id} (lead ${toFire}m) via ${channels.join(",")}`)
     } else {
-      console.log(`not sent (no channel succeeded): ${r.kind} "${r.title}" lead ${toFire}m`)
+      console.log(`not sent (no channel succeeded): ${r.kind} ${r.id} lead ${toFire}m`)
     }
   } else {
     // The event is already in the past: mark this lead fired without notifying.

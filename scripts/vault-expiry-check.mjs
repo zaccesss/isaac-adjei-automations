@@ -96,8 +96,8 @@ async function main() {
   }
 
   expiring.sort((a, b) => a.daysLeft - b.daysLeft)
-  console.log(`Found ${expiring.length} expiring item(s):`)
-  expiring.forEach((i) => console.log(`  ${i.name} (${i.type}): ${i.daysLeft}d - ${i.expiresOn}`))
+  // Run logs are public, so print the count only - item names, types and dates go to Discord.
+  console.log(`Found ${expiring.length} expiring item(s)`)
 
   const fields = expiring.map((item) => ({
     name: `${item.name} (${item.type})`,
