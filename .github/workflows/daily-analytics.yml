@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       DISCORD_WEBHOOK_POSTS: ${{ secrets.DISCORD_WEBHOOK_POSTS }}
       DISCORD_WEBHOOK_FITNESS: ${{ secrets.DISCORD_WEBHOOK_FITNESS }}

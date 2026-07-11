@@ -4,6 +4,9 @@
 // reached the target, and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
 // finally lands. Node only, no deps. Each channel is optional - a page is skipped if its webhook is unset.
 import { londonDate, londonHour, alreadyRanToday } from "./lib/uk-cron.mjs"
+import { guard } from "./lib/report-failure.mjs"
+
+guard("daily-analytics")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

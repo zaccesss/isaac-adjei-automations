@@ -1,6 +1,6 @@
 # automations
 
-[![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](https://healthchecks.io)
+[![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](STATUS.md)
 
 A collection of scheduled jobs - data syncs, timed reminders and digests - that run on GitHub Actions.
 
@@ -8,6 +8,7 @@ Each job is a cron-scheduled workflow in [`.github/workflows`](.github/workflows
 
 ## Contents
 
+- [`STATUS.md`](STATUS.md) - live per-job health badges (click the badge above), each job's cadence and what it does.
 - [`.github/workflows/README.md`](.github/workflows/README.md) - every workflow, its schedule, the UK-time windowed schedule and the Healthchecks.io monitoring.
 - [`scripts/README.md`](scripts/README.md) - what each script does and the environment it needs.
 

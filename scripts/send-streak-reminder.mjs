@@ -1,6 +1,9 @@
 // Posts a morning Discord reminder of which active streaks are not yet logged for today, read from
 // the streaks and streak_logs tables. Runs at 08:00 Europe/London (gated in the workflow). Node only.
 import { alreadyRanToday } from "./lib/uk-cron.mjs"
+import { guard } from "./lib/report-failure.mjs"
+
+guard("streak-reminder")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

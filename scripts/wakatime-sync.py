@@ -189,4 +189,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    from lib.report_failure import guard
+
+    with guard("wakatime-sync"):
+        main()

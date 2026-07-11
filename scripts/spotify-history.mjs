@@ -3,6 +3,10 @@
 // give (it only returns top-N and the last 50 plays). I fetch the recently-played endpoint and upsert
 // each play, deduped by played_at. Node only, no deps.
 
+import { guard } from "./lib/report-failure.mjs"
+
+guard("spotify-history")
+
 const CID = process.env.SPOTIFY_CLIENT_ID
 const SEC = process.env.SPOTIFY_CLIENT_SECRET
 const RT = process.env.SPOTIFY_REFRESH_TOKEN

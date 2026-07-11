@@ -37,6 +37,7 @@ jobs:
       - run: node scripts/medication-reminders.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_REMINDERS: ${{ secrets.DISCORD_WEBHOOK_REMINDERS }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

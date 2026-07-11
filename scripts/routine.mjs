@@ -7,6 +7,9 @@
 // (workflow_dispatch sets FORCE=1) always posts, for testing.
 
 import { londonHour, alreadyRanToday } from "./lib/uk-cron.mjs"
+import { guard } from "./lib/report-failure.mjs"
+
+guard("routine")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

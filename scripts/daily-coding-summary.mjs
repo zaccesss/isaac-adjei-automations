@@ -2,6 +2,9 @@
 // comparing that day's coding time to the 30-day average, read from the wakatime_daily table. The
 // upstream WakaTime sync runs first in the same workflow, so the day is fully settled. Node only.
 import { londonDate, alreadyRanToday } from "./lib/uk-cron.mjs"
+import { guard } from "./lib/report-failure.mjs"
+
+guard("daily-coding-summary")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

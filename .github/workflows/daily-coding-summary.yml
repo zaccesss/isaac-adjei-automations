@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:

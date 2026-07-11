@@ -7,6 +7,10 @@
 //
 // A workflow_dispatch with TEST_EMAIL or TEST_TO set sends one test message there and exits.
 
+import { guard } from "./lib/report-failure.mjs"
+
+guard("reminders")
+
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const discordWebhook = process.env.DISCORD_WEBHOOK_REMINDERS
