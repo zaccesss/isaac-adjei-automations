@@ -20,9 +20,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Install Gitleaks
+        # The checksum comes from the release's gitleaks_8.21.2_checksums.txt, so a tampered
+        # download fails the build instead of running.
         run: |
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz" \
-            | tar -xz -C /tmp gitleaks
+          curl -sSfL -o /tmp/gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz"
+          echo "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba  /tmp/gitleaks.tar.gz" | sha256sum -c -
+          tar -xz -C /tmp -f /tmp/gitleaks.tar.gz gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
       - name: Run Gitleaks
         run: gitleaks detect --no-git --redact --exit-code=1

@@ -69,7 +69,7 @@ _SENIOR_ROLE_RE = re.compile(
 # I read credentials from environment variables set by GitHub Actions secrets
 # so nothing sensitive ever touches the repository.
 SUPABASE_URL = os.environ["SUPABASE_URL"].strip()
-SUPABASE_KEY = os.environ["SUPABASE_ANON_KEY"].strip()
+SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
 
 # I create the client at module level so it is shared across all scraper
 # functions rather than re-initialising a new connection for every company.
@@ -2936,7 +2936,8 @@ def send_discord_alert(new_jobs: list[dict]) -> None:
                 timeout=10,
             )
         except Exception as e:
-            print(f"  Discord alert failed: {e}")
+            # The exception text can echo the webhook URL, which is itself the credential.
+            print(f"  Discord alert failed: {type(e).__name__}")
 
 
 # ─── MAIN ───────────────────────────────────────────────────────────────────

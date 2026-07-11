@@ -24,15 +24,6 @@ jobs:
   recategorise:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      RECATEGORISE_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
     steps:
       - name: Gate to the 06:00-09:00 UK window
         id: gate
@@ -48,7 +39,7 @@ jobs:
           fi
 
       - if: steps.gate.outputs.go == '1'
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Healthcheck start
         if: steps.gate.outputs.go == '1'
@@ -59,7 +50,7 @@ jobs:
           status: start
 
       - if: steps.gate.outputs.go == '1'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
@@ -67,6 +58,16 @@ jobs:
         run: pip install requests
 
       - if: steps.gate.outputs.go == '1'
+        # Secrets are scoped to this step so the setup actions never see them.
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
+          RECATEGORISE_DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: python scripts/recategorise.py
 
       - name: Healthcheck success
