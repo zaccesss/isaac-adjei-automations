@@ -2,6 +2,9 @@
 // posts a Discord alert if anything is due to expire soon. Runs at 08:00 Europe/London (gated in the
 // workflow). Node only, no deps.
 import { alreadyRanToday } from "./lib/uk-cron.mjs"
+import { guard } from "./lib/report-failure.mjs"
+
+guard("vault-expiry-check")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY

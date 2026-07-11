@@ -52,6 +52,7 @@ jobs:
         if: steps.gate.outputs.go == '1'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_STREAKS: ${{ secrets.DISCORD_WEBHOOK_STREAKS }}
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
