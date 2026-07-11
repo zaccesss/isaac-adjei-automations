@@ -70,7 +70,7 @@ async function sendEmail(to, r, t) {
     headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: fromEmail, to, subject, html, text }),
   })
-  if (!res.ok) console.error("resend:", res.status, await res.text())
+  if (!res.ok) console.error("resend:", res.status)
   return res.ok
 }
 
@@ -90,7 +90,7 @@ async function sendSms(to, text) {
     },
     body: new URLSearchParams({ To: to, From: from, Body: text }),
   })
-  if (!res.ok) console.error("twilio:", res.status, await res.text())
+  if (!res.ok) console.error("twilio:", res.status)
   return res.ok
 }
 
@@ -98,11 +98,11 @@ async function sendSms(to, text) {
 if (process.env.TEST_EMAIL || process.env.TEST_TO) {
   if (process.env.TEST_EMAIL) {
     const ok = await sendEmail(process.env.TEST_EMAIL, { name: "Test reminder", dose: "1 drop - test", notes: "If you got this, email reminders are working." }, "now")
-    console.log(ok ? `Test email sent to ${process.env.TEST_EMAIL}.` : "Test email failed - check RESEND_API_KEY and the from address.")
+    console.log(ok ? "Test email sent." : "Test email failed - check RESEND_API_KEY and the from address.")
   }
   if (process.env.TEST_TO) {
     const ok = await sendSms(process.env.TEST_TO, "Test from your medication reminder system. If you received this, SMS is working.")
-    console.log(ok ? `Test SMS sent to ${process.env.TEST_TO}.` : "Test SMS failed - check the Twilio secrets and sender.")
+    console.log(ok ? "Test SMS sent." : "Test SMS failed - check the Twilio secrets and sender.")
   }
   process.exit(0)
 }
@@ -142,9 +142,10 @@ for (const r of reminders) {
         body: JSON.stringify({ reminder_id: r.id, label: r.label, name: r.name, channel: channels.join(","), scheduled_time: t, status: "sent" }),
       })
       sentDoses++
-      console.log(`sent: ${r.label}/${r.name} @ ${t} via ${channels.join(",")}`)
+      // Run logs are public, so print the row id only - medication names are health data.
+      console.log(`sent: reminder ${r.id} @ ${t} via ${channels.join(",")}`)
     } else {
-      console.log(`not sent (no channel succeeded): ${r.label}/${r.name} @ ${t}`)
+      console.log(`not sent (no channel succeeded): reminder ${r.id} @ ${t}`)
     }
   }
 }

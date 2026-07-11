@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-12
+
+### Security
+
+- Run logs now carry ids, counts and times only. The reminder, medication and vault jobs no longer print item detail, provider error logging is reduced to the status code and the scraper's Discord alert failure prints the error class alone, so public run logs stay free of personal detail. This is the standing pattern for every future job (#44)
+- The job-scraper now reads its database key from `SUPABASE_SERVICE_ROLE_KEY` like every other job, retiring the mislabelled anon-key variable (#44)
+- Workflow secrets are scoped to the script steps that need them instead of being visible to every step in the job (#44)
+- Every first-party action is pinned to a full commit SHA that Dependabot keeps fresh and the gitleaks binary download is verified against its published checksum before it runs (#44)
+
+### Added
+
+- A `pip` block in Dependabot so the scraper's Python dependencies get weekly update PRs like the Actions already do (#44)
+
+---
+
 ## 2026-07-11
 
 ### Added

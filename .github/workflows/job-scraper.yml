@@ -32,24 +32,10 @@ jobs:
     # Public repo = free Actions minutes, so give the run room to finish. The script's own
     # SCRAPER_BUDGET_MIN (default 110) exits cleanly first.
     timeout-minutes: 120
-    env:
-      SCRAPER_MODE: api
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
-      REED_API_KEY: ${{ secrets.REED_API_KEY }}
-      ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
-      ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
-      JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -64,6 +50,21 @@ jobs:
           status: start
 
       - name: Run API scrapers
+        # Secrets are scoped to this step so the setup and cache actions never see them.
+        env:
+          SCRAPER_MODE: api
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
+          SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
         run: python scripts/job-scraper.py
 
       - name: Write source summary
@@ -78,16 +79,10 @@ jobs:
     # ubuntu-22.04 avoids the libasound2 removal in 24.04 that breaks playwright install-deps.
     runs-on: ubuntu-22.04
     timeout-minutes: 120
-    env:
-      SCRAPER_MODE: browser
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
-      SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
@@ -97,7 +92,7 @@ jobs:
       # Cache the Playwright browser binary so repeated runs skip the ~80 MB download.
       - name: Cache Playwright browsers
         id: pw-cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('scripts/requirements.txt') }}
@@ -111,6 +106,12 @@ jobs:
           fi
 
       - name: Run browser scrapers
+        env:
+          SCRAPER_MODE: browser
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
+          SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
         run: python scripts/job-scraper.py
 
       - name: Write source summary
@@ -141,7 +142,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
       - name: Healthcheck success
         if: needs.api-sources.result == 'success' && needs.browser-sources.result == 'success'
         uses: ./.github/actions/healthcheck

@@ -22,11 +22,6 @@ jobs:
   recap:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:
       - name: Gate to the 07:00-10:00 UK window
         id: gate
@@ -42,7 +37,7 @@ jobs:
           fi
 
       - if: steps.gate.outputs.go == '1'
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Healthcheck start
         if: steps.gate.outputs.go == '1'
@@ -53,12 +48,12 @@ jobs:
           status: start
 
       - if: steps.gate.outputs.go == '1'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
       - if: steps.gate.outputs.go == '1'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
 
@@ -67,14 +62,22 @@ jobs:
 
       - name: Sync WakaTime data (the just-ended day is now complete)
         if: steps.gate.outputs.go == '1'
+        # Secrets are scoped to the two script steps so the setup actions never see them.
         env:
           WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
         run: python scripts/wakatime-sync.py
 
       - name: Post the daily coding summary to Discord
         if: steps.gate.outputs.go == '1'
         env:
           DISCORD_WEBHOOK_CODING: ${{ secrets.DISCORD_WEBHOOK_CODING }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
         run: node scripts/daily-coding-summary.mjs
 
       - name: Healthcheck success

@@ -17,18 +17,9 @@ jobs:
   analytics:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      DISCORD_WEBHOOK_POSTS: ${{ secrets.DISCORD_WEBHOOK_POSTS }}
-      DISCORD_WEBHOOK_FITNESS: ${{ secrets.DISCORD_WEBHOOK_FITNESS }}
-      DISCORD_WEBHOOK_APPLICATIONS: ${{ secrets.DISCORD_WEBHOOK_APPLICATIONS }}
-      DISCORD_WEBHOOK_MUSIC: ${{ secrets.DISCORD_WEBHOOK_MUSIC }}
-      FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
       - name: Healthcheck start
@@ -37,7 +28,17 @@ jobs:
           ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
           slug: daily-analytics
           status: start
-      - run: node scripts/daily-analytics.mjs
+      # Secrets are scoped to this step so the setup actions never see them.
+      - env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_POSTS: ${{ secrets.DISCORD_WEBHOOK_POSTS }}
+          DISCORD_WEBHOOK_FITNESS: ${{ secrets.DISCORD_WEBHOOK_FITNESS }}
+          DISCORD_WEBHOOK_APPLICATIONS: ${{ secrets.DISCORD_WEBHOOK_APPLICATIONS }}
+          DISCORD_WEBHOOK_MUSIC: ${{ secrets.DISCORD_WEBHOOK_MUSIC }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+        run: node scripts/daily-analytics.mjs
       - name: Healthcheck success
         uses: ./.github/actions/healthcheck
         with:
