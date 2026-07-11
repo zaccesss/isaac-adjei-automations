@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-11
+
+### Added
+
+- Full failure reporting on every job. When a job crashes it now posts the complete error, the stack trace plus a link to the exact Actions run, to the `#errors` Discord channel, through shared reporters (`scripts/lib/report-failure.mjs` for the Node jobs and `scripts/lib/report_failure.py` for the Python ones). Best-effort, so a webhook problem never masks the original error, which still goes to the run log. All eleven jobs are wired and `DISCORD_WEBHOOK_ERRORS` is passed to each workflow (#28)
+- `STATUS.md`, a live status page with a Healthchecks badge for each job, its cadence and one line on what it does. The single README badge links to it so the README stays clean and the per-job breakdown is one click away (#28)
+
+### Changed
+
+- Each job now has its own dedicated Healthchecks check with its own cadence, grace and badge, tagged so they can be pulled as a group. The high-frequency reminder jobs use a period check rather than a strict per-slot schedule so a single late or dropped GitHub Actions run does not false-alarm: reminders and medication-reminders alert after 60 minutes of silence, Spotify history after three hours, while the windowed and daily jobs keep their exact cron schedule. Down and late alerts route to the `#uptime` Discord channel (#28)
+
+---
+
 ## 2026-07-09
 
 ### Added
