@@ -12,12 +12,12 @@ and claims the day so it acts exactly once. See [UK time and the windowed schedu
 
 | Workflow | Schedule (UK) | Script | Purpose |
 | --- | --- | --- | --- |
-| [daily-coding-summary](daily-coding-summary.yml) | once, 07:00-10:00 window | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data then posts a Discord recap comparing it to the 30-day average |
+| [daily-coding-summary](daily-coding-summary.yml) | once, 00:30-03:00 window | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data then posts a Discord recap comparing it to the 30-day average |
 | [wakatime-sync](wakatime-sync.yml) | every 3 hours | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Keeps the coding stats fresh through the day (idempotent, so a dropped run is harmless) |
 | [routine](routine.yml) | once, 07:00-09:00 window | [`routine.mjs`](../../scripts/routine.mjs) | Posts the morning habit and streak checklist to Discord |
 | [streak-reminder](streak-reminder.yml) | once, 08:00-10:00 window | [`send-streak-reminder.mjs`](../../scripts/send-streak-reminder.mjs) | Reminds me on Discord which streaks are not yet logged today |
 | [vault-expiry-check](vault-expiry-check.yml) | once, 08:00-10:00 window | [`vault-expiry-check.mjs`](../../scripts/vault-expiry-check.mjs) | Alerts on Discord when vault or inventory items are near their expiry date |
-| [daily-analytics](daily-analytics.yml) | once, 08:00-10:00 window | [`daily-analytics.mjs`](../../scripts/daily-analytics.mjs) | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel |
+| [daily-analytics](daily-analytics.yml) | once, 01:00-04:00 window | [`daily-analytics.mjs`](../../scripts/daily-analytics.mjs) | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel |
 | [recategorise](recategorise.yml) | once, 06:00-09:00 window | [`recategorise.py`](../../scripts/recategorise.py) | Re-categorises "Software Engineering" catch-all applications with the AI (idempotent mop-up) |
 | [medication-reminders](medication-reminders.yml) | every 30 min | [`medication-reminders.mjs`](../../scripts/medication-reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [reminders](reminders.yml) | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
@@ -37,13 +37,14 @@ Dependabot PR auto-merge and merged-branch cleanup are handled centrally by repo
 
 Every time-of-day job holds a fixed UK wall-clock time year-round. GitHub Actions is UTC only, does not
 observe British Summer Time and (worse) delays or drops scheduled runs, especially at the top of the
-hour. So instead of one fragile slot, each daily job fires **every 30 minutes across a morning window**
-that covers its target hour in both GMT and BST. A **gate** (either a workflow step running
+hour. So instead of one fragile slot, each daily job fires **every 30 minutes across a window** that
+covers its target hour in both GMT and BST. A **gate** (either a workflow step running
 `TZ=Europe/London date +%H` or the same check in the script) lets it act only once the local hour has
 reached the target, and it **claims the day** in the shared `cron_runs` table via
 [`../../scripts/lib/uk-cron.mjs`](../../scripts/lib/uk-cron.mjs) so whichever run lands first does the work
-and later runs in the window skip. A manual `workflow_dispatch` sets `FORCE=1`, which bypasses both the
-gate and the claim so a test run always acts.
+and later runs in the window skip. A manual `workflow_dispatch` runs straight away (the gates let a
+dispatch through) but still claims the day, so a dispatch cannot double-post against the window; tick the
+`force` input to bypass the gate and the claim when a test run should always act.
 
 The every-30-minute jobs (medication, reminders, Spotify) do not gate to an hour: they run all day and
 de-duplicate their own work. `job-scraper` fires from two off-peak UTC crons (a dropped one does not cost

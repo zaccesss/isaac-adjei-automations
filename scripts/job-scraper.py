@@ -1,6 +1,6 @@
 # I scrape tech internships and placements from 20+ sources and upsert them into Supabase so my application tracker stays fresh without manual searching.
 """
-Job Scraper - runs via GitHub Actions every 2 days at midnight UTC.
+Job Scraper - runs daily via GitHub Actions (two off-peak tries; the upsert de-duplicates).
 
 Sources:
   - The Trackr (Playwright - JS rendered, best UK internship aggregator)

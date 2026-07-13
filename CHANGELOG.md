@@ -11,6 +11,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A "dose failed to deliver" alert on the medication reminders job. When a dose is due and every configured channel fails, it now posts the reminder, its label, the time and the channels it tried to the private #errors channel, instead of only writing an id-only line to the public run log where nobody would see it. The dose stays unlogged so the next run retries delivery, and the alert surfaces the failure in the meantime (#54)
 
+### Changed
+
+- The coding recap and the daily analytics now post just after midnight instead of mid-morning - the recap from 00:30 UK, the analytics from 01:00 UK - so the day that just ended is summarised while it is fresh rather than after breakfast. The backup windows, gate steps and docs moved with them; the recap window opens at 00:30 so the final WakaTime heartbeats of the day settle before the sync reads them (#56)
+- A manual run of a daily job no longer bypasses the once-a-day claim by default. The five daily workflows take a `force` tickbox instead of hard-wiring FORCE=1 on every dispatch, so a dispatch fired at the right time claims the day like a scheduled run and cannot double-post against the backup window, while ticking `force` still re-sends for testing. This clears the way for dispatch-driven scheduling (#56)
+
+### Fixed
+
+- The job-scraper docstring still said the scrape runs every two days; it has been daily since late June (#56)
+
 ---
 
 ## 2026-07-12

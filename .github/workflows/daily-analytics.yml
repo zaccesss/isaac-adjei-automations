@@ -1,14 +1,20 @@
 # Posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness, Music)
-# for the day that just ended. GitHub Actions cron drops many runs, so this fires every 30 min across the UK
-# morning; the script gates to >= 08:00 UK and claims (job, UK-day), so it posts exactly once per day
-# whenever a run lands. Each channel is optional - a page is skipped if its webhook secret is unset.
+# for the day that just ended, shortly after the coding recap. GitHub Actions cron drops many runs, so this
+# fires every 30 min across the small hours; the script gates to >= 01:00 UK and claims (job, UK-day), so it
+# posts exactly once per day whenever a run lands. Each channel is optional - a page is skipped if its
+# webhook secret is unset.
 
 name: Daily Analytics
 
 on:
   schedule:
-    - cron: "23,53 6-10 * * *"
+    - cron: "23,53 0-3 * * *" # every 30 min, 00:23-03:53 UTC (covers the 01:00-04:00 UK window in BST and GMT)
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a re-send: bypass the hour gate and the once-per-day claim"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -37,7 +43,7 @@ jobs:
           DISCORD_WEBHOOK_FITNESS: ${{ secrets.DISCORD_WEBHOOK_FITNESS }}
           DISCORD_WEBHOOK_APPLICATIONS: ${{ secrets.DISCORD_WEBHOOK_APPLICATIONS }}
           DISCORD_WEBHOOK_MUSIC: ${{ secrets.DISCORD_WEBHOOK_MUSIC }}
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          FORCE: ${{ inputs.force && '1' || '' }}
         run: node scripts/daily-analytics.mjs
       - name: Healthcheck success
         uses: ./.github/actions/healthcheck

@@ -1,15 +1,20 @@
-# Coding recap for the day that just ended. GitHub Actions cron is unreliable (it delays and drops runs,
-# especially at the top of the hour), so instead of one fragile 00:30 slot this fires every 30 minutes
-# across the UK morning and the gate acts only in the 07:00-10:00 window; the script claims (job, UK-day)
-# so it posts exactly once whenever a run finally lands. The WakaTime sync runs first so yesterday is
-# complete before the summary reads it.
+# Coding recap for the day that just ended, posted just after midnight UK while yesterday is fresh.
+# GitHub Actions cron is unreliable (it delays and drops runs, especially at the top of the hour), so
+# instead of one fragile 00:30 slot this fires every 30 minutes across a small night window and the gate
+# acts only from 00:30 to 03:00 UK; the script claims (job, UK-day) so it posts exactly once whenever a
+# run finally lands. The WakaTime sync runs first so yesterday is complete before the summary reads it.
 
 name: Daily Coding Summary
 
 on:
   schedule:
-    - cron: "7,37 6-10 * * *" # every 30 min, 06:00-10:30 UTC (covers the 07:00-10:00 UK window in BST and GMT)
+    - cron: "7,37 23,0-2 * * *" # every 30 min, 23:07-02:37 UTC (covers the 00:30-03:00 UK window in BST and GMT)
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a re-send: bypass the hour gate and the once-per-day claim"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}
@@ -23,17 +28,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Gate to the 07:00-10:00 UK window
+      - name: Gate to the 00:30-03:00 UK window
         id: gate
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
           H=$((10#$(TZ=Europe/London date +%H)))
-          if [ "$H" -ge 7 ] && [ "$H" -le 10 ]; then
+          M=$((10#$(TZ=Europe/London date +%M)))
+          # The window opens at 00:30, not 00:00, so the just-ended day's final WakaTime heartbeats
+          # have settled before the sync reads it.
+          if { [ "$H" -eq 0 ] && [ "$M" -ge 30 ]; } || [ "$H" -eq 1 ] || [ "$H" -eq 2 ]; then
             echo "go=1" >> "$GITHUB_OUTPUT"
           else
-            echo "outside 07-10 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+            echo "outside 00:30-03:00 UK (is ${H}:${M}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.gate.outputs.go == '1'
@@ -77,7 +85,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
-          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+          FORCE: ${{ inputs.force && '1' || '' }}
         run: node scripts/daily-coding-summary.mjs
 
       - name: Healthcheck success
