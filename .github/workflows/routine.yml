@@ -1,18 +1,25 @@
-# Posts a morning habit and streak checklist to Discord, once, around 07:00 Europe/London.
-# GitHub Actions cron drops many runs, so this fires every 30 min across 06:00-09:30 UTC (the 07:00-09:00
-# UK window in BST and GMT) and the script posts once and claims (job, UK-day) so it never repeats.
+# Posts the habit and streak checklist to Discord twice a day: the full morning checklist around
+# 07:00 Europe/London and a smart evening pass around 20:00 that only chases what is still unlogged.
+# GitHub Actions cron drops many runs, so each slot fires every 30 min across its window (covering
+# BST and GMT) and the script posts once per slot and claims (job-slot, UK-day) so it never repeats.
 
 name: Routine checklist
 
 on:
   schedule:
-    - cron: "9,39 6-9 * * *"
+    - cron: "9,39 6-9 * * *" # morning: 06:09-09:39 UTC covers the 07:00-09:00 UK window in BST and GMT
+    - cron: "9,39 19-21 * * *" # evening: 19:09-21:39 UTC covers the 20:00-22:00 UK window in BST and GMT
   workflow_dispatch:
     inputs:
       force:
         description: "Force a re-send: bypass the hour gate and the once-per-day claim"
         type: boolean
         default: false
+      slot:
+        description: "Slot: am posts the full morning checklist, pm the evening still-unlogged pass (blank = pick by London hour)"
+        type: choice
+        options: ["", "am", "pm"]
+        default: ""
 
 permissions:
   contents: read
@@ -38,6 +45,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_ROUTINE: ${{ secrets.DISCORD_WEBHOOK_ROUTINE }}
           FORCE: ${{ inputs.force && '1' || '' }}
+          SLOT: ${{ inputs.slot }}
       - name: Healthcheck success
         uses: ./.github/actions/healthcheck
         with:

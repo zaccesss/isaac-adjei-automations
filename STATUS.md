@@ -13,8 +13,8 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 |---|---|---|---|
 | Reminders | ![reminders](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/PBHg40DK/reminders.svg) | every 30 min | Fires one-off appointment and meeting reminders over Discord, email and SMS |
 | Medication reminders | ![medication-reminders](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/LlvuveB0/medication-reminders.svg) | every 30 min | Sends due medication doses over Discord, email and SMS, logging each so none repeats |
-| Routine checklist | ![routine](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/4B5WCt1O/routine.svg) | 06-09 UK | Posts the morning habit and streak checklist to `#routine` |
-| Streak reminder | ![streak-reminder](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/mRKs2Rhy/streak-reminder.svg) | 07-10 UK | Nudges me to keep the coding and study streaks alive |
+| Routine checklist | ![routine](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/4B5WCt1O/routine.svg) | 07-09 + 20-22 UK | Posts the morning habit and streak checklist to `#routine`, then an evening pass of what is still unlogged |
+| Streak reminder | ![streak-reminder](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/mRKs2Rhy/streak-reminder.svg) | 08-10 + 20-22 UK | Nudges me to keep the coding and study streaks alive, morning and evening |
 | Vault expiry check | ![vault-expiry-check](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/zwhJK1gB/vault-expiry-check.svg) | 07-10 UK | Warns about vault credentials that are about to expire |
 
 ## Coding and analytics
