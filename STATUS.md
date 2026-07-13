@@ -2,8 +2,9 @@
 
 Live health of every scheduled job, monitored by [Healthchecks.io](https://healthchecks.io). Each job
 pings its own check on start, success and failure; a check goes **down** if a job stops pinging past its
-grace window; that alert lands in the `#uptime` Discord channel. Self-reported errors (a job that
-runs but throws) post the full trace to `#errors`.
+grace window; that alert lands in the `#automation-errors` Discord channel (medication reminders also
+raise a Linear incident). Self-reported errors (a job that runs but throws) post the full trace to
+`#errors`.
 
 Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/Qr8d_Bxl/automations.svg)
 

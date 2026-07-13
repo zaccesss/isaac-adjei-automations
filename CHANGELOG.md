@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-14
+
+### Changed
+
+- Job health alerts moved to a dedicated `#automation-errors` Discord channel, so cron noise and website monitoring never mix in `#uptime` again; medication reminders also raise a Linear incident. Every Healthchecks check was re-tuned to the scheduler-era cadence at the same time - the reminder jobs now alarm within the hour of a real stall instead of four, and the daily jobs within two hours of their slot - safe because the windowed GitHub crons stay on as a second trigger path (#60)
+
+---
+
 ## 2026-07-13
 
 ### Added
