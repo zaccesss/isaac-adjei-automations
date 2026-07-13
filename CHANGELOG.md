@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-13
+
+### Added
+
+- A "dose failed to deliver" alert on the medication reminders job. When a dose is due and every configured channel fails, it now posts the reminder, its label, the time and the channels it tried to the private #errors channel, instead of only writing an id-only line to the public run log where nobody would see it. The dose stays unlogged so the next run retries delivery, and the alert surfaces the failure in the meantime (#54)
+
+---
+
 ## 2026-07-12
 
 ### Security
