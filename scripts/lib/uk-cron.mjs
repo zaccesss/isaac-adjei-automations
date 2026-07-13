@@ -23,32 +23,47 @@ export function londonHour(date = new Date()) {
 // today and this run should skip, false if this run is the first today and should proceed.
 // - FORCE=1 always returns false so manual workflow_dispatch test runs always send.
 // - The insert uses PostgREST "ignore-duplicates": a duplicate returns an empty array (already ran).
-// - Any error returns true (skip) so a transient DB failure never causes a double-send; the healthcheck
-//   / missing message surfaces the miss and it can be re-run manually with FORCE=1.
+// - On a DB error it THROWS. On error I cannot tell whether today's run already happened, so the old
+//   code skipped silently (exit 0) and the miss looked like a clean success. Throwing instead lets the
+//   caller's guard report it to #errors and exit non-zero, so Healthchecks /fail fires. The claim did
+//   not land, so a later run (or a FORCE=1 rerun) still sends exactly once - no double-send, because
+//   the claim runs before any message is sent.
 export async function alreadyRanToday(job) {
   if (process.env.FORCE === "1") return false
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return false // no DB configured: fall back to gate-only behaviour
+  const res = await fetch(`${url}/rest/v1/cron_runs`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=ignore-duplicates,return=representation",
+    },
+    body: JSON.stringify({ job, run_date: londonDate() }),
+  })
+  if (!res.ok) throw new Error(`[alreadyRanToday] ${job} claim failed: ${res.status} ${await res.text()}`)
+  const rows = await res.json()
+  return Array.isArray(rows) && rows.length === 0 // empty => duplicate ignored => already ran today
+}
+
+// Release today's (job, London-day) claim from cron_runs so a later run can retry. Used when a job
+// claimed the day up front (to stop a double-send) but then produced nothing - e.g. every section
+// failed - so the day must NOT count as done. Best-effort: a failure here is logged, never thrown,
+// because the caller is already on its failure path and about to exit non-zero anyway.
+export async function releaseClaim(job) {
+  if (process.env.FORCE === "1") return
+  const url = process.env.SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return
   try {
-    const res = await fetch(`${url}/rest/v1/cron_runs`, {
-      method: "POST",
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=ignore-duplicates,return=representation",
-      },
-      body: JSON.stringify({ job, run_date: londonDate() }),
+    const res = await fetch(`${url}/rest/v1/cron_runs?job=eq.${encodeURIComponent(job)}&run_date=eq.${londonDate()}`, {
+      method: "DELETE",
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
     })
-    if (!res.ok) {
-      console.error("[alreadyRanToday]", job, res.status, await res.text())
-      return true // treat as already-ran: skip rather than risk a duplicate send
-    }
-    const rows = await res.json()
-    return Array.isArray(rows) && rows.length === 0 // empty => duplicate ignored => already ran today
+    if (!res.ok) console.error("[releaseClaim]", job, res.status, await res.text())
   } catch (err) {
-    console.error("[alreadyRanToday]", job, err)
-    return true
+    console.error("[releaseClaim]", job, err)
   }
 }

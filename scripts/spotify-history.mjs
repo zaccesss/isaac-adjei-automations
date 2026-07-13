@@ -77,7 +77,7 @@ async function main() {
   console.log(`Fetched ${rows.length} recent plays, stored ${inserted.length} new.`)
 }
 
-main().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+// No local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
+// to #errors and then exits non-zero. A local catch would swallow it and the failure would only ever
+// reach the run log.
+await main()

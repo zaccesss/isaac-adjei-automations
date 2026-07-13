@@ -19,6 +19,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - A `pip` block in Dependabot so the scraper's Python dependencies get weekly update PRs like the Actions already do (#44)
 
+### Fixed
+
+- Hardened the scheduled jobs so a failed run can no longer pass for a success. The daily-day claim now throws on a database error instead of returning "already ran", so a blip surfaces through the #errors guard and the Healthchecks /fail ping rather than exiting quietly; daily-analytics releases its claim and exits non-zero when every section fails, so the day is retried instead of marked done with nothing posted, and it pages its applications query with the scraped rows filtered out server-side, so the counts cover every real application rather than a truncated first 1000 that the scraped rows had evicted; and spotify-history drops the local catch that was swallowing its failures, so a crash now reaches #errors in full through the shared guard (#52)
+
 ---
 
 ## 2026-07-11
