@@ -1,20 +1,26 @@
-# Posts a morning Discord reminder of streaks not yet logged, at 08:00 Europe/London. Two UTC crons
-# (07:10 and 08:10) cover BST and GMT; a gate step runs it only at 08:xx UK. The :10 minute leaves room
-# for GitHub's scheduling delay to still land inside the target hour.
+# Posts a Discord reminder of streaks not yet logged, twice a day: a morning check at 08:00
+# Europe/London and an evening pass at 20:00 that only posts while something is still unlogged.
+# GitHub drops many scheduled runs, so each slot fires every 30 min across its window and the gate
+# step lets only the right UK hours through; the script claims (job-slot, UK-day) so neither slot
+# repeats.
 
 name: Daily Streak Reminder
 
 on:
   schedule:
-    # Fire every 30 min across 07:00-10:00 UTC (covers the 08:00-10:00 UK window in BST and GMT). GitHub
-    # drops many scheduled runs, so several tries guarantee one lands; the script claims once per day.
-    - cron: "13,43 7-10 * * *"
+    - cron: "13,43 7-10 * * *" # morning: 07:13-10:43 UTC covers the 08:00-10:00 UK window in BST and GMT
+    - cron: "13,43 19-21 * * *" # evening: 19:13-21:43 UTC covers the 20:00-22:00 UK window in BST and GMT
   workflow_dispatch:
     inputs:
       force:
         description: "Force a re-send: bypass the once-per-day claim"
         type: boolean
         default: false
+      slot:
+        description: "Slot: am is the morning check, pm the evening still-unlogged pass (blank = pick by London hour)"
+        type: choice
+        options: ["", "am", "pm"]
+        default: ""
 
 permissions:
   contents: read
@@ -24,17 +30,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Gate to the 08:00-10:00 UK window
+      - name: Gate to the 08:00-10:00 or 20:00-22:00 UK window
         id: gate
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
           fi
           H=$((10#$(TZ=Europe/London date +%H)))
-          if [ "$H" -ge 8 ] && [ "$H" -le 10 ]; then
+          if { [ "$H" -ge 8 ] && [ "$H" -le 10 ]; } || { [ "$H" -ge 20 ] && [ "$H" -le 22 ]; }; then
             echo "go=1" >> "$GITHUB_OUTPUT"
           else
-            echo "outside 08-10 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+            echo "outside 08-10 and 20-22 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
           fi
 
       - if: steps.gate.outputs.go == '1'
@@ -61,6 +67,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_STREAKS: ${{ secrets.DISCORD_WEBHOOK_STREAKS }}
           FORCE: ${{ inputs.force && '1' || '' }}
+          SLOT: ${{ inputs.slot }}
         run: node scripts/send-streak-reminder.mjs
 
       - name: Healthcheck success
