@@ -10,6 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - A "dose failed to deliver" alert on the medication reminders job. When a dose is due and every configured channel fails, it now posts the reminder, its label, the time and the channels it tried to the private #errors channel, instead of only writing an id-only line to the public run log where nobody would see it. The dose stays unlogged so the next run retries delivery, and the alert surfaces the failure in the meantime (#54)
+- An evening pass for the routine checklist and the streak reminder, at 20:00 UK. Each script now runs an am and a pm slot with its own once-a-day claim: the morning posts stay exactly as they were, and the evening run chases only what is still unlogged - habits and streaks left unticked, with time to save the chain - staying completely silent when everything is already done. A `slot` input on both workflows overrides the choice for manual runs, and the evening cron windows ride as GitHub backup alongside the scheduler (#58)
 
 ### Changed
 
