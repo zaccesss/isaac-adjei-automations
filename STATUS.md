@@ -21,8 +21,8 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 
 | Job | Status | Cadence | What it does |
 |---|---|---|---|
-| Daily coding summary | ![daily-coding-summary](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/ANzypoxl/daily-coding-summary.svg) | 06-10 UK | Posts the WakaTime coding summary to `#coding` |
-| Daily analytics | ![daily-analytics](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/gwYAU-IS/daily-analytics.svg) | 06-10 UK | Posts blog, fitness, applications and music digests to their channels |
+| Daily coding summary | ![daily-coding-summary](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/ANzypoxl/daily-coding-summary.svg) | 00:30-03 UK | Posts the WakaTime coding summary to `#coding` |
+| Daily analytics | ![daily-analytics](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/gwYAU-IS/daily-analytics.svg) | 01-04 UK | Posts blog, fitness, applications and music digests to their channels |
 | WakaTime sync | ![wakatime-sync](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/yd__upOn/wakatime-sync.svg) | every 3 hours | Syncs WakaTime coding time into the database |
 
 ## Data and jobs

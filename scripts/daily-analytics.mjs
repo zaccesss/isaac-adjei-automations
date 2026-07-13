@@ -1,5 +1,6 @@
 // Posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness,
-// Music) for the day that just ended. Runs each morning. Resilient to GitHub Actions cron being delayed or
+// Music) for the day that just ended. Runs just after midnight UK, once the coding recap is out, so the
+// numbers are waiting first thing. Resilient to GitHub Actions cron being delayed or
 // dropped: the workflow fires from a frequent morning schedule, this proceeds only once the London hour has
 // reached the target, and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
 // finally lands. Node only, no deps. Each channel is optional - a page is skipped if its webhook is unset.
@@ -10,7 +11,7 @@ guard("daily-analytics")
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
-const TARGET_HOUR = 8
+const TARGET_HOUR = 1
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.log("Missing Supabase env - skipping.")
