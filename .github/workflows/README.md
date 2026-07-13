@@ -56,7 +56,7 @@ Every scheduled job is watched by [Healthchecks.io](https://healthchecks.io). A 
 [`../actions/healthcheck`](../actions/healthcheck/action.yml) pings `hc-ping.com/<key>/<slug>` on **start**,
 **success** and **fail**, with one slug per job (for example `routine`, `daily-analytics`, `job-scraper`).
 A job that stops running, fails or hangs then shows as down or late on the status page and alerts the
-`#monitoring` Discord channel, instead of failing silently for days. The ping is guarded on the
+`#automation-errors` Discord channel, instead of failing silently for days. The ping is guarded on the
 `HEALTHCHECK_PING_KEY` secret, so with no key set it is a no-op and the jobs run unchanged. `job-scraper`
 reports success only when both its parallel jobs succeed.
 
