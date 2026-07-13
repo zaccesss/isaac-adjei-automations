@@ -3,7 +3,7 @@
 // dropped: the workflow fires from a frequent morning schedule, this proceeds only once the London hour has
 // reached the target, and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
 // finally lands. Node only, no deps. Each channel is optional - a page is skipped if its webhook is unset.
-import { londonDate, londonHour, alreadyRanToday } from "./lib/uk-cron.mjs"
+import { londonDate, londonHour, alreadyRanToday, releaseClaim } from "./lib/uk-cron.mjs"
 import { guard } from "./lib/report-failure.mjs"
 
 guard("daily-analytics")
@@ -23,6 +23,19 @@ async function get(path) {
   })
   if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`)
   return res.json()
+}
+
+// Page past PostgREST's 1000-row cap. The caller passes a path already carrying its filters and a
+// stable order; I append offset/limit and read until a short page. Needed for applications, where the
+// scraped rows (thousands of them) otherwise fill the first 1000 and evict the real ones.
+async function getAll(pathBase) {
+  const rows = []
+  for (let offset = 0; ; offset += 1000) {
+    const page = await get(`${pathBase}&offset=${offset}&limit=1000`)
+    rows.push(...page)
+    if (page.length < 1000) break
+  }
+  return rows
 }
 
 async function send(webhook, title, lines) {
@@ -60,7 +73,9 @@ let sent = 0
 
 // ── Applications ──
 try {
-  const apps = await get(`applications?select=status,applied_date&limit=5000`)
+  // Exclude the scraped rows server-side (they are not real applications and there are thousands) and
+  // page the rest, so the counts reflect every genuine application rather than a truncated first 1000.
+  const apps = await getAll(`applications?select=status,applied_date&status=neq.scraped&order=id`)
   const skip = new Set(["Not Applied", "Not Interested", "scraped"])
   const interview = new Set(["Interview", "Assessment Centre", "Video Interview", "Face-to-face Interview", "Telephone Interview"])
   const live = apps.filter((a) => !skip.has(a.status))
@@ -116,6 +131,15 @@ try {
   ])) sent++
 } catch (e) {
   console.error("music:", e.message)
+}
+
+// If every section failed, the day produced nothing. alreadyRanToday already claimed it up front to
+// stop a double-post, so release that claim for a later run to retry, and exit non-zero so Healthchecks
+// /fail fires instead of this reading as a clean, complete run.
+if (sent === 0) {
+  await releaseClaim("daily-analytics")
+  console.error(`Daily analytics for ${yesterday}: every section failed, nothing posted. Released the claim to retry.`)
+  process.exit(1)
 }
 
 console.log(`Daily analytics done for ${yesterday}. ${sent} channel(s) posted.`)
