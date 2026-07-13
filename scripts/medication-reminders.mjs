@@ -74,6 +74,22 @@ async function sendEmail(to, r, t) {
   return res.ok
 }
 
+// A due dose that no channel could deliver is a real problem - it is often someone else's medication -
+// so I raise it to #errors rather than only logging it. The dose is deliberately NOT logged as sent, so
+// the next run retries delivery; this alert makes the failure visible in the meantime. #errors is a
+// private channel, so the name is safe to include here, unlike the public run log which stays id-only.
+async function alertDeliveryFailure(r, t, channels) {
+  const webhook = process.env.DISCORD_WEBHOOK_ERRORS
+  if (!webhook) return
+  const tried = channels.length ? channels.join(", ") : "no channels configured"
+  const content = `\u{1F534} **Medication dose failed to deliver**\n${r.name}${r.label ? ` - ${r.label}` : ""} at ${t}\nTried: ${tried} - all failed. The dose was not logged, so the next run will retry.`
+  try {
+    await fetch(webhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) })
+  } catch (e) {
+    console.error("could not post medication delivery failure to #errors:", e?.message || e)
+  }
+}
+
 async function sendSms(to, text) {
   const sid = process.env.TWILIO_ACCOUNT_SID
   const token = process.env.TWILIO_AUTH_TOKEN
@@ -146,6 +162,7 @@ for (const r of reminders) {
       console.log(`sent: reminder ${r.id} @ ${t} via ${channels.join(",")}`)
     } else {
       console.log(`not sent (no channel succeeded): reminder ${r.id} @ ${t}`)
+      await alertDeliveryFailure(r, t, channels)
     }
   }
 }
