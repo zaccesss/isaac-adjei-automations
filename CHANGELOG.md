@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The job scraper now leans London without narrowing anything: Reed, Adzuna and Jooble each run London-targeted passes alongside their untouched UK-wide searches (Reed with a 20 mile Greater London radius) and the location filter recognises the London districts postings actually name, from Kings Cross to Hammersmith, so a London role is never dropped for being labelled by neighbourhood (#63)
 - The daily analytics posts now carry the detail behind the counts. Fitness reports yesterday alone instead of a rolling week - each activity with its sport, distance, moving time, heart rate, calories and climb, plus day totals, or a rest-day note. Music adds total listening time, top artists and the top album. Posts split opens by post type and count finished reads. Applications list the roles applied to yesterday with company, category, work mode and location, break the live pipeline down by category and flag deadlines due in the next week, including openings not yet applied to (#61)
 - Job health alerts moved to a dedicated `#automation-errors` Discord channel, so cron noise and website monitoring never mix in `#uptime` again; medication reminders also raise a Linear incident. Every Healthchecks check was re-tuned to the scheduler-era cadence at the same time - the reminder jobs now alarm within the hour of a real stall instead of four, and the daily jobs within two hours of their slot - safe because the windowed GitHub crons stay on as a second trigger path (#60)
 

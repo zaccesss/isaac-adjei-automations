@@ -189,6 +189,12 @@ UK_EU_TERMS = [
     "sutton", "kingston upon thames", "richmond", "wimbledon", "stratford",
     "greenwich", "hackney", "islington", "lambeth", "southwark", "wandsworth",
     "shoreditch", "hoxton", "bank", "city of london", "westminster",
+    # More London districts that postings actually name, so a London role is
+    # never dropped for using a neighbourhood instead of the city.
+    "kings cross", "king's cross", "paddington", "liverpool street",
+    "moorgate", "holborn", "farringdon", "soho", "covent garden", "camden",
+    "hammersmith", "euston", "old street", "aldgate", "canada water",
+    "white city", "brixton", "battersea", "vauxhall", "ealing", "wembley",
     # Major UK cities
     "birmingham", "manchester", "edinburgh", "glasgow", "bristol",
     "cambridge", "oxford", "reading", "leeds", "sheffield",
@@ -2596,6 +2602,19 @@ def scrape_reed(existing_keys: set) -> int:
          "locationName": "United Kingdom", "graduate": "true"},
         {"keywords": "technology",
          "locationName": "United Kingdom", "graduate": "true"},
+        # London-targeted passes ride alongside the UK-wide ones (20 mile radius
+        # covers Greater London), so results lean London without losing national
+        # coverage.
+        {"keywords": "software intern",
+         "locationName": "London", "distanceFromLocation": 20},
+        {"keywords": "technology internship",
+         "locationName": "London", "distanceFromLocation": 20},
+        {"keywords": "engineering internship",
+         "locationName": "London", "distanceFromLocation": 20},
+        {"keywords": "industrial placement",
+         "locationName": "London", "distanceFromLocation": 20},
+        {"keywords": "year in industry",
+         "locationName": "London", "distanceFromLocation": 20},
     ]
 
     count = 0
@@ -2658,21 +2677,31 @@ def scrape_adzuna(existing_keys: set) -> int:
         return 0
 
     BASE = "https://api.adzuna.com/v1/api/jobs/gb/search/1"
+    # Each search carries its own "where". The UK-wide set stays as it was; a
+    # London-targeted set rides alongside so the results lean London without
+    # losing national coverage. 20 requests/day sits well inside the 1000/month
+    # trial quota.
     SEARCHES = [
-        "software intern",
-        "technology internship",
-        "engineering internship",
-        "year in industry",
-        "industrial placement",
-        "graduate scheme technology",
-        "data science internship",
-        "machine learning internship",
-        "embedded software intern",
-        "firmware engineer intern",
-        "cloud engineer internship",
-        "devops internship",
-        "cyber security intern",
-        "quant developer internship",
+        {"what": "software intern", "where": "UK"},
+        {"what": "technology internship", "where": "UK"},
+        {"what": "engineering internship", "where": "UK"},
+        {"what": "year in industry", "where": "UK"},
+        {"what": "industrial placement", "where": "UK"},
+        {"what": "graduate scheme technology", "where": "UK"},
+        {"what": "data science internship", "where": "UK"},
+        {"what": "machine learning internship", "where": "UK"},
+        {"what": "embedded software intern", "where": "UK"},
+        {"what": "firmware engineer intern", "where": "UK"},
+        {"what": "cloud engineer internship", "where": "UK"},
+        {"what": "devops internship", "where": "UK"},
+        {"what": "cyber security intern", "where": "UK"},
+        {"what": "quant developer internship", "where": "UK"},
+        {"what": "software intern", "where": "London"},
+        {"what": "technology internship", "where": "London"},
+        {"what": "engineering internship", "where": "London"},
+        {"what": "industrial placement", "where": "London"},
+        {"what": "data science internship", "where": "London"},
+        {"what": "machine learning internship", "where": "London"},
     ]
 
     def _resolve_url(tracking_url: str) -> str:
@@ -2687,7 +2716,8 @@ def scrape_adzuna(existing_keys: set) -> int:
         return tracking_url
 
     count = 0
-    for what in SEARCHES:
+    for search in SEARCHES:
+        what = search["what"]
         try:
             resp = requests.get(
                 BASE,
@@ -2695,7 +2725,7 @@ def scrape_adzuna(existing_keys: set) -> int:
                     "app_id":           app_id,
                     "app_key":          app_key,
                     "what":             what,
-                    "where":            "UK",
+                    "where":            search["where"],
                     "results_per_page": 15,
                     "content-type":     "application/json",
                 },
@@ -2703,7 +2733,7 @@ def scrape_adzuna(existing_keys: set) -> int:
                 timeout=15,
             )
             if resp.status_code != 200:
-                print(f"  Adzuna HTTP {resp.status_code} for '{what}'")
+                print(f"  Adzuna HTTP {resp.status_code} for '{what}' ({search['where']})")
                 continue
 
             for job in resp.json().get("results", []):
@@ -2756,6 +2786,12 @@ def scrape_jooble(existing_keys: set) -> int:
         {"keywords": "industrial placement", "location": "United Kingdom"},
         {"keywords": "graduate scheme software", "location": "United Kingdom"},
         {"keywords": "engineering internship", "location": "United Kingdom"},
+        # London-targeted passes alongside the UK-wide ones, per the London
+        # priority - the UK searches above are untouched.
+        {"keywords": "software internship", "location": "London"},
+        {"keywords": "technology intern", "location": "London"},
+        {"keywords": "industrial placement", "location": "London"},
+        {"keywords": "engineering internship", "location": "London"},
     ]
 
     count = 0
