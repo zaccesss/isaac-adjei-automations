@@ -22,7 +22,7 @@ and claims the day so it acts exactly once. See [UK time and the windowed schedu
 | [medication-reminders](medication-reminders.yml) | every 30 min | [`medication-reminders.mjs`](../../scripts/medication-reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [reminders](reminders.yml) | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
 | [spotify-history](spotify-history.yml) | every 30 min | [`spotify-history.mjs`](../../scripts/spotify-history.mjs) | Records my Spotify plays into `listening_history` so the analytics build up real history |
-| [job-scraper](job-scraper.yml) | 01:23 and 04:41 UTC (two tries) | [`job-scraper.py`](../../scripts/job-scraper.py) | Scrapes graduate and internship sources and upserts them into the applications table |
+| [job-scraper](job-scraper.yml) | 01:23 and 04:41 UTC (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
 
 ## Repo automation
 

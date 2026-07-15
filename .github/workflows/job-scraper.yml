@@ -65,7 +65,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
           SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
-        run: python scripts/job-scraper.py
+        run: python -m scraper
 
       - name: Write source summary
         if: always()
@@ -112,7 +112,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_JOBS }}
           SCRAPER_AI_TEST: ${{ github.event.inputs.ai_test }}
-        run: python scripts/job-scraper.py
+        run: python -m scraper
 
       - name: Write source summary
         if: always()
