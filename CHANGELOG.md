@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-15
+
+### Changed
+
+- The job scraper is a proper Python package now (`scraper/`, run as `python -m scraper`) instead of one 3,200-line script: one module per responsibility, one file per source with an ordered registry, the static company and keyword lists under `data/` and a RunContext object carrying the per-run state instead of module globals. Behaviour is identical from the database's point of view; a thin shim keeps the old script path working and the workflow, secrets and Healthchecks wiring are untouched (#64)
+- The internship cycle cutoff moved up to January 2026: the 2025/26 season is over, so roles with a 2025 closing date are stale (#64)
+
+### Added
+
+- A pure-logic test suite (pytest) covering the relevance filters, location rules, date cutoffs and parsers, dedupe keys and the AI validator, with the cases lifted from the inline comments they protect (#64)
+- The AI enrichment also derives the opening date and whether a CV is required, alongside the salary, work mode, closing date, visa sponsorship and cover letter it already extracted; an ATS-provided value still always wins (#64)
+- A rate-limited AI provider is benched for the rest of the run, so every later extraction goes straight to the providers still answering instead of queueing behind a known-dead limit (#64)
+- `SCRAPER_DRY_RUN=1` rehearses a full run, printing would-be inserts and updates instead of writing, and one shared HTTP session now carries the API sources' calls (#64)
+
+---
+
 ## 2026-07-14
 
 ### Changed
