@@ -1,7 +1,6 @@
 """Source: workday."""
 
 import time
-import requests
 from ..data.companies import PRIORITY_COMPANIES
 from ..db import insert_job
 from ..filters import infer_type, is_relevant, is_relevant_job
@@ -9,6 +8,7 @@ from ..http import HEADERS
 from ..locations import is_location_ok
 from ..budget import over_budget
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── WORKDAY API (NVIDIA, Intel, and other Workday-hosted companies) ─────────
 
@@ -42,7 +42,7 @@ def scrape_workday(
     total = None
     while total is None or offset < total:
         try:
-            resp = requests.post(
+            resp = SESSION.post(
                 url,
                 json={"limit": 20, "offset": offset, "searchText": "intern"},
                 headers={**HEADERS, "Content-Type": "application/json"},

@@ -17,6 +17,13 @@ HEADERS = {
 }
 
 
+# One shared session for connection reuse across the thousands of small API and
+# detail calls; it carries the same browser headers, and per-call headers merge
+# over it exactly as they did over bare requests, so semantics are unchanged.
+SESSION = requests.Session()
+SESSION.headers.update(HEADERS)
+
+
 def is_url_alive(url: str) -> bool:
     """Return False only if the URL definitively 404s or 410s (gone for good).
 
@@ -27,11 +34,11 @@ def is_url_alive(url: str) -> bool:
     if not url or not url.startswith("http"):
         return True
     try:
-        resp = requests.head(url, headers=HEADERS, timeout=8,
+        resp = SESSION.head(url, headers=HEADERS, timeout=8,
                              allow_redirects=True)
         # Some servers don't support HEAD and return 405 - fall back to GET.
         if resp.status_code == 405:
-            resp = requests.get(url, headers=HEADERS, timeout=10,
+            resp = SESSION.get(url, headers=HEADERS, timeout=10,
                                 allow_redirects=True, stream=True)
             resp.close()
         return resp.status_code not in (404, 410)

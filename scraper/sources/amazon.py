@@ -1,13 +1,13 @@
 """Source: amazon."""
 
 import time
-import requests
 from datetime import datetime
 from ..db import insert_job
 from ..detect import detect_cover_letter_required, detect_sponsors_visa
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── AMAZON JOBS JSON API ─────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ def scrape_amazon(ctx) -> int:
     offset = 0
     while offset <= 200:
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 "https://www.amazon.jobs/en/search.json",
                 params={
                     "base_query": "intern",

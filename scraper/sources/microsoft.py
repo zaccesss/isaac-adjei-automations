@@ -1,11 +1,11 @@
 """Source: microsoft."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── MICROSOFT CAREERS ────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ def scrape_microsoft(ctx) -> int:
     page = 1
     while page <= 10:
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 "https://jobs.careers.microsoft.com/api/jobs/search",
                 params={
                     "q": "intern",

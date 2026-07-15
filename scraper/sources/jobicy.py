@@ -1,11 +1,11 @@
 """Source: jobicy."""
 
 import time
-import requests
 from ..data.keywords import TECH_KEYWORDS
 from ..db import insert_job
 from ..filters import infer_type, is_student_role
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── JOBICY ──────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,7 @@ def scrape_jobicy(ctx) -> int:
     count = 0
     for params in QUERIES:
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 "https://jobicy.com/api/v2/remote-jobs",
                 params={**params, "count": 50},
                 headers={"Accept": "application/json"},

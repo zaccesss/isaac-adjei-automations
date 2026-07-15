@@ -2,11 +2,11 @@
 
 import time
 import json
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── APPLE CAREERS ──────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ def scrape_apple(ctx) -> int:
     page = 1
     while page <= 10:
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 "https://jobs.apple.com/api/role/search",
                 params={
                     "filters": json.dumps({

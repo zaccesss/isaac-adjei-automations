@@ -1,10 +1,10 @@
 """Source: arbeitnow."""
 
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── ARBEITNOW ───────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ def scrape_arbeitnow(ctx) -> int:
     # and EU-based engineering roles.
     count = 0
     try:
-        resp = requests.get(
+        resp = SESSION.get(
             "https://arbeitnow.com/api/job-board-api",
             headers={"Accept": "application/json"},
             timeout=15,

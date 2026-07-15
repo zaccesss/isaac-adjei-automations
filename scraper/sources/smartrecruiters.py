@@ -1,13 +1,13 @@
 """Source: smartrecruiters."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import SMARTRECRUITERS_COMPANIES
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── SMARTRECRUITERS ─────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ def scrape_smartrecruiters(
     )
     count = 0
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp = SESSION.get(url, headers=HEADERS, timeout=15)
         if resp.status_code != 200:
             print(
                 f"  SmartRecruiters {company_name}: "

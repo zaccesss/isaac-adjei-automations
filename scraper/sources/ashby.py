@@ -1,7 +1,6 @@
 """Source: ashby."""
 
 import time
-import requests
 from ..db import insert_job
 from ..detect import detect_cover_letter_required, detect_sponsors_visa
 from ..filters import infer_type, is_relevant, is_relevant_job
@@ -9,6 +8,7 @@ from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import ASHBY_COMPANIES
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── ASHBY (REST posting API) ────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ def scrape_ashby(
     count = 0
     try:
         # I request the JSON endpoint directly rather than scraping the HTML.
-        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp = SESSION.get(url, headers=HEADERS, timeout=15)
         if resp.status_code != 200:
             print(f"  Ashby {company_name}: HTTP {resp.status_code}")
             return 0

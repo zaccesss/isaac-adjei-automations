@@ -1,7 +1,6 @@
 """Source: greenhouse."""
 
 import time
-import requests
 from ..dates import _parse_greenhouse_date
 from ..db import insert_job
 from ..detect import _strip_html, detect_cover_letter_required, detect_sponsors_visa
@@ -10,6 +9,7 @@ from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import GREENHOUSE_COMPANIES
 from ..stats import record_stat
+from ..http import SESSION
 
 def fetch_greenhouse_location(slug: str, job_id: int) -> str:
     """Call the Greenhouse job detail endpoint to get the office/city name.
@@ -21,7 +21,7 @@ def fetch_greenhouse_location(slug: str, job_id: int) -> str:
         f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs/{job_id}"
     )
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=10)
+        resp = SESSION.get(url, headers=HEADERS, timeout=10)
         if resp.status_code == 200:
             offices = resp.json().get("offices") or []
             names = [
@@ -47,7 +47,7 @@ def scrape_greenhouse(
     )
     count = 0
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp = SESSION.get(url, headers=HEADERS, timeout=15)
         if resp.status_code != 200:
             print(
                 f"  Greenhouse {company_name}: HTTP {resp.status_code}"

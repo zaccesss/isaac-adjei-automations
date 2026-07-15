@@ -1,12 +1,12 @@
 """Source: reed."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
 from .. import config
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── REED.CO.UK ─────────────────────────────────────────────────────────────
 
@@ -56,7 +56,7 @@ def scrape_reed(ctx) -> int:
     count = 0
     for params in SEARCHES:
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 "https://www.reed.co.uk/api/1.0/search",
                 params={**params, "resultsToTake": 100},
                 auth=(api_key, ""),

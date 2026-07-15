@@ -1,11 +1,11 @@
 """Source: remotive."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import is_relevant_job
 from ..http import HEADERS
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── REMOTIVE (remote full-time tech jobs, worldwide) ────────────────────────
 
@@ -19,7 +19,7 @@ def scrape_remotive(ctx) -> int:
     for cat in categories:
         url = f"https://remotive.com/api/remote-jobs?category={cat}&limit=100"
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=15)
+            resp = SESSION.get(url, headers=HEADERS, timeout=15)
             if resp.status_code != 200:
                 print(f"  Remotive {cat}: HTTP {resp.status_code}")
                 continue

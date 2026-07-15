@@ -1,12 +1,12 @@
 """Source: adzuna."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
 from .. import config
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── ADZUNA ──────────────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ def scrape_adzuna(ctx) -> int:
         # I follow the Adzuna redirect to get the actual company/ATS URL.
         # If it still lands on adzuna.co.uk the tracking link is kept as fallback.
         try:
-            r = requests.head(tracking_url, allow_redirects=True, timeout=5)
+            r = SESSION.head(tracking_url, allow_redirects=True, timeout=5)
             if r.url and "adzuna" not in r.url:
                 return r.url
         except Exception:
@@ -63,7 +63,7 @@ def scrape_adzuna(ctx) -> int:
     for search in SEARCHES:
         what = search["what"]
         try:
-            resp = requests.get(
+            resp = SESSION.get(
                 BASE,
                 params={
                     "app_id":           app_id,

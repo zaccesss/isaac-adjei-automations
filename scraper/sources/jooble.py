@@ -1,12 +1,12 @@
 """Source: jooble."""
 
 import time
-import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
 from .. import config
 from ..stats import record_stat
+from ..http import SESSION
 
 # ─── JOOBLE ──────────────────────────────────────────────────────────────────
 
@@ -37,7 +37,7 @@ def scrape_jooble(ctx) -> int:
     count = 0
     for params in SEARCHES:
         try:
-            resp = requests.post(
+            resp = SESSION.post(
                 f"https://jooble.org/api/{api_key}",
                 json=params,
                 headers={"Content-type": "application/json"},
