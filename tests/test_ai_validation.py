@@ -53,3 +53,37 @@ def test_ai_label_coercions():
     assert _ai_label("Optional") == "Optional"
     assert _ai_label("dunno") is None
     assert _ai_label(None) is None
+
+
+def test_a_rate_limited_provider_is_benched_for_the_run(monkeypatch):
+    import scraper.ai as ai_mod
+    from scraper.context import RunContext
+
+    calls = {"limited": 0, "healthy": 0}
+
+    class _FakeLimited(Exception):
+        class response:  # mimics requests.HTTPError.response
+            status_code = 429
+
+    def limited(prompt):
+        calls["limited"] += 1
+        raise _FakeLimited()
+
+    def healthy(prompt):
+        calls["healthy"] += 1
+        return '{"category": "Embedded"}'
+
+    monkeypatch.setattr(ai_mod, "_AI_PROVIDERS", (("Limited", limited), ("Healthy", healthy)))
+    monkeypatch.setattr(ai_mod.config, "GROQ_API_KEY", "x")
+    monkeypatch.setattr(ai_mod.time, "sleep", lambda s: None)
+
+    ctx = RunContext.bare()
+    desc = "An embedded firmware role working on FPGA and RTOS systems in C and C++." * 3
+    first = ai_mod.ai_extract(ctx, desc)
+    second = ai_mod.ai_extract(ctx, desc)
+
+    assert first == {"category": "Embedded"} and second == {"category": "Embedded"}
+    # The 429 benched the limited provider immediately: it is never tried again.
+    assert calls["limited"] == 1
+    assert calls["healthy"] == 2
+    assert ctx.ai_provider_failures["Limited"] >= 3

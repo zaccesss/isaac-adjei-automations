@@ -186,7 +186,8 @@ _AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", 
 
 
 def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
-    """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter in turn.
+    """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter -> GitHub
+    Models in turn. A rate-limited provider is benched for the rest of the run so the others carry it.
     Returns {} on exhausted budget, no key or total failure, so the scraper degrades gracefully."""
     if ctx.ai_calls >= config.AI_BUDGET:
         return {}
@@ -198,10 +199,21 @@ def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
     ctx.ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)
     for name, fn in _AI_PROVIDERS:
+        # A provider that hit its rate limit (or failed three calls running) is benched
+        # for the rest of the run, so every later extraction goes straight to the
+        # providers still answering instead of queueing behind a known-dead limit.
+        if ctx.ai_provider_failures.get(name, 0) >= 3:
+            continue
         try:
             content = fn(prompt)
         except Exception as e:
-            print(f"  ~ AI provider {name} failed: {e}")
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status == 429:
+                ctx.ai_provider_failures[name] = 3
+                print(f"  ~ AI provider {name} rate limited - benched for the rest of the run")
+            else:
+                ctx.ai_provider_failures[name] = ctx.ai_provider_failures.get(name, 0) + 1
+                print(f"  ~ AI provider {name} failed: {e}")
             continue
         if not content:
             continue
@@ -209,6 +221,7 @@ def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
             result = _validate_ai(json.loads(content))
         except Exception:
             continue
+        ctx.ai_provider_failures[name] = 0
         time.sleep(1.5)
         return result
     time.sleep(1.5)

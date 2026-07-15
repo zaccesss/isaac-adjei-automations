@@ -23,6 +23,8 @@ class RunContext:
     new_jobs: list = field(default_factory=list)
     source_stats: list = field(default_factory=list)
     ai_calls: int = 0
+    # Consecutive availability failures per AI provider; three benches it for the run.
+    ai_provider_failures: dict = field(default_factory=dict)
     run_start: float = field(default_factory=time.time)
     budget_seconds: int = field(default_factory=lambda: config.BUDGET_SECONDS)
 
