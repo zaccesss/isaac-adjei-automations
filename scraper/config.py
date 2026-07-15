@@ -30,3 +30,7 @@ ADZUNA_APP_ID = os.environ.get("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY = os.environ.get("ADZUNA_APP_KEY", "")
 JOOBLE_API_KEY = os.environ.get("JOOBLE_API_KEY", "")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
+
+# SCRAPER_DRY_RUN=1 rehearses a run: everything scrapes and filters as normal but the
+# database writes and the Discord alert are printed instead of sent.
+DRY_RUN = os.environ.get("SCRAPER_DRY_RUN", "").strip() == "1"

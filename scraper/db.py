@@ -1,6 +1,8 @@
 """Supabase access: dedupe keys, existing-row loading, the insert-or-refresh upsert and the freshness stamp."""
 
 import hashlib
+
+from . import config
 from datetime import datetime, timezone
 from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
@@ -86,7 +88,7 @@ def _cover_letter_label(v):
 
 
 def insert_job(ctx, job: dict) -> bool:
-    # I use a different date cutoff for full-time jobs (Jan 2026) vs internships (Sep 2025)
+    # The date cutoff differs by type (both sit at Jan 2026 this season)
     cutoff = JOB_CUTOFF if job.get("type") == "Full-time Job" else CYCLE_CUTOFF
     if not is_date_relevant(job.get("deadline"), cutoff):
         return False
@@ -149,10 +151,14 @@ def insert_job(ctx, job: dict) -> bool:
     # Known URL -> refresh the scraper-owned fields in place. I never delete and never duplicate, and
     # status/notes/starred/applied_date stay exactly as I left them in the app.
     if url and url in ctx.existing_urls:
-        try:
-            ctx.supabase.table("applications").update(patch).eq("url", url).execute()
-        except Exception as e:
-            print(f"  ~ update failed {job['company']}: {e}")
+        if config.DRY_RUN:
+            ctx.dry_run_actions.append(("update", job["company"], job["role"]))
+            print(f"  [dry run] would update {job['company']} | {job['role']}")
+        else:
+            try:
+                ctx.supabase.table("applications").update(patch).eq("url", url).execute()
+            except Exception as e:
+                print(f"  ~ update failed {job['company']}: {e}")
         ctx.seen_urls.add(url)
         return False
 
@@ -161,6 +167,17 @@ def insert_job(ctx, job: dict) -> bool:
         if url:
             ctx.seen_urls.add(url)
         return False
+
+    if config.DRY_RUN:
+        ctx.existing_keys.add(key)
+        if url:
+            ctx.existing_urls.add(url)
+            ctx.seen_urls.add(url)
+        if record.get("type") != "Full-time Job":
+            ctx.new_jobs.append(job)
+        ctx.dry_run_actions.append(("insert", job["company"], job["role"]))
+        print(f"  [dry run] would insert {job['company']} | {job['role']} {url}")
+        return True
 
     try:
         # A genuinely new row. Plain insert (not upsert-ignore) so a pre-load miss does not silently
@@ -195,6 +212,9 @@ def refresh_seen_timestamps(ctx) -> None:
     # permanently and never deleted. I only touch last_scraped_at - all other
     # columns (status, notes, starred etc.) remain exactly as the user left them.
     if not ctx.seen_urls:
+        return
+    if config.DRY_RUN:
+        print(f"[dry run] would refresh timestamps for {len(ctx.seen_urls)} existing entries.")
         return
     seen_list = list(ctx.seen_urls)
     now = datetime.now(timezone.utc).isoformat()

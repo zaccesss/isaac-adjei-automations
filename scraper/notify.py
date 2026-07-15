@@ -6,6 +6,9 @@ from . import config
 # ─── DISCORD ALERT ──────────────────────────────────────────────────────────
 
 def send_discord_alert(new_jobs: list[dict]) -> None:
+    if config.DRY_RUN:
+        print(f"[dry run] would post a Discord alert for {len(new_jobs)} new student roles.")
+        return
     # I post new job findings to Discord so alerts appear on phone immediately
     # after the daily scraper run rather than waiting for the Sunday digest.
     webhook_url = config.DISCORD_WEBHOOK_URL

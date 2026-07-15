@@ -25,6 +25,8 @@ class RunContext:
     ai_calls: int = 0
     # Consecutive availability failures per AI provider; three benches it for the run.
     ai_provider_failures: dict = field(default_factory=dict)
+    # The (action, company, role) tuples a SCRAPER_DRY_RUN=1 run would have written.
+    dry_run_actions: list = field(default_factory=list)
     run_start: float = field(default_factory=time.time)
     budget_seconds: int = field(default_factory=lambda: config.BUDGET_SECONDS)
 
