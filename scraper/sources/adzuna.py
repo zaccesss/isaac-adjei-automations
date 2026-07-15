@@ -1,20 +1,21 @@
 """Source: adzuna."""
 
-import os
 import time
 import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
+from .. import config
+from ..stats import record_stat
 
 # ─── ADZUNA ──────────────────────────────────────────────────────────────────
 
-def scrape_adzuna(existing_keys: set) -> int:
+def scrape_adzuna(ctx) -> int:
     # I use Adzuna's aggregated UK jobs API which covers hundreds of job boards.
     # ADZUNA_APP_ID and ADZUNA_APP_KEY must be set as GitHub Actions secrets.
     # Register free at developer.adzuna.com - 1000 requests/month on trial.
-    app_id = os.environ.get("ADZUNA_APP_ID", "")
-    app_key = os.environ.get("ADZUNA_APP_KEY", "")
+    app_id = config.ADZUNA_APP_ID
+    app_key = config.ADZUNA_APP_KEY
     if not app_id or not app_key:
         print("  ADZUNA_APP_ID/ADZUNA_APP_KEY not set - skipping Adzuna")
         return 0
@@ -91,7 +92,7 @@ def scrape_adzuna(existing_keys: set) -> int:
 
                 if not is_relevant(title, company, location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  company,
                     "role":     title,
                     "type":     infer_type(title),
@@ -100,7 +101,7 @@ def scrape_adzuna(existing_keys: set) -> int:
                     "source":   "Adzuna",
                     "deadline": expiry[:10] if expiry else None,
                     "description": job.get("description", ""),
-                }, existing_keys):
+                }):
                     count += 1
 
             time.sleep(1.0)
@@ -109,3 +110,10 @@ def scrape_adzuna(existing_keys: set) -> int:
 
     print(f"  Added {count} from Adzuna")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Adzuna ---")
+    n = scrape_adzuna(ctx)
+    record_stat(ctx, "Adzuna", n)
+    return n

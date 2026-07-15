@@ -6,10 +6,11 @@ import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
+from ..stats import record_stat
 
 # ─── APPLE CAREERS ──────────────────────────────────────────────────────────
 
-def scrape_apple(existing_keys: set) -> int:
+def scrape_apple(ctx) -> int:
     """Scrape Apple UK internships via their public jobs search API."""
     print("\nScraping Apple Careers (UK)...")
     count = 0
@@ -47,14 +48,14 @@ def scrape_apple(existing_keys: set) -> int:
                 )
                 if not is_relevant(title, "Apple", location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  "Apple",
                     "role":     title,
                     "type":     infer_type(title),
                     "url":      job_url,
                     "location": location,
                     "source":   "Apple Careers",
-                }, existing_keys):
+                }):
                     count += 1
             if len(results) < 20:
                 break
@@ -65,3 +66,15 @@ def scrape_apple(existing_keys: set) -> int:
             break
     print(f"  Added {count} from Apple Careers")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Apple Careers ---")
+    try:
+        n = scrape_apple(ctx)
+        record_stat(ctx, "Apple Careers", n)
+        return n
+    except Exception as e:
+        print(f"  Error Apple: {e}")
+        record_stat(ctx, "Apple Careers", 0, str(e))
+        return 0

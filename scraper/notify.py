@@ -1,14 +1,14 @@
 """The end-of-run Discord alert for newly found student roles."""
 
-import os
 import requests
+from . import config
 
 # ─── DISCORD ALERT ──────────────────────────────────────────────────────────
 
 def send_discord_alert(new_jobs: list[dict]) -> None:
     # I post new job findings to Discord so alerts appear on phone immediately
     # after the daily scraper run rather than waiting for the Sunday digest.
-    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL", "")
+    webhook_url = config.DISCORD_WEBHOOK_URL
     if not webhook_url or not new_jobs:
         return
 

@@ -5,11 +5,14 @@ import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
+from ..budget import over_budget
+from ..data.companies import SMARTRECRUITERS_COMPANIES
+from ..stats import record_stat
 
 # ─── SMARTRECRUITERS ─────────────────────────────────────────────────────────
 
 def scrape_smartrecruiters(
-    company_id: str, company_name: str, existing_keys: set
+    ctx, company_id: str, company_name: str
 ) -> int:
     """SmartRecruiters public API - used by KPMG, Vodafone and others.
 
@@ -50,17 +53,32 @@ def scrape_smartrecruiters(
             if not is_relevant(title, company_name, location):
                 continue
 
-            if insert_job({
+            if insert_job(ctx, {
                 "company":  company_name,
                 "role":     title,
                 "type":     infer_type(title),
                 "url":      job_url,
                 "location": location,
                 "source":   "SmartRecruiters",
-            }, existing_keys):
+            }):
                 count += 1
 
         time.sleep(0.5)
     except Exception as e:
         print(f"  Error SmartRecruiters {company_name}: {e}")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- SmartRecruiters ---")
+    total = 0
+    for company_id, name in SMARTRECRUITERS_COMPANIES:
+        if over_budget(ctx):
+            print("  [budget] skipping remaining SmartRecruiters companies")
+            break
+        n = scrape_smartrecruiters(ctx, company_id, name)
+        if n:
+            print(f"  {name}: {n}")
+        total += n
+    record_stat(ctx, "SmartRecruiters", total)
+    return total

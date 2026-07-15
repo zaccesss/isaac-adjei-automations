@@ -1,18 +1,19 @@
 """Source: reed."""
 
-import os
 import time
 import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
+from .. import config
+from ..stats import record_stat
 
 # ─── REED.CO.UK ─────────────────────────────────────────────────────────────
 
-def scrape_reed(existing_keys: set) -> int:
+def scrape_reed(ctx) -> int:
     # I use Reed's public API - REED_API_KEY must be set as a GitHub Actions
     # secret. Register free at reed.co.uk/developers/jobseeker to get one.
-    api_key = os.environ.get("REED_API_KEY", "")
+    api_key = config.REED_API_KEY
     if not api_key:
         print("  REED_API_KEY not set - skipping Reed.co.uk")
         return 0
@@ -79,7 +80,7 @@ def scrape_reed(existing_keys: set) -> int:
 
                 if not is_relevant(title, company, location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  company,
                     "role":     title,
                     "type":     infer_type(title),
@@ -88,7 +89,7 @@ def scrape_reed(existing_keys: set) -> int:
                     "source":   "Reed",
                     "deadline": expiry,
                     "description": job.get("jobDescription", ""),
-                }, existing_keys):
+                }):
                     count += 1
 
             time.sleep(0.5)
@@ -97,3 +98,10 @@ def scrape_reed(existing_keys: set) -> int:
 
     print(f"  Added {count} from Reed.co.uk")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Reed ---")
+    n = scrape_reed(ctx)
+    record_stat(ctx, "Reed", n)
+    return n

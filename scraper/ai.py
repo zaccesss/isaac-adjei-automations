@@ -1,11 +1,11 @@
 """Optional AI field extraction: Groq then Gemini then OpenRouter then GitHub Models."""
 
-import os
 import re
 import time
 import json
 import requests
 from .filters import detect_category
+from . import config
 
 # ─── AI FIELD EXTRACTION (Groq -> Gemini -> OpenRouter, optional) ────────────
 # When a new role carries a description, I ask an LLM to pick the correct category tab and extract
@@ -15,12 +15,6 @@ from .filters import detect_category
 # is tried first, then Gemini, then OpenRouter, so a rate limit or outage on one still leaves a
 # working fallback. The whole step is skipped when none of the three keys is set.
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
-GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
-AI_BUDGET = int(os.environ.get("SCRAPER_AI_BUDGET", "150"))
-_ai_calls = 0
 
 # The exact category tabs the dashboard groups by - the model must pick one of these or null.
 AI_CATEGORIES = {
@@ -96,11 +90,11 @@ def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
 
 
 def _call_groq(prompt: str):
-    if not GROQ_API_KEY:
+    if not config.GROQ_API_KEY:
         return None
     resp = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {config.GROQ_API_KEY}", "Content-Type": "application/json"},
         json={
             "model": "llama-3.3-70b-versatile",
             "messages": [
@@ -118,12 +112,12 @@ def _call_groq(prompt: str):
 
 
 def _call_gemini(prompt: str):
-    if not GOOGLE_AI_API_KEY:
+    if not config.GOOGLE_AI_API_KEY:
         return None
     resp = requests.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
         # The key travels in a header so an exception's URL text can never carry it.
-        headers={"x-goog-api-key": GOOGLE_AI_API_KEY},
+        headers={"x-goog-api-key": config.GOOGLE_AI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0},
@@ -135,11 +129,11 @@ def _call_gemini(prompt: str):
 
 
 def _call_openrouter(prompt: str):
-    if not OPENROUTER_API_KEY:
+    if not config.OPENROUTER_API_KEY:
         return None
     resp = requests.post(
         "https://openrouter.ai/api/v1/chat/completions",
-        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {config.OPENROUTER_API_KEY}", "Content-Type": "application/json"},
         json={
             "model": "meta-llama/llama-3.3-70b-instruct:free",
             "messages": [
@@ -157,11 +151,11 @@ def _call_openrouter(prompt: str):
 
 
 def _call_github(prompt: str):
-    if not GH_MODELS_TOKEN:
+    if not config.GH_MODELS_TOKEN:
         return None
     resp = requests.post(
         "https://models.github.ai/inference/chat/completions",
-        headers={"Authorization": f"Bearer {GH_MODELS_TOKEN}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {config.GH_MODELS_TOKEN}", "Content-Type": "application/json"},
         json={
             "model": "openai/gpt-4o-mini",
             "messages": [
@@ -181,18 +175,17 @@ def _call_github(prompt: str):
 _AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter), ("GitHub", _call_github))
 
 
-def ai_extract(text: str, title: str = "", company: str = "") -> dict:
+def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
     """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter in turn.
     Returns {} on exhausted budget, no key or total failure, so the scraper degrades gracefully."""
-    global _ai_calls
-    if _ai_calls >= AI_BUDGET:
+    if ctx.ai_calls >= config.AI_BUDGET:
         return {}
     snippet = (text or "").strip()[:6000]
     if len(snippet) < 80:
         return {}
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GH_MODELS_TOKEN):
+    if not (config.GROQ_API_KEY or config.GOOGLE_AI_API_KEY or config.OPENROUTER_API_KEY or config.GH_MODELS_TOKEN):
         return {}
-    _ai_calls += 1
+    ctx.ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)
     for name, fn in _AI_PROVIDERS:
         try:
@@ -212,7 +205,7 @@ def ai_extract(text: str, title: str = "", company: str = "") -> dict:
     return {}
 
 
-def _ai_fill(job: dict) -> None:
+def _ai_fill(ctx, job: dict) -> None:
     """Categorise a new job and fill its empty scraper-owned fields from the description, in place.
     The reliable company-based FAANG+/Quant categories from the regex are kept; the model sets the
     rest of the tabs and never overrides a value the ATS already provided."""
@@ -228,7 +221,7 @@ def _ai_fill(job: dict) -> None:
     if regex_cat in ("FAANG+", "Quant Developer") and fields_complete:
         job["category"] = regex_cat
         return
-    ai = ai_extract(job.get("description", ""), job.get("role", ""), job.get("company", ""))
+    ai = ai_extract(ctx, job.get("description", ""), job.get("role", ""), job.get("company", ""))
     # Keep the reliable company-based regex categories, otherwise take the model's tab.
     if regex_cat in ("FAANG+", "Quant Developer"):
         job["category"] = regex_cat

@@ -5,6 +5,7 @@ from ..data.keywords import TECH_KEYWORDS
 from ..dates import _parse_trackr_date
 from ..db import insert_job
 from ..filters import _SENIOR_ROLE_RE, is_relevant
+from ..stats import record_stat
 
 # ─── THE TRACKR (Playwright - JS rendered) ──────────────────────────────────
 
@@ -17,7 +18,7 @@ def _trackr_col(cells, colmap: "dict[str, int]", key: str) -> str:
     return (cells[idx].inner_text() or "").strip()
 
 
-def scrape_trackr_all(existing_keys: set) -> int:
+def scrape_trackr_all(ctx) -> int:
     """Scrape all four Trackr categories using a headless browser.
 
     I use Playwright rather than requests here because The Trackr is a React
@@ -236,7 +237,7 @@ def scrape_trackr_all(existing_keys: set) -> int:
                         if _SENIOR_ROLE_RE.search(programme):
                             continue
 
-                    if insert_job({
+                    if insert_job(ctx, {
                         "company":           company,
                         "role":              programme,
                         "type":              job_type,
@@ -253,7 +254,7 @@ def scrape_trackr_all(existing_keys: set) -> int:
                         "cover_letter_required":  cover_req or None,
                         "written_answers":        written or None,
                         "sponsors_visa":          sponsors or None,
-                    }, existing_keys):
+                    }):
                         count += 1
 
             except Exception as e:
@@ -271,3 +272,17 @@ def scrape_trackr_all(existing_keys: set) -> int:
         browser.close()
 
     return total
+
+
+def run(ctx) -> int:
+    # I guard the call site too because an uncaught exception here would abort the
+    # whole run - the try/except inside scrape_trackr_all only catches per-category
+    # errors, not startup failures.
+    try:
+        n = scrape_trackr_all(ctx)
+        record_stat(ctx, "The Trackr", n)
+        return n
+    except Exception as e:
+        print(f"  Error The Trackr: {e}")
+        record_stat(ctx, "The Trackr", 0, str(e))
+        return 0

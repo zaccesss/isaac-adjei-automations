@@ -5,10 +5,11 @@ import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
+from ..stats import record_stat
 
 # ─── MICROSOFT CAREERS ────────────────────────────────────────────────────────
 
-def scrape_microsoft(existing_keys: set) -> int:
+def scrape_microsoft(ctx) -> int:
     """Scrape Microsoft UK internships from their careers portal."""
     print("\nScraping Microsoft Careers (UK)...")
     count = 0
@@ -54,14 +55,14 @@ def scrape_microsoft(existing_keys: set) -> int:
                 )
                 if not is_relevant(title, "Microsoft", location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  "Microsoft",
                     "role":     title,
                     "type":     infer_type(title),
                     "url":      job_url,
                     "location": location,
                     "source":   "Microsoft Careers",
-                }, existing_keys):
+                }):
                     count += 1
             if len(jobs_list) < 20:
                 break
@@ -72,3 +73,15 @@ def scrape_microsoft(existing_keys: set) -> int:
             break
     print(f"  Added {count} from Microsoft Careers")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Microsoft Careers ---")
+    try:
+        n = scrape_microsoft(ctx)
+        record_stat(ctx, "Microsoft Careers", n)
+        return n
+    except Exception as e:
+        print(f"  Error Microsoft: {e}")
+        record_stat(ctx, "Microsoft Careers", 0, str(e))
+        return 0

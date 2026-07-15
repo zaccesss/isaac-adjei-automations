@@ -5,10 +5,11 @@ import requests
 from ..db import insert_job
 from ..filters import is_relevant_job
 from ..http import HEADERS
+from ..stats import record_stat
 
 # ─── REMOTIVE (remote full-time tech jobs, worldwide) ────────────────────────
 
-def scrape_remotive(existing_keys: set) -> int:
+def scrape_remotive(ctx) -> int:
     # I use Remotive's free public API which returns currently open remote jobs.
     # I filter to full_time only so internship/contract listings are excluded.
     print("\nScraping Remotive (remote full-time jobs)...")
@@ -37,7 +38,7 @@ def scrape_remotive(existing_keys: set) -> int:
                 pub_str = (job.get("publication_date") or "")[:10] or None
                 if not is_relevant_job(title, company, location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":      company,
                     "role":         title,
                     "type":         "Full-time Job",
@@ -46,10 +47,17 @@ def scrape_remotive(existing_keys: set) -> int:
                     "salary_range": salary or "",
                     "opening_date": pub_str,
                     "source":       "Remotive",
-                }, existing_keys):
+                }):
                     count += 1
             time.sleep(0.5)
         except Exception as e:
             print(f"  Error Remotive {cat}: {e}")
     print(f"  Added {count} from Remotive")
     return count
+
+
+def run(ctx) -> int:
+    # The old main called Remotive without a section header; kept that way.
+    n = scrape_remotive(ctx)
+    record_stat(ctx, "Remotive", n)
+    return n

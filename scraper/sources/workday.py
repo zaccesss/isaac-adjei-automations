@@ -7,6 +7,8 @@ from ..db import insert_job
 from ..filters import infer_type, is_relevant, is_relevant_job
 from ..http import HEADERS
 from ..locations import is_location_ok
+from ..budget import over_budget
+from ..stats import record_stat
 
 # ─── WORKDAY API (NVIDIA, Intel, and other Workday-hosted companies) ─────────
 
@@ -22,8 +24,8 @@ WORKDAY_COMPANIES = [
 
 
 def scrape_workday(
-    subdomain: str, wdnum: str, tenant: str, site_id: str,
-    company_name: str, existing_keys: set
+    ctx, subdomain: str, wdnum: str, tenant: str, site_id: str,
+    company_name: str
 ) -> int:
     """Scrape a Workday-hosted career site via their internal CXS API.
 
@@ -75,24 +77,24 @@ def scrape_workday(
                     f"/en-US/{site_id}/job{ext_url}"
                 ) if ext_url else ""
                 if is_relevant(title, company_name, location_text):
-                    if insert_job({
+                    if insert_job(ctx, {
                         "company":  company_name,
                         "role":     title,
                         "type":     infer_type(title),
                         "url":      job_url,
                         "location": location_text,
                         "source":   "Workday",
-                    }, existing_keys):
+                    }):
                         count += 1
                 elif is_relevant_job(title, company_name, location_text):
-                    if insert_job({
+                    if insert_job(ctx, {
                         "company":  company_name,
                         "role":     title,
                         "type":     "Full-time Job",
                         "url":      job_url,
                         "location": location_text,
                         "source":   "Workday",
-                    }, existing_keys):
+                    }):
                         count += 1
             offset += len(jobs)
             time.sleep(0.5)
@@ -103,3 +105,17 @@ def scrape_workday(
             break
     print(f"  Added {count} from {company_name} Workday")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Workday (NVIDIA / Intel / Morgan Stanley) ---")
+    total = 0
+    for subdomain, wdnum, tenant, site_id, name in WORKDAY_COMPANIES:
+        if over_budget(ctx):
+            break
+        try:
+            total += scrape_workday(ctx, subdomain, wdnum, tenant, site_id, name)
+        except Exception as e:
+            print(f"  Error {name} Workday: {e}")
+    record_stat(ctx, "Workday", total)
+    return total

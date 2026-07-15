@@ -1,8 +1,6 @@
 """Supabase access: dedupe keys, existing-row loading, the insert-or-refresh upsert and the freshness stamp."""
 
-import os
 import hashlib
-from supabase import create_client, Client
 from datetime import datetime, timezone
 from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
@@ -10,14 +8,6 @@ from .filters import detect_category
 from .http import is_url_alive
 from .locations import normalize_location
 
-# I read credentials from environment variables set by GitHub Actions secrets
-# so nothing sensitive ever touches the repository.
-SUPABASE_URL = os.environ["SUPABASE_URL"].strip()
-SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
-
-# I create the client at module level so it is shared across all scraper
-# functions rather than re-initialising a new connection for every company.
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # ─── DEDUPLICATION ──────────────────────────────────────────────────────────
@@ -42,43 +32,33 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
     return hashlib.md5(raw.encode()).hexdigest()[:16]
 
 
-def load_existing_keys() -> set:
+def load_existing_keys(ctx) -> None:
     # I load all existing keys at the start of each run so every insert check
     # is an O(1) set lookup rather than a DB query per row. On a fresh DB this
-    # returns an empty set and everything gets inserted.
+    # loads an empty set and everything gets inserted.
     try:
-        res = supabase.table("applications").select(
+        res = ctx.supabase.table("applications").select(
             "company,role,url"
         ).execute()
-        existing_keys = {
+        ctx.existing_keys = {
             dedupe_key(r["company"], r["role"], r.get("url") or "")
             for r in (res.data or [])
         }
         # Remember which URLs already exist so insert_job updates them in place rather than skipping.
-        _existing_urls.update(r["url"] for r in (res.data or []) if r.get("url"))
-        if not existing_keys:
+        ctx.existing_urls.update(r["url"] for r in (res.data or []) if r.get("url"))
+        if not ctx.existing_keys:
             # I warn here because an empty result on a populated DB usually
             # means RLS is blocking the SELECT - the upsert below will still
             # prevent duplicates at the DB level so this is non-fatal.
             print("WARNING: 0 existing rows loaded - RLS may be blocking reads. Continuing with upsert deduplication.")
-        return existing_keys
     except Exception as e:
         # I log and continue rather than crashing - the upsert strategy means
         # no duplicates are created even if this pre-load fails.
         print(f"Warning: could not load existing keys: {e}")
-        return set()
 
 
 # ─── INSERT ─────────────────────────────────────────────────────────────────
 
-# I collect URLs seen this run so I can batch-refresh last_scraped_at at the
-# end without overwriting user-set status, notes or other fields.
-_seen_urls: set[str] = set()
-# URLs already in the DB at load time, so insert_job knows whether to insert a new row or refresh the
-# scraper-owned fields of an existing one (upsert-by-URL, never delete, never clobber user edits).
-_existing_urls: set[str] = set()
-# I collect newly inserted student jobs for the end-of-run Discord alert.
-_new_jobs: list[dict] = []
 
 
 # Columns the scraper owns and may overwrite on an existing row. Everything else (status, notes,
@@ -105,7 +85,7 @@ def _cover_letter_label(v):
     return None
 
 
-def insert_job(job: dict, existing_keys: set) -> bool:
+def insert_job(ctx, job: dict) -> bool:
     # I use a different date cutoff for full-time jobs (Jan 2026) vs internships (Sep 2025)
     cutoff = JOB_CUTOFF if job.get("type") == "Full-time Job" else CYCLE_CUTOFF
     if not is_date_relevant(job.get("deadline"), cutoff):
@@ -116,13 +96,13 @@ def insert_job(job: dict, existing_keys: set) -> bool:
     # thing eating the time budget, and a known URL is never deleted even if it
     # 404s now, so that check was wasted work.
     url = job.get("url", "")
-    if url and url not in _existing_urls and not is_url_alive(url):
+    if url and url not in ctx.existing_urls and not is_url_alive(url):
         return False
 
     # New role with a description: let Groq fill any fields the ATS did not provide (bounded by
     # AI_BUDGET, never overriding an ATS value or touching user-owned columns).
-    if url and url not in _existing_urls and job.get("description"):
-        _ai_fill(job)
+    if url and url not in ctx.existing_urls and job.get("description"):
+        _ai_fill(ctx, job)
 
     key = dedupe_key(job["company"], job["role"], job.get("url", ""))
 
@@ -168,30 +148,30 @@ def insert_job(job: dict, existing_keys: set) -> bool:
 
     # Known URL -> refresh the scraper-owned fields in place. I never delete and never duplicate, and
     # status/notes/starred/applied_date stay exactly as I left them in the app.
-    if url and url in _existing_urls:
+    if url and url in ctx.existing_urls:
         try:
-            supabase.table("applications").update(patch).eq("url", url).execute()
+            ctx.supabase.table("applications").update(patch).eq("url", url).execute()
         except Exception as e:
             print(f"  ~ update failed {job['company']}: {e}")
-        _seen_urls.add(url)
+        ctx.seen_urls.add(url)
         return False
 
     # URL-less duplicate already seen this run (no DB unique constraint protects these).
-    if key in existing_keys:
+    if key in ctx.existing_keys:
         if url:
-            _seen_urls.add(url)
+            ctx.seen_urls.add(url)
         return False
 
     try:
         # A genuinely new row. Plain insert (not upsert-ignore) so a pre-load miss does not silently
         # drop the refresh - the 23505 path below turns a surprise URL conflict into a field update.
-        supabase.table("applications").insert(record).execute()
-        existing_keys.add(key)
+        ctx.supabase.table("applications").insert(record).execute()
+        ctx.existing_keys.add(key)
         if url:
-            _existing_urls.add(url)
-            _seen_urls.add(url)
+            ctx.existing_urls.add(url)
+            ctx.seen_urls.add(url)
         if record.get("type") != "Full-time Job":
-            _new_jobs.append(job)
+            ctx.new_jobs.append(job)
         print(f"  + {job['company']} | {job['role']} {url}")
         return True
     except Exception as e:
@@ -199,29 +179,29 @@ def insert_job(job: dict, existing_keys: set) -> bool:
         # scraper fields instead of dropping the row on the floor.
         if url and "23505" in str(e):
             try:
-                supabase.table("applications").update(patch).eq("url", url).execute()
+                ctx.supabase.table("applications").update(patch).eq("url", url).execute()
             except Exception:
                 pass
-            _existing_urls.add(url)
-            _seen_urls.add(url)
+            ctx.existing_urls.add(url)
+            ctx.seen_urls.add(url)
             return False
         print(f"  ! Failed to insert {job['company']}: {e}")
         return False
 
 
-def refresh_seen_timestamps() -> None:
+def refresh_seen_timestamps(ctx) -> None:
     # I batch-update last_scraped_at for all entries seen this run so freshness
     # is always visible per-row, even though scraped applications are kept
     # permanently and never deleted. I only touch last_scraped_at - all other
     # columns (status, notes, starred etc.) remain exactly as the user left them.
-    if not _seen_urls:
+    if not ctx.seen_urls:
         return
-    seen_list = list(_seen_urls)
+    seen_list = list(ctx.seen_urls)
     now = datetime.now(timezone.utc).isoformat()
     BATCH = 100
     try:
         for i in range(0, len(seen_list), BATCH):
-            supabase.table("applications").update(
+            ctx.supabase.table("applications").update(
                 {"last_scraped_at": now}
             ).in_("url", seen_list[i:i + BATCH]).execute()
         print(f"Refreshed timestamps for {len(seen_list)} existing entries.")

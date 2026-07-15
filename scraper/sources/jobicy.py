@@ -5,10 +5,11 @@ import requests
 from ..data.keywords import TECH_KEYWORDS
 from ..db import insert_job
 from ..filters import infer_type, is_student_role
+from ..stats import record_stat
 
 # ─── JOBICY ──────────────────────────────────────────────────────────────────
 
-def scrape_jobicy(existing_keys: set) -> int:
+def scrape_jobicy(ctx) -> int:
     # I use Jobicy's free open API - no auth required.
     # It covers remote-only tech roles so I skip the location check and accept
     # any matching student role since "Remote" is UK-acceptable.
@@ -41,14 +42,14 @@ def scrape_jobicy(existing_keys: set) -> int:
                     continue
                 if not any(k in title.lower() for k in TECH_KEYWORDS):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  company,
                     "role":     title,
                     "type":     infer_type(title),
                     "url":      job_url,
                     "location": "Remote",
                     "source":   "Jobicy",
-                }, existing_keys):
+                }):
                     count += 1
 
             time.sleep(0.5)
@@ -57,3 +58,10 @@ def scrape_jobicy(existing_keys: set) -> int:
 
     print(f"  Added {count} from Jobicy")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Jobicy ---")
+    n = scrape_jobicy(ctx)
+    record_stat(ctx, "Jobicy", n)
+    return n

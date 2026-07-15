@@ -4,10 +4,11 @@ import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
+from ..stats import record_stat
 
 # ─── ARBEITNOW ───────────────────────────────────────────────────────────────
 
-def scrape_arbeitnow(existing_keys: set) -> int:
+def scrape_arbeitnow(ctx) -> int:
     # I use Arbeitnow's free public API - no auth required.
     # It aggregates European tech jobs and is particularly strong for remote
     # and EU-based engineering roles.
@@ -33,14 +34,14 @@ def scrape_arbeitnow(existing_keys: set) -> int:
 
             if not is_relevant(title, company, location):
                 continue
-            if insert_job({
+            if insert_job(ctx, {
                 "company":  company,
                 "role":     title,
                 "type":     infer_type(title),
                 "url":      job_url,
                 "location": normalize_location(location),
                 "source":   "Arbeitnow",
-            }, existing_keys):
+            }):
                 count += 1
 
     except Exception as e:
@@ -48,3 +49,10 @@ def scrape_arbeitnow(existing_keys: set) -> int:
 
     print(f"  Added {count} from Arbeitnow")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Arbeitnow ---")
+    n = scrape_arbeitnow(ctx)
+    record_stat(ctx, "Arbeitnow", n)
+    return n

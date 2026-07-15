@@ -2,7 +2,7 @@
 from ..db import dedupe_key, insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
-from ..stats import _record_stat
+from ..stats import record_stat
 
 
 # ─── COMPANY CAREER SITES (Playwright - proprietary ATSes) ──────────────────
@@ -10,7 +10,7 @@ from ..stats import _record_stat
 # ARM and JPMorgan use Workday but require session cookies the CXS API rejects.
 # I open one shared browser for all five companies to reduce startup overhead.
 
-def scrape_company_sites_playwright(existing_keys: set) -> int:
+def scrape_company_sites_playwright(ctx) -> int:
     """Scrape Google, Meta, ARM, Goldman Sachs and JPMorgan via headless browser.
 
     Each company gets its own page inside a single Chromium session. I use
@@ -95,17 +95,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
                     if not is_relevant(title, "Google", location):
                         continue
                     key = dedupe_key("Google", title, url)
-                    if key in existing_keys:
+                    if key in ctx.existing_keys:
                         continue
-                    insert_job({
+                    insert_job(ctx, {
                         "company": "Google",
                         "role": title,
                         "location": normalize_location(location),
                         "url": url,
                         "type": infer_type(title),
                         "cv_required": True,
-                    }, existing_keys)
-                    existing_keys.add(key)
+                    })
+                    ctx.existing_keys.add(key)
                     count += 1
 
                 next_btn = (page.query_selector("a[aria-label='Next page']")
@@ -126,7 +126,7 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
         if count:
             print(f"     Google: {count} new")
         total += count
-        _record_stat("Google Careers", count)
+        record_stat(ctx, "Google Careers", count)
 
         # ── Meta Careers ────────────────────────────────────────────────────
         page = context.new_page()
@@ -175,17 +175,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
                 if not is_relevant(title, "Meta", location):
                     continue
                 key = dedupe_key("Meta", title, url)
-                if key in existing_keys:
+                if key in ctx.existing_keys:
                     continue
-                insert_job({
+                insert_job(ctx, {
                     "company": "Meta",
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
                     "type": infer_type(title),
                     "cv_required": True,
-                }, existing_keys)
-                existing_keys.add(key)
+                })
+                ctx.existing_keys.add(key)
                 count += 1
 
         except Exception as exc:
@@ -196,7 +196,7 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
         if count:
             print(f"     Meta: {count} new")
         total += count
-        _record_stat("Meta Careers", count)
+        record_stat(ctx, "Meta Careers", count)
 
         # ── ARM Careers ─────────────────────────────────────────────────────
         # ARM uses Workday (arm.wd1.myworkdayjobs.com) but the CXS REST API
@@ -250,17 +250,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
                 if not is_relevant(title, "ARM", location):
                     continue
                 key = dedupe_key("ARM", title, url)
-                if key in existing_keys:
+                if key in ctx.existing_keys:
                     continue
-                insert_job({
+                insert_job(ctx, {
                     "company": "ARM",
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
                     "type": infer_type(title),
                     "cv_required": True,
-                }, existing_keys)
-                existing_keys.add(key)
+                })
+                ctx.existing_keys.add(key)
                 count += 1
 
         except Exception as exc:
@@ -271,7 +271,7 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
         if count:
             print(f"     ARM: {count} new")
         total += count
-        _record_stat("ARM Careers", count)
+        record_stat(ctx, "ARM Careers", count)
 
         # ── Goldman Sachs ───────────────────────────────────────────────────
         page = context.new_page()
@@ -316,17 +316,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
                 if not is_relevant(title, "Goldman Sachs", location):
                     continue
                 key = dedupe_key("Goldman Sachs", title, url)
-                if key in existing_keys:
+                if key in ctx.existing_keys:
                     continue
-                insert_job({
+                insert_job(ctx, {
                     "company": "Goldman Sachs",
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
                     "type": infer_type(title),
                     "cv_required": True,
-                }, existing_keys)
-                existing_keys.add(key)
+                })
+                ctx.existing_keys.add(key)
                 count += 1
 
         except Exception as exc:
@@ -337,7 +337,7 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
         if count:
             print(f"     Goldman Sachs: {count} new")
         total += count
-        _record_stat("Goldman Sachs", count)
+        record_stat(ctx, "Goldman Sachs", count)
 
         # ── JPMorgan Careers ────────────────────────────────────────────────
         page = context.new_page()
@@ -387,17 +387,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
                 if not is_relevant(title, "JPMorgan", location):
                     continue
                 key = dedupe_key("JPMorgan", title, url)
-                if key in existing_keys:
+                if key in ctx.existing_keys:
                     continue
-                insert_job({
+                insert_job(ctx, {
                     "company": "JPMorgan",
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
                     "type": infer_type(title),
                     "cv_required": True,
-                }, existing_keys)
-                existing_keys.add(key)
+                })
+                ctx.existing_keys.add(key)
                 count += 1
 
         except Exception as exc:
@@ -408,9 +408,17 @@ def scrape_company_sites_playwright(existing_keys: set) -> int:
         if count:
             print(f"     JPMorgan: {count} new")
         total += count
-        _record_stat("JPMorgan Careers", count)
+        record_stat(ctx, "JPMorgan Careers", count)
 
         browser.close()
 
     print(f"  Company sites total: {total} new")
     return total
+
+
+def run(ctx) -> int:
+    try:
+        return scrape_company_sites_playwright(ctx)
+    except Exception as e:
+        print(f"  Error company career sites: {e}")
+        return 0

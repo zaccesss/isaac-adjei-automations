@@ -1,19 +1,20 @@
 """Source: jooble."""
 
-import os
 import time
 import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
+from .. import config
+from ..stats import record_stat
 
 # ─── JOOBLE ──────────────────────────────────────────────────────────────────
 
-def scrape_jooble(existing_keys: set) -> int:
+def scrape_jooble(ctx) -> int:
     # I use Jooble's POST API which aggregates from hundreds of job boards.
     # JOOBLE_API_KEY must be set as a GitHub Actions secret.
     # Request a free key at jooble.org/api/about.
-    api_key = os.environ.get("JOOBLE_API_KEY", "")
+    api_key = config.JOOBLE_API_KEY
     if not api_key:
         print("  JOOBLE_API_KEY not set - skipping Jooble")
         return 0
@@ -58,7 +59,7 @@ def scrape_jooble(existing_keys: set) -> int:
 
                 if not is_relevant(title, company, location):
                     continue
-                if insert_job({
+                if insert_job(ctx, {
                     "company":  company,
                     "role":     title,
                     "type":     infer_type(title),
@@ -66,7 +67,7 @@ def scrape_jooble(existing_keys: set) -> int:
                     "location": normalize_location(location),
                     "source":   "Jooble",
                     "deadline": updated[:10] if updated else None,
-                }, existing_keys):
+                }):
                     count += 1
 
             time.sleep(0.5)
@@ -75,3 +76,10 @@ def scrape_jooble(existing_keys: set) -> int:
 
     print(f"  Added {count} from Jooble")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Jooble ---")
+    n = scrape_jooble(ctx)
+    record_stat(ctx, "Jooble", n)
+    return n

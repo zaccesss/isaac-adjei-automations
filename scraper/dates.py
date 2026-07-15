@@ -2,8 +2,8 @@
 
 from datetime import datetime, timedelta
 
-# Internship cycle cutoff: Sep 2025 start of 2025/26 recruiting season.
-CYCLE_CUTOFF = datetime(2025, 9, 1)
+# Internship cycle cutoff: Jan 2025 start of 2025/26 recruiting season.
+CYCLE_CUTOFF = datetime(2026, 1, 1)
 # Full-time job cutoff: Jan 2026 - only include recently posted roles.
 JOB_CUTOFF = datetime(2026, 1, 1)
 

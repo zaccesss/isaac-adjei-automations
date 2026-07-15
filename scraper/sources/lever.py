@@ -5,6 +5,9 @@ import requests
 from ..db import insert_job
 from ..filters import infer_type, is_relevant, is_relevant_job
 from ..http import HEADERS
+from ..budget import over_budget
+from ..data.companies import LEVER_COMPANIES
+from ..stats import record_stat
 
 def fetch_lever_details(slug: str, posting_id: str) -> dict:
     """Call the Lever individual posting endpoint for extra fields.
@@ -29,7 +32,7 @@ def fetch_lever_details(slug: str, posting_id: str) -> dict:
 # ─── LEVER JSON API ─────────────────────────────────────────────────────────
 
 def scrape_lever(
-    slug: str, company_name: str, existing_keys: set
+    ctx, slug: str, company_name: str
 ) -> int:
     # I use Lever's v0 public postings endpoint which returns all jobs as a
     # flat JSON array. mode=json returns structured data not an HTML page.
@@ -59,7 +62,7 @@ def scrape_lever(
                     time.sleep(0.2)
 
             if is_relevant(title, company_name, location):
-                if insert_job({
+                if insert_job(ctx, {
                     "company":   company_name,
                     "role":      title,
                     "type":      infer_type(title),
@@ -67,10 +70,10 @@ def scrape_lever(
                     "location":  location,
                     "work_mode": work_mode,
                     "source":    "Lever",
-                }, existing_keys):
+                }):
                     count += 1
             elif is_relevant_job(title, company_name, location):
-                if insert_job({
+                if insert_job(ctx, {
                     "company":   company_name,
                     "role":      title,
                     "type":      "Full-time Job",
@@ -78,10 +81,25 @@ def scrape_lever(
                     "location":  location,
                     "work_mode": work_mode,
                     "source":    "Lever",
-                }, existing_keys):
+                }):
                     count += 1
 
         time.sleep(0.5)
     except Exception as e:
         print(f"  Error Lever {company_name}: {e}")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Lever ---")
+    total = 0
+    for slug, name in LEVER_COMPANIES:
+        if over_budget(ctx):
+            print("  [budget] skipping remaining Lever companies")
+            break
+        n = scrape_lever(ctx, slug, name)
+        if n:
+            print(f"  {name}: {n}")
+        total += n
+    record_stat(ctx, "Lever", total)
+    return total

@@ -7,10 +7,11 @@ from ..db import insert_job
 from ..detect import detect_cover_letter_required, detect_sponsors_visa
 from ..filters import infer_type, is_relevant
 from ..http import HEADERS
+from ..stats import record_stat
 
 # ─── AMAZON JOBS JSON API ─────────────────────────────────────────────────────
 
-def scrape_amazon(existing_keys: set) -> int:
+def scrape_amazon(ctx) -> int:
     """Scrape Amazon UK internships via their public JSON search API.
 
     Amazon hosts their own careers site at amazon.jobs which exposes a
@@ -62,7 +63,7 @@ def scrape_amazon(existing_keys: set) -> int:
                     except Exception:
                         pass
                 if is_relevant(title, "Amazon", location):
-                    if insert_job({
+                    if insert_job(ctx, {
                         "company":               "Amazon",
                         "role":                  title,
                         "type":                  infer_type(title),
@@ -72,7 +73,7 @@ def scrape_amazon(existing_keys: set) -> int:
                         "opening_date":          opening_date,
                         "sponsors_visa":         detect_sponsors_visa(description_text),
                         "cover_letter_required": detect_cover_letter_required(description_text),
-                    }, existing_keys):
+                    }):
                         count += 1
             total_hits = data.get("hits", 0)
             if offset + 10 >= total_hits:
@@ -84,3 +85,15 @@ def scrape_amazon(existing_keys: set) -> int:
             break
     print(f"  Added {count} from Amazon Jobs")
     return count
+
+
+def run(ctx) -> int:
+    print("\n--- Amazon Jobs ---")
+    try:
+        n = scrape_amazon(ctx)
+        record_stat(ctx, "Amazon Jobs", n)
+        return n
+    except Exception as e:
+        print(f"  Error Amazon: {e}")
+        record_stat(ctx, "Amazon Jobs", 0, str(e))
+        return 0
