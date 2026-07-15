@@ -260,8 +260,9 @@ UK_CITIES = {
     "wolverhampton", "derby", "worcester", "ipswich",
 }
 
-# Internship cycle cutoff: Sep 2025 start of 2025/26 recruiting season.
-CYCLE_CUTOFF = datetime(2025, 9, 1)
+# Internship cycle cutoff: Jan 2026. The 2025/26 season is over, so roles with a
+# 2025 closing date are stale now; this moves forward as each season ages out.
+CYCLE_CUTOFF = datetime(2026, 1, 1)
 # Full-time job cutoff: Jan 2026 - only include recently posted roles.
 JOB_CUTOFF = datetime(2026, 1, 1)
 
