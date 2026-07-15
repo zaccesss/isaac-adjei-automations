@@ -9,7 +9,8 @@ from . import config
 
 # ─── AI FIELD EXTRACTION (Groq -> Gemini -> OpenRouter, optional) ────────────
 # When a new role carries a description, I ask an LLM to pick the correct category tab and extract
-# the fields the ATS did not provide (salary, work mode, deadline, visa sponsorship, cover letter).
+# the fields the ATS did not provide (salary, work mode, opening and closing dates, visa
+# sponsorship, CV and cover letter requirements).
 # It only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant
 # categories from the regex, never overrides an ATS value and never touches user-owned columns. Groq
 # is tried first, then Gemini, then OpenRouter, so a rate limit or outage on one still leaves a
@@ -67,6 +68,12 @@ def _validate_ai(data: dict) -> dict:
     cl = _ai_label(data.get("cover_letter_required"))
     if cl is not None:
         out["cover_letter_required"] = cl
+    cv = _ai_label(data.get("cv_required"))
+    if cv is not None:
+        out["cv_required"] = cv
+    od = data.get("opening_date")
+    if isinstance(od, str) and _AI_DATE_RE.match(od.strip()):
+        out["opening_date"] = od.strip()
     return out
 
 
@@ -79,12 +86,15 @@ def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
         '"Software Engineering","Startups","Tech Consulting"], '
         '"sponsors_visa": true|false|null, "salary": string|null, '
         '"work_mode": "Remote"|"Hybrid"|"On-site"|null, "deadline": "YYYY-MM-DD"|null, '
+        '"opening_date": "YYYY-MM-DD"|null, "cv_required": true|false|null, '
         '"cover_letter_required": true|false|null}\n'
         "category is the single best-fit tab: Embedded for firmware/FPGA/RTOS/robotics, Hardware for "
         "circuit/electronics/chip design, Quant Developer for trading or quant roles, FAANG+ only "
         "for Google/Meta/Amazon/Apple/Microsoft/Netflix/OpenAI/Anthropic/DeepMind. sponsors_visa is "
         "true only if it explicitly offers visa sponsorship, false only if it explicitly rules it "
-        "out. salary is the stated pay verbatim. deadline is the closing date.\n\n"
+        "out. salary is the stated pay verbatim. deadline is the closing date and opening_date is when "
+        "applications open. cv_required is true only if a CV or resume is explicitly required, "
+        "false only if the advert explicitly says none is needed.\n\n"
         f"ROLE: {title}\nCOMPANY: {company}\n\nADVERT:\n{snippet}"
     )
 
@@ -215,6 +225,8 @@ def _ai_fill(ctx, job: dict) -> None:
         and job.get("salary_range")
         and job.get("work_mode")
         and job.get("deadline")
+        and job.get("opening_date")
+        and job.get("cv_required")
         and job.get("cover_letter_required") is not None
     )
     # Skip the call only when the company-based category is high-confidence and nothing is missing.
@@ -239,4 +251,8 @@ def _ai_fill(ctx, job: dict) -> None:
         job["deadline"] = ai["deadline"]
     if ai.get("cover_letter_required") is not None and job.get("cover_letter_required") is None:
         job["cover_letter_required"] = ai["cover_letter_required"]
+    if ai.get("cv_required") and not job.get("cv_required"):
+        job["cv_required"] = ai["cv_required"]
+    if ai.get("opening_date") and not job.get("opening_date"):
+        job["opening_date"] = ai["opening_date"]
     print(f"  * AI enriched {job.get('company')} | {job.get('role')} -> {job.get('category')} | {ai}")
