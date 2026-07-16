@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-07-16
 
+### Fixed
+
+- Every job in the Discord alert links somewhere again. Trackr rows without an external apply link (the very rows the old parser used to mangle) posted as plain text once they parsed correctly; they now carry the Trackr company page as their link, fragment-tagged per programme so each URL stays unique for dedupe and in-place refreshes (#65)
+
 ### Added
 
 - Thirteen live-verified companies join the scraper, leaning embedded and hardware for my placement hunt: Tenstorrent, Riverlane, Nothing, Helsing, Ocado Group and Anduril on Greenhouse; Cerebras, Cognition and Ramp on Ashby; Analog Devices, Micron, NXP and Marvell on Workday - four semiconductor majors the tracker never saw before. The priority list learns the embedded and semiconductor names, placement-year department names now count as student pipelines and Reed, Adzuna and Jooble each gain embedded, electronics and hardware placement searches alongside their untouched existing ones (#65)
