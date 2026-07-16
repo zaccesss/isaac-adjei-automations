@@ -172,6 +172,24 @@ def insert_job(ctx, job: dict) -> bool:
     if key in ctx.existing_keys:
         if url:
             ctx.seen_urls.add(url)
+            # A row inserted back when this job carried no URL sits linkless forever
+            # otherwise (the update path matches by URL, which it does not have).
+            # Fill the URL onto the matching url-less scraped row; user-owned fields
+            # stay untouched and progressed rows are excluded by status.
+            if url not in ctx.existing_urls:
+                if config.DRY_RUN:
+                    ctx.dry_run_actions.append(("fill-url", job["company"], job["role"]))
+                    print(f"  [dry run] would fill url for {job['company']} | {job['role']}")
+                else:
+                    try:
+                        ctx.supabase.table("applications").update({"url": url}).eq(
+                            "company", job["company"]
+                        ).eq("role", job["role"]).eq(
+                            "status", "scraped"
+                        ).is_("url", "null").execute()
+                    except Exception as e:
+                        print(f"  ~ url fill failed {job['company']}: {e}")
+                ctx.existing_urls.add(url)
         return False
 
     if config.DRY_RUN:
