@@ -1,4 +1,10 @@
 """Source: company sites."""
+import re
+
+from bs4 import BeautifulSoup
+
+from ..http import HEADERS, SESSION
+
 from ..db import dedupe_key, insert_job
 from ..filters import infer_type, is_relevant
 from ..locations import normalize_location
@@ -199,74 +205,65 @@ def scrape_company_sites_playwright(ctx) -> int:
         record_stat(ctx, "Meta Careers", count)
 
         # ── ARM Careers ─────────────────────────────────────────────────────
-        # ARM uses Workday (arm.wd1.myworkdayjobs.com) but the CXS REST API
-        # returns 422 - session auth is required. Playwright renders the page.
-        page = context.new_page()
+        # ARM's old Coveo search page is gone (it 404s now). Their Radancy careers
+        # site answers plain JSON without a browser: the results endpoint returns
+        # rendered rows in a "results" field, the city sits in the /job/{city}/...
+        # path and the titles come from the anchors. No Playwright needed.
         count = 0
         try:
             print("  -> ARM Careers")
-            page.goto(
-                "https://careers.arm.com/search"
-                "#q=intern&t=Jobs&numberOfResults=25"
-                "&f:@sfdclocations=[United%20Kingdom]",
-                wait_until="networkidle",
-                timeout=30000,
-            )
-            try:
-                page.wait_for_selector(
-                    "a[href*='arm.wd1'], .CoveoResult a,"
-                    " [class*='JobItem'], a[class*='result']",
-                    timeout=15000,
+            seen_hrefs = set()
+            for page_no in range(1, 7):
+                resp = SESSION.get(
+                    "https://careers.arm.com/search-jobs/results",
+                    params={
+                        "ActiveFacetID": 0,
+                        "CurrentPage": page_no,
+                        "RecordsPerPage": 50,
+                        "SearchResultsModuleName": "Search Results",
+                        "SearchFiltersModuleName": "Search Filters",
+                        "SearchType": 5,
+                    },
+                    headers={**HEADERS, "Accept": "application/json"},
+                    timeout=20,
                 )
-            except PWTimeout:
-                print("     ARM: timed out")
-                page.close()
-                page = context.new_page()
-                raise RuntimeError("timeout")
-
-            links = page.query_selector_all(
-                "a[href*='arm.wd1'], .CoveoResultLink, [class*='result-link']"
-            )
-            for link in links:
-                title = link.inner_text().strip()
-                if not title:
-                    continue
-                href = link.get_attribute("href") or ""
-                url = (href if href.startswith("http")
-                       else f"https://careers.arm.com{href}")
-
-                parent = link.evaluate_handle(
-                    "el => el.closest('li, .CoveoResult, [class*=Result]')"
-                )
-                if parent.as_element():
-                    loc_el = parent.as_element().query_selector(
-                        "[class*='location'], [field='@sfdclocations']"
-                    )
-                    location = (loc_el.inner_text().strip()
-                                if loc_el else "United Kingdom")
-                else:
-                    location = "United Kingdom"
-
-                if not is_relevant(title, "ARM", location):
-                    continue
-                key = dedupe_key("ARM", title, url)
-                if key in ctx.existing_keys:
-                    continue
-                insert_job(ctx, {
-                    "company": "ARM",
-                    "role": title,
-                    "location": normalize_location(location),
-                    "url": url,
-                    "type": infer_type(title),
-                    "cv_required": True,
-                })
-                ctx.existing_keys.add(key)
-                count += 1
-
+                if resp.status_code != 200:
+                    break
+                payload = resp.json()
+                soup = BeautifulSoup(payload.get("results", ""), "html.parser")
+                anchors = soup.select("a[href^='/job/']")
+                if not payload.get("hasJobs") or not anchors:
+                    break
+                for a in anchors:
+                    href = a.get("href") or ""
+                    m = re.match(r"^/job/([^/]+)/", href)
+                    if not m or href in seen_hrefs:
+                        continue
+                    seen_hrefs.add(href)
+                    title = " ".join(a.get_text(" ", strip=True).split())
+                    if not title:
+                        continue
+                    city = m.group(1).replace("-", " ").title()
+                    url = f"https://careers.arm.com{href}"
+                    if not is_relevant(title, "ARM", city):
+                        continue
+                    key = dedupe_key("ARM", title, url)
+                    if key in ctx.existing_keys:
+                        continue
+                    insert_job(ctx, {
+                        "company": "ARM",
+                        "role": title,
+                        "location": normalize_location(city),
+                        "url": url,
+                        "type": infer_type(title),
+                        "cv_required": True,
+                    })
+                    ctx.existing_keys.add(key)
+                    count += 1
+                if len(anchors) < 5:
+                    break
         except Exception as exc:
             print(f"     ARM error: {exc}")
-        finally:
-            page.close()
 
         if count:
             print(f"     ARM: {count} new")

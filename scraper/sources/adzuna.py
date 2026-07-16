@@ -23,7 +23,7 @@ def scrape_adzuna(ctx) -> int:
     BASE = "https://api.adzuna.com/v1/api/jobs/gb/search/1"
     # Each search carries its own "where". The UK-wide set stays as it was; a
     # London-targeted set rides alongside so the results lean London without
-    # losing national coverage. 20 requests/day sits well inside the 1000/month
+    # losing national coverage. 24 requests/day sits well inside the 1000/month
     # trial quota.
     SEARCHES = [
         {"what": "software intern", "where": "UK"},
@@ -46,6 +46,11 @@ def scrape_adzuna(ctx) -> int:
         {"what": "industrial placement", "where": "London"},
         {"what": "data science internship", "where": "London"},
         {"what": "machine learning internship", "where": "London"},
+        # Embedded and hardware passes, per my placement hunt.
+        {"what": "electronics internship", "where": "UK"},
+        {"what": "embedded placement", "where": "UK"},
+        {"what": "hardware internship", "where": "UK"},
+        {"what": "embedded software intern", "where": "London"},
     ]
 
     def _resolve_url(tracking_url: str) -> str:
