@@ -114,6 +114,29 @@ def insert_job(ctx, job: dict) -> bool:
 
     key = dedupe_key(job["company"], job["role"], job.get("url", ""))
 
+    # An existing url-less row with this company and role gets its URL filled in
+    # place instead of gaining a linked lookalike: a fallback URL changes the
+    # url-based key, so the plain key match below would never see the old row.
+    if url and key not in ctx.existing_keys:
+        bare_key = dedupe_key(job["company"], job["role"], "")
+        if bare_key in ctx.existing_keys and url not in ctx.existing_urls:
+            if config.DRY_RUN:
+                ctx.dry_run_actions.append(("fill-url", job["company"], job["role"]))
+                print(f"  [dry run] would fill url for {job['company']} | {job['role']}")
+            else:
+                try:
+                    ctx.supabase.table("applications").update({"url": url}).eq(
+                        "company", job["company"]
+                    ).eq("role", job["role"]).eq(
+                        "status", "scraped"
+                    ).is_("url", "null").execute()
+                except Exception as e:
+                    print(f"  ~ url fill failed {job['company']}: {e}")
+            ctx.existing_keys.add(key)
+            ctx.existing_urls.add(url)
+            ctx.seen_urls.add(url)
+            return False
+
     record = {
         "company":  job["company"],
         "role":     job["role"],

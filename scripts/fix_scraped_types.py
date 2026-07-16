@@ -32,6 +32,8 @@ SUPABASE_URL = os.environ["SUPABASE_URL"].strip()
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
 DRY_RUN = os.environ.get("DRY_RUN", "1").strip() != "0"
 FIX_GHOSTS = os.environ.get("FIX_GHOSTS", "").strip() == "1"
+FIX_DUPES = os.environ.get("FIX_DUPES", "").strip() == "1"
+PURGE_STALE = os.environ.get("PURGE_STALE", "").strip() == "1"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -40,7 +42,7 @@ def main():
     rows = []
     for start in range(0, 200_000, 1000):
         res = supabase.table("applications").select(
-            "id,company,role,type,source,location,last_scraped_at"
+            "id,company,role,type,source,location,last_scraped_at,url"
         ).eq("status", "scraped").range(start, start + 999).execute()
         page = res.data or []
         rows.extend(page)
@@ -83,9 +85,35 @@ def main():
     if len(irrelevant) > 20:
         print(f"  ... plus {len(irrelevant) - 20} more")
 
+    # My healing bug briefly inserted linked twins next to old url-less rows:
+    # where a company-and-role pair has both, the url-less copy is redundant.
+    by_pair = {}
+    for r in rows:
+        pair = ((r.get("company") or "").strip().lower(), (r.get("role") or "").strip().lower())
+        by_pair.setdefault(pair, []).append(r)
+    dupes = []
+    for pair, group in by_pair.items():
+        if len(group) > 1 and any(g.get("url") for g in group):
+            dupes.extend(g for g in group if not g.get("url"))
+    print(f"\n{len(dupes)} url-less duplicate rows (a linked twin exists):")
+    for d in dupes[:15]:
+        print(f"  dupe: {d['company']} | {d['role']}")
+    if dupes and FIX_DUPES and not DRY_RUN:
+        for d in dupes:
+            supabase.table("applications").delete().eq("id", d["id"]).execute()
+        print(f"deleted {len(dupes)} url-less duplicates (FIX_DUPES=1)")
+
     cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
-    stale = [r for r in rows if (r.get("last_scraped_at") or "") < cutoff]
-    print(f"\n{len(stale)} rows not seen by any scrape in 14 days (report only - likely gone from the boards)")
+    dupe_ids = {d["id"] for d in dupes}
+    stale = [
+        r for r in rows
+        if (r.get("last_scraped_at") or "") < cutoff and r["id"] not in dupe_ids
+    ]
+    print(f"\n{len(stale)} rows not seen by any scrape in 14 days (dead listings)")
+    if stale and PURGE_STALE and not DRY_RUN:
+        for r in stale:
+            supabase.table("applications").delete().eq("id", r["id"]).execute()
+        print(f"deleted {len(stale)} stale scraped rows (PURGE_STALE=1) - progressed rows are never touched")
 
     print(f"\n{len(ghosts)} ghost rows (role equals company, unrecoverable):")
     for g in ghosts:
