@@ -1,316 +1,193 @@
-"""Source: trackr."""
+"""Source: The Trackr (JSON API).
 
+The Trackr is an Angular SPA backed by api.the-trackr.com. The old scraper drove
+a headless browser and read the rendered table, so a programme whose apply link
+sat one hop away - on the company page, reached by clicking the company name
+rather than the row - came through link-less. That was the whole FAANG
+missing-links problem: the real posting URL was never in the row the browser read.
+
+The public programmes endpoint returns every field the table shows as clean
+JSON, including the direct apply `url` and, where that is blank, the company
+`careersSite`. Both are real external destinations, never a the-trackr.com page,
+so I query the API directly. No browser, no missing links, and the per-role CV /
+cover-letter / written-answer / visa flags and the opening and closing dates all
+arrive structured instead of being scraped out of table cells.
+
+I discovered the contract from the Angular bundle and the API's own 422 body:
+GET /programmes?region=UK&industry=Tech&season=2026&type=summer-internships
+with an app.the-trackr.com Origin. region, industry and season are validated
+enums; type is the tab slug. I pull every tab and both live cycles.
+"""
 import time
-from ..data.keywords import TECH_KEYWORDS
-from urllib.parse import quote
+from datetime import datetime, timezone
 
-from ..dates import _parse_trackr_date
 from ..db import insert_job
-from ..filters import _SENIOR_ROLE_RE, resolve_type, is_relevant
+from ..filters import _SENIOR_ROLE_RE
+from ..http import HEADERS, SESSION
 from ..stats import record_stat
 
-# ─── THE TRACKR (Playwright - JS rendered) ──────────────────────────────────
+API = "https://api.the-trackr.com/programmes"
+
+# The Trackr splits UK Tech into these tabs; each tab is a `type` value on the
+# API. I request every one so nothing is missed - Summer Internships, Industrial
+# Placements, Graduate Schemes, Spring Weeks, Pre-Uni and Events. A tab with no
+# entries for a season simply returns an empty list, so listing the two that are
+# empty this cycle (insight-programmes, pre-uni) costs nothing and future-proofs
+# the source for when the Trackr populates them.
+TYPE_TO_CATEGORY = {
+    "summer-internships":    "Internship",
+    "industrial-placements": "Industrial Placement",
+    "graduate-programmes":   "Graduate",
+    "spring-weeks":          "Spring Week",
+    "insight-programmes":    "Event",
+    "events":                "Event",
+    "pre-uni":               "Event",
+}
+
+# The endpoint rejects calls without the app Origin, so I always send it. The
+# API scopes the whole feed to UK Tech already, so I do not re-filter by location
+# or tech keyword - the tab decides the category.
+_API_HEADERS = {
+    **HEADERS,
+    "Accept": "application/json",
+    "Origin": "https://app.the-trackr.com",
+    "Referer": "https://app.the-trackr.com/",
+}
 
 
-def _trackr_col(cells, colmap: "dict[str, int]", key: str) -> str:
-    """Return the trimmed text of the mapped column for this row, or ''."""
-    idx = colmap.get(key)
-    if idx is None or idx >= len(cells):
+def _iso_date(value) -> "str | None":
+    """Return the YYYY-MM-DD slice of an ISO timestamp, or None."""
+    if isinstance(value, str) and len(value) >= 10 and value[4] == "-":
+        return value[:10]
+    return None
+
+
+def _yes_no(value) -> "str | None":
+    """Normalise the API's mixed booleans and labels to the app's text values.
+
+    cv arrives as a real bool; coverLetter and writtenAnswers arrive as
+    "Yes"/"No"/"Optional" strings; sponsorsVisa is a bool. The app stores all of
+    them as text labels, so I map booleans and pass existing labels through.
+    """
+    if value is True:
+        return "Yes"
+    if value is False:
+        return "No"
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _locations(value) -> str:
+    """Join the locations array whether it holds strings or {name/city} dicts."""
+    if not isinstance(value, list):
         return ""
-    return (cells[idx].inner_text() or "").strip()
+    parts = []
+    for item in value:
+        if isinstance(item, str):
+            parts.append(item)
+        elif isinstance(item, dict):
+            parts.append(item.get("name") or item.get("city") or "")
+    return ", ".join(p for p in parts if p)
+
+
+def _seasons() -> "list[str]":
+    """The current recruiting cycle and the next one.
+
+    The Trackr labels a cycle by its intake year and keeps two live at once
+    (verified July 2026: 2026 and 2027 both return data). Pulling the current
+    year and the year after tracks the roll-over without a code change, and the
+    owner - a second year hunting a 2027 year-long placement - needs the later
+    cycle as much as the current one.
+    """
+    year = datetime.now(timezone.utc).year
+    return [str(year), str(year + 1)]
+
+
+def fetch_programmes(season: str, type_slug: str) -> list:
+    """GET one tab of one cycle as JSON, or [] on any non-200 or error."""
+    try:
+        resp = SESSION.get(
+            API,
+            params={
+                "region": "UK",
+                "industry": "Tech",
+                "season": season,
+                "type": type_slug,
+            },
+            headers=_API_HEADERS,
+            timeout=20,
+        )
+        if resp.status_code != 200:
+            print(f"  Trackr {type_slug} {season}: HTTP {resp.status_code}")
+            return []
+        data = resp.json()
+        return data if isinstance(data, list) else []
+    except Exception as e:
+        print(f"  Error Trackr {type_slug} {season}: {e}")
+        return []
 
 
 def scrape_trackr_all(ctx) -> int:
-    """Scrape all four Trackr categories using a headless browser.
-
-    I use Playwright rather than requests here because The Trackr is a React
-    SPA - the job table is injected into the DOM by JavaScript after the
-    initial page load, so a plain HTTP GET returns an empty shell.
-    """
-    from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
-
-    # The Trackr renders the SAME full table on every category route now (verified
-    # July 2026: all four slugs serve identical 307-row tables), so one page load
-    # covers everything and each row's type comes from its own title instead of
-    # the category URL - the old four-pass loop processed every row four times
-    # and stamped it with whichever category got there first.
-    categories = [
-        ("summer-internships", "Internship"),
-    ]
-
+    """Pull every UK Tech tab across the live cycles straight from the API."""
+    print("\nScraping The Trackr (JSON API)...")
     total = 0
-    print("\nScraping The Trackr (headless)...")
-
-    with sync_playwright() as p:
-        # I use a single browser instance across all four pages to share
-        # startup overhead.
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-                "--no-first-run",
-            ],
-        )
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/125.0.0.0 Safari/537.36"
-            ),
-            locale="en-GB",
-            viewport={"width": 1920, "height": 1080},
-            extra_http_headers={"Accept-Language": "en-GB,en;q=0.9"},
-        )
-        # Hide navigator.webdriver so bot-detection scripts see a real browser.
-        context.add_init_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-
-        for slug, job_type in categories:
-            url = f"https://app.the-trackr.com/uk-technology/{slug}"
-            print(f"  -> {url}")
-            # I open a fresh page per category rather than navigating in-place
-            # to avoid leftover React state polluting the next render.
-            page = context.new_page()
+    for season in _seasons():
+        for type_slug, category in TYPE_TO_CATEGORY.items():
+            programmes = fetch_programmes(season, type_slug)
+            if not programmes:
+                continue
             count = 0
-
-            try:
-                # I wait for "networkidle" so the React data-fetching hooks
-                # have had time to run and the table is populated.
-                page.goto(url, wait_until="networkidle", timeout=30000)
-
-                # I use a secondary wait for table rows because networkidle
-                # can fire before the final render cycle if the data fetch
-                # completes just after the last network request.
-                try:
-                    page.wait_for_selector(
-                        "table tbody tr, [role='row']",
-                        timeout=15000,
-                    )
-                except PWTimeout:
-                    print(f"     Timed out waiting for rows on {slug}")
-                    page.close()
+            for prog in programmes:
+                company_obj = prog.get("company") or {}
+                company = (company_obj.get("name") or "").strip()
+                role = (prog.get("name") or "").strip()
+                if not company or not role:
+                    continue
+                # Senior or lead titles are never a student programme even when
+                # the Trackr files one under an early-careers tab, so I drop them
+                # rather than store a role the owner cannot apply to.
+                if _SENIOR_ROLE_RE.search(role):
                     continue
 
-                rows = page.query_selector_all(
-                    "table tbody tr, [role='row']"
-                )
-                print(f"     Found {len(rows)} rows")
+                # The direct apply link first; the company careers site when the
+                # Trackr has no per-programme link yet. Both are real external
+                # pages - this is the fix for the company-name-only links.
+                url = (
+                    prog.get("url") or company_obj.get("careersSite") or ""
+                ).strip()
 
-                # I map the column headers to indices once per page so each
-                # field is read from the correct column. Header wording varies,
-                # so I match on keywords; unmatched fields fall back to the date
-                # scan further down.
-                colmap: "dict[str, int]" = {}
-                for _i, _h in enumerate(page.query_selector_all(
-                    "table thead th, table thead td, [role='columnheader']"
-                )):
-                    _label = (_h.inner_text() or "").strip().lower()
-                    if "location" in _label:
-                        colmap.setdefault("location", _i)
-                    elif "company" in _label:
-                        colmap.setdefault("company", _i)
-                    elif "programme" in _label or "program" in _label or "role" in _label:
-                        colmap.setdefault("programme", _i)
-                    elif "last year" in _label or "last-year" in _label:
-                        colmap.setdefault("last_year", _i)
-                    elif "open" in _label:
-                        colmap.setdefault("opening", _i)
-                    elif "clos" in _label or "deadline" in _label:
-                        colmap.setdefault("closing", _i)
-                    elif _label == "cv":
-                        colmap.setdefault("cv", _i)
-                    elif "cover" in _label:
-                        colmap.setdefault("cover", _i)
-                    elif "written" in _label:
-                        colmap.setdefault("written", _i)
-                    elif "sponsor" in _label:
-                        colmap.setdefault("sponsors", _i)
-
-                for row in rows:
-                    cells = row.query_selector_all("td, [role='cell']")
-                    # I skip rows with fewer than 2 cells because they are
-                    # likely header or spacer rows.
-                    if len(cells) < 2:
-                        continue
-
-                    # I prefer a link with "company" in its href because it
-                    # reliably points to the company page rather than a
-                    # programme detail page.
-                    company_el = (
-                        row.query_selector("a[href*='company']")
-                        or row.query_selector(
-                            "a[href*='/uk-technology/']"
-                        )
-                        # I fall back to the first cell as a last resort.
-                        or (cells[0] if cells else None)
-                    )
-                    # I use the second link as the programme link because the
-                    # first is always the company.
-                    all_links = row.query_selector_all("a")
-                    prog_el = (
-                        all_links[1]
-                        if len(all_links) > 1
-                        else (cells[1] if len(cells) > 1 else None)
-                    )
-
-                    # The header-mapped columns are authoritative. The old second-link
-                    # fallback broke on rows with no external apply link: it landed on
-                    # the company cell (a My Status column shifted the table right) and
-                    # stored the company name as the role.
-                    company = _trackr_col(cells, colmap, "company") or (
-                        company_el.inner_text().strip()
-                        if company_el else ""
-                    )
-                    programme = _trackr_col(cells, colmap, "programme") or (
-                        prog_el.inner_text().strip()
-                        if prog_el else ""
-                    )
-                    # I capture the application link, preferring an external
-                    # "apply" link over a the-trackr.com internal page so the
-                    # app opens the real posting.
-                    job_url = ""
-                    for _a in all_links:
-                        _href = _a.get_attribute("href") or ""
-                        if _href.startswith("http") and "the-trackr.com" not in _href:
-                            job_url = _href
-                            break
-                    if not job_url and prog_el:
-                        job_url = prog_el.get_attribute("href") or ""
-                    # I prepend the origin when the href is relative so the
-                    # stored URL is always absolute.
-                    if job_url and not job_url.startswith("http"):
-                        job_url = (
-                            f"https://app.the-trackr.com{job_url}"
-                        )
-                    # Rows with no external apply link still get a clickable
-                    # link: the Trackr company page, fragment-tagged with the
-                    # programme so the URL stays unique per role for dedupe and
-                    # in-place refreshes (the fragment never reaches the server).
-                    if not job_url and company_el:
-                        _chref = company_el.get_attribute("href") or ""
-                        if _chref.startswith("/company/"):
-                            _prog_tag = quote(
-                                _trackr_col(cells, colmap, "programme")[:80]
-                            )
-                            job_url = (
-                                f"https://app.the-trackr.com{_chref}#{_prog_tag}"
-                            )
-
-                    # I read the date and location columns by name. Where a
-                    # header was not matched I fall back to scanning the
-                    # trailing cells for the first two parseable dates (opening
-                    # then closing), preserving the old behaviour.
-                    opening_date = _parse_trackr_date(
-                        _trackr_col(cells, colmap, "opening")
-                    )
-                    closing_date = _parse_trackr_date(
-                        _trackr_col(cells, colmap, "closing")
-                    )
-                    last_year_opening = _parse_trackr_date(
-                        _trackr_col(cells, colmap, "last_year")
-                    )
-                    if opening_date is None and closing_date is None:
-                        _seen_dates = []
-                        for cell in cells[2:]:
-                            _d = _parse_trackr_date(
-                                (cell.inner_text() or "").strip()
-                            )
-                            if _d:
-                                _seen_dates.append(_d)
-                            if len(_seen_dates) == 2:
-                                break
-                        if _seen_dates:
-                            opening_date = _seen_dates[0]
-                            if len(_seen_dates) > 1:
-                                closing_date = _seen_dates[1]
-                    location = _trackr_col(cells, colmap, "location")
-                    # The Trackr lists the real per-role CV / cover letter /
-                    # written-answers / visa-sponsorship values, so I read them
-                    # rather than hardcoding "Yes" for every row.
-                    cv_req = _trackr_col(cells, colmap, "cv")
-                    cover_req = _trackr_col(cells, colmap, "cover")
-                    written = _trackr_col(cells, colmap, "written")
-                    sponsors = _trackr_col(cells, colmap, "sponsors")
-
-                    # I silently skip rows where company or programme could
-                    # not be parsed.
-                    if not company or not programme:
-                        continue
-                    # A programme equal to the company is the old fallback's
-                    # failure mode, never a real role - skip it rather than
-                    # store a company-named ghost row.
-                    if programme.lower() == company.lower():
-                        continue
-                    # The row's own title decides its type now that every
-                    # category route serves the same table.
-                    row_type = resolve_type(programme, default="Internship")
-                    # I bypass the student-term check for placement, spring-week
-                    # and graduate rows because their type already came from a
-                    # placement or scheme term in the title - requiring
-                    # "placement" again would drop nothing and "intern" would
-                    # drop most real results.
-                    if row_type == "Internship":
-                        if not is_relevant(programme, company):
-                            continue
-                    else:
-                        # I still require a tech keyword for non-internship
-                        # rows so non-tech roles are skipped.
-                        if not any(
-                            k in programme.lower() for k in TECH_KEYWORDS
-                        ):
-                            continue
-                        # I also reject senior titles even from placement and
-                        # grad-scheme rows - The Trackr occasionally lists
-                        # staff or lead roles under these buckets.
-                        if _SENIOR_ROLE_RE.search(programme):
-                            continue
-
-                    if insert_job(ctx, {
-                        "company":           company,
-                        "role":              programme,
-                        "type":              row_type,
-                        "url":               job_url or "",
-                        "source":            "The Trackr",
-                        "deadline":          closing_date,
-                        "opening_date":      opening_date,
-                        "location":          location,
-                        "last_year_opening": last_year_opening,
-                        # I reuse the job's city for the housing search link so
-                        # the app's "Find Housing" column is populated.
-                        "housing_location":  location,
-                        "cv_required":            cv_req or None,
-                        "cover_letter_required":  cover_req or None,
-                        "written_answers":        written or None,
-                        "sponsors_visa":          sponsors or None,
-                    }):
-                        count += 1
-
-            except Exception as e:
-                print(f"     Error on {slug}: {e}")
-            finally:
-                # I always close the page in the finally block so the browser
-                # does not accumulate open tabs on error.
-                page.close()
-
-            print(f"     Added {count} from {slug}")
+                if insert_job(ctx, {
+                    "company":                company,
+                    "role":                   role,
+                    "type":                   category,
+                    "url":                    url,
+                    "source":                 "The Trackr",
+                    "location":               _locations(prog.get("locations")),
+                    "housing_location":       company_obj.get("ukHousingLocation") or "",
+                    "opening_date":           _iso_date(prog.get("openingDate")),
+                    "deadline":               _iso_date(prog.get("closingDate")),
+                    "last_year_opening":      _iso_date(prog.get("lastYearOpening")),
+                    "cv_required":            _yes_no(prog.get("cv")),
+                    "cover_letter_required":  _yes_no(prog.get("coverLetter")),
+                    "written_answers":        _yes_no(prog.get("writtenAnswers")),
+                    "sponsors_visa":          _yes_no(company_obj.get("sponsorsVisa")),
+                }):
+                    count += 1
+            if count:
+                print(f"  {type_slug} {season}: {count} new")
             total += count
-            # I sleep 2 seconds between categories to avoid rate limiting.
+            # The endpoint rate-limits a rapid burst (429 after ~6 fast calls),
+            # so I space the tab requests out.
             time.sleep(2)
-
-        browser.close()
-
+    print(f"  The Trackr total: {total} new")
     return total
 
 
 def run(ctx) -> int:
-    # I guard the call site too because an uncaught exception here would abort the
-    # whole run - the try/except inside scrape_trackr_all only catches per-category
-    # errors, not startup failures.
+    # I guard the call site because an uncaught error here would abort the whole
+    # run - fetch_programmes already swallows per-request failures, but a bad
+    # season loop or a JSON change should degrade to zero, not crash the scraper.
     try:
         n = scrape_trackr_all(ctx)
         record_stat(ctx, "The Trackr", n)
