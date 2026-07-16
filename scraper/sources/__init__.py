@@ -2,8 +2,12 @@
 
 Each entry is (name, mode, gated, run). mode selects which SCRAPER_MODE job the
 source belongs to. gated marks the sources the old main() wrapped in an over-budget
-check; the browser pair and the first four API families manage the budget
-internally, so they stay ungated to keep the behaviour identical.
+check; The Trackr, the company-sites browser source and the first four API families
+manage the budget internally, so they stay ungated to keep the behaviour identical.
+
+The Trackr now runs in the fast "api" job: it reads the api.the-trackr.com
+programmes JSON directly, so it no longer needs the Playwright install the browser
+job carries for the company-sites source.
 """
 from . import (
     adzuna,
@@ -25,7 +29,7 @@ from . import (
 )
 
 SOURCES = [
-    ("The Trackr", "browser", False, trackr.run),
+    ("The Trackr", "api", False, trackr.run),
     ("Company career sites", "browser", False, company_sites.run),
     ("Greenhouse", "api", False, greenhouse.run),
     ("Lever", "api", False, lever.run),
