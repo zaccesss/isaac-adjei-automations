@@ -44,3 +44,21 @@ def test_dry_run_update_path_and_timestamp_refresh(monkeypatch):
 
 def test_dry_run_defaults_off():
     assert config.DRY_RUN is False
+
+
+def test_a_linked_row_heals_the_urlless_original_instead_of_duplicating(monkeypatch):
+    monkeypatch.setattr(config, "DRY_RUN", True)
+    ctx = RunContext.bare()
+
+    # The url-less original was inserted in an earlier run.
+    original = {"company": "Acme", "role": "Software Intern", "type": "Internship", "deadline": None}
+    assert insert_job(ctx, original) is True
+
+    # The same row arrives again, now carrying a fallback link: it must fill the
+    # URL onto the original, not insert a linked twin (the fragment URL changes
+    # the url-based dedupe key, which is exactly how the twins happened).
+    linked = dict(original)
+    linked["url"] = "https://app.the-trackr.com/company/acme#Software%20Intern"
+    assert insert_job(ctx, linked) is False
+    assert ("fill-url", "Acme", "Software Intern") in ctx.dry_run_actions
+    assert len([a for a in ctx.dry_run_actions if a[0] == "insert"]) == 1

@@ -13,6 +13,14 @@ on:
         description: "Also delete ghost rows whose role equals their company (only with dry_run false)"
         required: false
         default: "false"
+      fix_dupes:
+        description: "Delete url-less duplicates that have a linked twin (only with dry_run false)"
+        required: false
+        default: "false"
+      purge_stale:
+        description: "Delete scraped rows no scrape has stamped in 14 days (only with dry_run false)"
+        required: false
+        default: "false"
 
 permissions:
   contents: read
@@ -37,4 +45,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DRY_RUN: ${{ inputs.dry_run == 'false' && '0' || '1' }}
           FIX_GHOSTS: ${{ inputs.fix_ghosts == 'true' && '1' || '' }}
+          FIX_DUPES: ${{ inputs.fix_dupes == 'true' && '1' || '' }}
+          PURGE_STALE: ${{ inputs.purge_stale == 'true' && '1' || '' }}
         run: python scripts/fix_scraped_types.py
