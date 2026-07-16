@@ -4,7 +4,7 @@ import time
 from ..data.keywords import TECH_KEYWORDS
 from ..dates import _parse_trackr_date
 from ..db import insert_job
-from ..filters import _SENIOR_ROLE_RE, is_relevant
+from ..filters import _SENIOR_ROLE_RE, infer_type, is_relevant
 from ..stats import record_stat
 
 # ─── THE TRACKR (Playwright - JS rendered) ──────────────────────────────────
@@ -27,12 +27,13 @@ def scrape_trackr_all(ctx) -> int:
     """
     from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-    # I map each URL slug to the type label I want to store in the DB.
+    # The Trackr renders the SAME full table on every category route now (verified
+    # July 2026: all four slugs serve identical 307-row tables), so one page load
+    # covers everything and each row's type comes from its own title instead of
+    # the category URL - the old four-pass loop processed every row four times
+    # and stamped it with whichever category got there first.
     categories = [
-        ("summer-internships",    "Internship"),
-        ("industrial-placements", "Industrial Placement"),
-        ("graduate-schemes",      "Graduate"),
-        ("spring-weeks",          "Spring Week"),
+        ("summer-internships", "Internship"),
     ]
 
     total = 0
@@ -109,6 +110,10 @@ def scrape_trackr_all(ctx) -> int:
                     _label = (_h.inner_text() or "").strip().lower()
                     if "location" in _label:
                         colmap.setdefault("location", _i)
+                    elif "company" in _label:
+                        colmap.setdefault("company", _i)
+                    elif "programme" in _label or "program" in _label or "role" in _label:
+                        colmap.setdefault("programme", _i)
                     elif "last year" in _label or "last-year" in _label:
                         colmap.setdefault("last_year", _i)
                     elif "open" in _label:
@@ -151,11 +156,15 @@ def scrape_trackr_all(ctx) -> int:
                         else (cells[1] if len(cells) > 1 else None)
                     )
 
-                    company = (
+                    # The header-mapped columns are authoritative. The old second-link
+                    # fallback broke on rows with no external apply link: it landed on
+                    # the company cell (a My Status column shifted the table right) and
+                    # stored the company name as the role.
+                    company = _trackr_col(cells, colmap, "company") or (
                         company_el.inner_text().strip()
                         if company_el else ""
                     )
-                    programme = (
+                    programme = _trackr_col(cells, colmap, "programme") or (
                         prog_el.inner_text().strip()
                         if prog_el else ""
                     )
@@ -217,30 +226,39 @@ def scrape_trackr_all(ctx) -> int:
                     # not be parsed.
                     if not company or not programme:
                         continue
-                    # I bypass the student-term check for placement and
-                    # spring-week categories because the category URL already
-                    # tells me the role type - requiring "placement" in every
-                    # title would drop most real results.
-                    if job_type == "Internship":
+                    # A programme equal to the company is the old fallback's
+                    # failure mode, never a real role - skip it rather than
+                    # store a company-named ghost row.
+                    if programme.lower() == company.lower():
+                        continue
+                    # The row's own title decides its type now that every
+                    # category route serves the same table.
+                    row_type = infer_type(programme, default="Internship")
+                    # I bypass the student-term check for placement, spring-week
+                    # and graduate rows because their type already came from a
+                    # placement or scheme term in the title - requiring
+                    # "placement" again would drop nothing and "intern" would
+                    # drop most real results.
+                    if row_type == "Internship":
                         if not is_relevant(programme, company):
                             continue
                     else:
                         # I still require a tech keyword for non-internship
-                        # categories so non-tech roles are skipped.
+                        # rows so non-tech roles are skipped.
                         if not any(
                             k in programme.lower() for k in TECH_KEYWORDS
                         ):
                             continue
                         # I also reject senior titles even from placement and
-                        # grad-scheme categories - The Trackr occasionally
-                        # lists staff or lead roles under these buckets.
+                        # grad-scheme rows - The Trackr occasionally lists
+                        # staff or lead roles under these buckets.
                         if _SENIOR_ROLE_RE.search(programme):
                             continue
 
                     if insert_job(ctx, {
                         "company":           company,
                         "role":              programme,
-                        "type":              job_type,
+                        "type":              row_type,
                         "url":               job_url or "",
                         "source":            "The Trackr",
                         "deadline":          closing_date,

@@ -56,8 +56,12 @@ GRADUATE_TERMS = [
 
 EVENT_TERMS = [
     "hackathon", "coding challenge", "coding competition",
-    "open day", "careers fair", "workshop", "conference",
-    "networking", "virtual event", "online event",
+    "open day", "careers fair", "conference",
+    # Bare "networking" and "workshop" are gone: they made networking-engineering
+    # roles and workshop engineers look like careers events. The qualified forms
+    # below still catch the real events.
+    "networking event", "networking evening", "coding workshop",
+    "insight workshop", "technology workshop", "virtual event", "online event",
 ]
 
 # Combined flat list for quick is_student_role checks

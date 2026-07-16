@@ -50,6 +50,14 @@ PRIORITY_COMPANIES = {
     "revolut", "checkout.com", "weaveworks", "thought machine",
     "onfido", "improbable", "babylon health", "benevolentai",
     "darktrace", "sophos", "micro focus", "aveva",
+    # Embedded and semiconductor companies - I am hunting embedded and hardware
+    # placements, so these get the same looser filter as the software giants.
+    "imagination technologies", "nxp", "stmicroelectronics", "st microelectronics",
+    "infineon", "renesas", "texas instruments", "analog devices", "micron",
+    "western digital", "nordic semiconductor", "raspberry pi", "silicon labs",
+    "microchip technology", "marvell", "cirrus logic", "lattice semiconductor",
+    "renishaw", "cambridge consultants", "ttp", "oxford instruments",
+    "edwards vacuum", "mbda", "babcock", "ocado", "helsing", "nothing technology",
 }
 
 # I also check Greenhouse department names because some companies tag their
@@ -57,6 +65,8 @@ PRIORITY_COMPANIES = {
 STUDENT_DEPTS = {
     "early talent", "university", "intern", "internship", "student",
     "campus", "early career", "new grad", "university recruiting",
+    # Placement-year pipelines get their own department names at UK employers.
+    "placement", "industrial placement", "year in industry",
 }
 
 
@@ -97,7 +107,7 @@ GREENHOUSE_COMPANIES = [
     ("starburst",     "Starburst"),
     ("collibra",      "Collibra"),
     ("cockroachlabs", "CockroachDB"),
-    ("atlassian",     "Atlassian"),
+    # atlassian removed July 2026: migrated off Greenhouse, the slug 404s.
     # Confirmed working slugs added after live API validation
     ("mongodb",       "MongoDB"),
     ("elastic",       "Elastic"),
@@ -120,6 +130,14 @@ GREENHOUSE_COMPANIES = [
     ("skyscanner",    "Skyscanner"),
     ("winton",        "Winton"),
     ("spacex",        "SpaceX"),
+    # Embedded, hardware and UK deep tech - confirmed live July 2026. These matter to
+    # me as much as the software names: I am hunting embedded and hardware placements.
+    ("tenstorrent",        "Tenstorrent"),
+    ("riverlane",          "Riverlane"),
+    ("nothing",            "Nothing"),
+    ("helsing",            "Helsing"),
+    ("ocadogroup",         "Ocado Group"),
+    ("andurilindustries",  "Anduril"),
 ]
 
 # Lever slugs confirmed to return HTTP 200 with real listings.
@@ -133,22 +151,20 @@ LEVER_COMPANIES = [
 # (ashby_slug, display_name) - confirmed against live API.
 ASHBY_COMPANIES = [
     ("linear",          "Linear"),
-    ("perplexityai",    "Perplexity AI"),
+    ("perplexity",      "Perplexity AI"),
     ("cursor",          "Cursor"),
     ("vercel",          "Vercel"),
     ("railway",         "Railway"),
     ("loom",            "Loom"),
-    ("iter",            "Iter"),
-    ("mistralai",       "Mistral AI"),
-    ("huggingface",     "Hugging Face"),
     ("supabase",        "Supabase"),
     ("neon",            "Neon"),
-    ("turso",           "Turso"),
-    ("planetscale",     "PlanetScale"),
     ("openai",          "OpenAI"),
-    ("deepmind",        "Google DeepMind"),
-    ("waymo",           "Waymo"),
     ("anyscale",        "Anyscale"),
+    # Removed July 2026 after a full live sweep: iter, mistralai, huggingface,
+    # turso, planetscale, deepmind and waymo all 404 on the Ashby board API now
+    # (migrated or renamed). DeepMind arrives via the Google Careers scraper and
+    # Mistral, Hugging Face and Waymo stay on the priority list so the boards
+    # still catch them.
     # Expanded - all confirmed against live API (June 2026)
     ("notion",          "Notion"),
     ("replit",          "Replit"),
@@ -166,35 +182,21 @@ ASHBY_COMPANIES = [
     ("ultra",           "Ultra"),
     # Wayve is also on Greenhouse (118 jobs) but Ashby has description/dates.
     ("wayve",           "Wayve"),
+    # Confirmed live July 2026 - Cerebras is the AI hardware one I care most about.
+    ("cerebras",        "Cerebras"),
+    ("cognition",       "Cognition"),
+    ("ramp",            "Ramp"),
 ]
 
-# I use SmartRecruiters for large UK employers that are not on Greenhouse or
-# Lever - mostly consulting and telco companies that standardised on it.
+# SmartRecruiters, rebuilt July 2026 after a full live sweep: every one of the 26
+# old identifiers returned totalFound 0 (the API answers a valid empty envelope for
+# unknown tenants rather than a 404, so the whole list was silently contributing
+# nothing). These are the tenants that verifiably return postings on the anonymous
+# API today; Version1 is a major UK and Ireland placement employer.
 SMARTRECRUITERS_COMPANIES = [
-    ("KPMG",           "KPMG"),
-    ("Vodafone",       "Vodafone"),
-    ("CapgeminiGroup", "Capgemini"),
-    ("Accenture",      "Accenture"),
-    ("CGI",            "CGI"),
-    ("Fujitsu",        "Fujitsu"),
-    ("Atos",           "Atos"),
-    ("DXC",            "DXC Technology"),
-    ("BT",             "BT"),
-    ("Virgin",         "Virgin Media O2"),
-    ("Siemens",        "Siemens"),
-    ("IBM",            "IBM"),
-    ("NatWest",        "NatWest"),
-    ("Barclays",       "Barclays"),
-    ("HSBC",           "HSBC"),
-    ("BritishAirways", "British Airways"),
-    ("RollsRoyce",     "Rolls-Royce"),
-    ("BAEsystems",     "BAE Systems"),
-    ("Airbus",         "Airbus"),
-    ("AstraZeneca",    "AstraZeneca"),
-    ("GlaxoSmithKline","GSK"),
-    ("BPGlobal",       "BP"),
-    ("Shell",          "Shell"),
-    ("Deloitte",       "Deloitte"),
-    ("PwC",            "PwC"),
-    ("EY",             "EY"),
+    ("ServiceNow", "ServiceNow"),
+    ("Experian",   "Experian"),
+    ("Ubisoft2",   "Ubisoft"),
+    ("Version1",   "Version 1"),
+    ("Visa",       "Visa"),
 ]

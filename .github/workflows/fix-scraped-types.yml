@@ -1,0 +1,40 @@
+# One-off, dispatch-only: retype already-scraped rows from their titles after the
+# Trackr category bug, listing unrecoverable ghost rows. Dry run by default.
+name: Fix Scraped Types (one-off)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print changes without writing (set to false to apply)"
+        required: false
+        default: "true"
+      fix_ghosts:
+        description: "Also delete ghost rows whose role equals their company (only with dry_run false)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  fix-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r scripts/requirements.txt
+
+      - name: Retype scraped rows
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ inputs.dry_run == 'false' && '0' || '1' }}
+          FIX_GHOSTS: ${{ inputs.fix_ghosts == 'true' && '1' || '' }}
+        run: python scripts/fix_scraped_types.py
