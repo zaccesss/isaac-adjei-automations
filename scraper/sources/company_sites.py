@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from ..http import HEADERS, SESSION
 
 from ..db import dedupe_key, insert_job
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..locations import normalize_location
 from ..stats import record_stat
 
@@ -108,7 +108,7 @@ def scrape_company_sites_playwright(ctx) -> int:
                         "role": title,
                         "location": normalize_location(location),
                         "url": url,
-                        "type": infer_type(title),
+                        "type": resolve_type(title),
                         "cv_required": True,
                     })
                     ctx.existing_keys.add(key)
@@ -188,7 +188,7 @@ def scrape_company_sites_playwright(ctx) -> int:
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
-                    "type": infer_type(title),
+                    "type": resolve_type(title),
                     "cv_required": True,
                 })
                 ctx.existing_keys.add(key)
@@ -255,7 +255,7 @@ def scrape_company_sites_playwright(ctx) -> int:
                         "role": title,
                         "location": normalize_location(city),
                         "url": url,
-                        "type": infer_type(title),
+                        "type": resolve_type(title),
                         "cv_required": True,
                     })
                     ctx.existing_keys.add(key)
@@ -320,7 +320,7 @@ def scrape_company_sites_playwright(ctx) -> int:
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
-                    "type": infer_type(title),
+                    "type": resolve_type(title),
                     "cv_required": True,
                 })
                 ctx.existing_keys.add(key)
@@ -391,7 +391,7 @@ def scrape_company_sites_playwright(ctx) -> int:
                     "role": title,
                     "location": normalize_location(location),
                     "url": url,
-                    "type": infer_type(title),
+                    "type": resolve_type(title),
                     "cv_required": True,
                 })
                 ctx.existing_keys.add(key)

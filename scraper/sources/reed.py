@@ -2,7 +2,7 @@
 
 import time
 from ..db import insert_job
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..locations import normalize_location
 from .. import config
 from ..stats import record_stat
@@ -93,7 +93,7 @@ def scrape_reed(ctx) -> int:
                 if insert_job(ctx, {
                     "company":  company,
                     "role":     title,
-                    "type":     infer_type(title),
+                    "type":     resolve_type(title),
                     "url":      job_url,
                     "location": normalize_location(location),
                     "source":   "Reed",

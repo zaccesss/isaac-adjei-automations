@@ -2,7 +2,7 @@
 
 import time
 from ..db import insert_job
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import SMARTRECRUITERS_COMPANIES
@@ -56,7 +56,7 @@ def scrape_smartrecruiters(
             if insert_job(ctx, {
                 "company":  company_name,
                 "role":     title,
-                "type":     infer_type(title),
+                "type":     resolve_type(title),
                 "url":      job_url,
                 "location": location,
                 "source":   "SmartRecruiters",

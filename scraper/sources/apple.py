@@ -3,7 +3,7 @@
 import time
 import json
 from ..db import insert_job
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..http import HEADERS
 from ..stats import record_stat
 from ..http import SESSION
@@ -51,7 +51,7 @@ def scrape_apple(ctx) -> int:
                 if insert_job(ctx, {
                     "company":  "Apple",
                     "role":     title,
-                    "type":     infer_type(title),
+                    "type":     resolve_type(title),
                     "url":      job_url,
                     "location": location,
                     "source":   "Apple Careers",
