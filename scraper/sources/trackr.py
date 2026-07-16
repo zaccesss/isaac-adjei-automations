@@ -2,6 +2,8 @@
 
 import time
 from ..data.keywords import TECH_KEYWORDS
+from urllib.parse import quote
+
 from ..dates import _parse_trackr_date
 from ..db import insert_job
 from ..filters import _SENIOR_ROLE_RE, infer_type, is_relevant
@@ -185,6 +187,19 @@ def scrape_trackr_all(ctx) -> int:
                         job_url = (
                             f"https://app.the-trackr.com{job_url}"
                         )
+                    # Rows with no external apply link still get a clickable
+                    # link: the Trackr company page, fragment-tagged with the
+                    # programme so the URL stays unique per role for dedupe and
+                    # in-place refreshes (the fragment never reaches the server).
+                    if not job_url and company_el:
+                        _chref = company_el.get_attribute("href") or ""
+                        if _chref.startswith("/company/"):
+                            _prog_tag = quote(
+                                _trackr_col(cells, colmap, "programme")[:80]
+                            )
+                            job_url = (
+                                f"https://app.the-trackr.com{_chref}#{_prog_tag}"
+                            )
 
                     # I read the date and location columns by name. Where a
                     # header was not matched I fall back to scanning the
