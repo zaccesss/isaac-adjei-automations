@@ -36,18 +36,24 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
 
 def load_existing_keys(ctx) -> None:
     # I load all existing keys at the start of each run so every insert check
-    # is an O(1) set lookup rather than a DB query per row. On a fresh DB this
-    # loads an empty set and everything gets inserted.
+    # is an O(1) set lookup rather than a DB query per row. PostgREST caps a
+    # single response at 1000 rows and this table passed that long ago, so the
+    # read pages in batches - a bare select silently stopped at the first 1000,
+    # which made every older row look brand new on every run (a wasted liveness
+    # check and AI call each, saved only by the 23505 fallback).
     try:
-        res = ctx.supabase.table("applications").select(
-            "company,role,url"
-        ).execute()
-        ctx.existing_keys = {
-            dedupe_key(r["company"], r["role"], r.get("url") or "")
-            for r in (res.data or [])
-        }
-        # Remember which URLs already exist so insert_job updates them in place rather than skipping.
-        ctx.existing_urls.update(r["url"] for r in (res.data or []) if r.get("url"))
+        for start in range(0, 200_000, 1000):
+            res = ctx.supabase.table("applications").select(
+                "company,role,url"
+            ).range(start, start + 999).execute()
+            rows = res.data or []
+            ctx.existing_keys.update(
+                dedupe_key(r["company"], r["role"], r.get("url") or "") for r in rows
+            )
+            # Remember which URLs already exist so insert_job updates them in place rather than skipping.
+            ctx.existing_urls.update(r["url"] for r in rows if r.get("url"))
+            if len(rows) < 1000:
+                break
         if not ctx.existing_keys:
             # I warn here because an empty result on a populated DB usually
             # means RLS is blocking the SELECT - the upsert below will still
