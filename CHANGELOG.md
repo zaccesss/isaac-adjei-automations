@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-16
+
+### Fixed
+
+- The scraper's existing-row pre-load now pages past PostgREST's 1000-row cap. A bare select silently stopped at the first 1000 rows once the table outgrew that, so every older listing looked brand new on every run: a wasted liveness check and AI enrichment call each, saved from duplication only by the unique-constraint fallback. The first packaged run printed "Found 999 existing applications" against a table several times that size, which is what gave it away (#69)
+
+---
+
 ## 2026-07-15
 
 ### Changed
