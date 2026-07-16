@@ -49,6 +49,28 @@ def test_is_relevant_requires_student_tech_and_location():
     assert not is_relevant("Software Intern", "Acme", "New York")
 
 
+def test_whole_word_terms_stop_the_lookalikes():
+    # Substring matching once let all of these through; each is a real case
+    # caught in the July 2026 verification runs.
+    assert not is_student_role("Outplacement Consultant", None)
+    assert not is_student_role("Replacement Parts Engineer", None)
+    assert not is_student_role("Workshop Engineer", None)
+    assert not is_student_role("Senior Software Engineer - Networking for AI", None)
+    assert not is_relevant("Repair Technician", "Acme", "London")
+    assert is_student_role("Technology Coding Workshop", None)
+
+
+def test_commercial_roles_are_rejected_outright():
+    assert not is_relevant("Named Account Executive, Thailand", "Cloudflare", "")
+    assert not is_relevant("Business Development Representative - Danish Speaking", "Cloudflare", "")
+    assert not is_relevant("Sales Engineer Intern", "Acme", "London")
+
+
+def test_senior_titles_beat_placement_words_in_typing():
+    assert infer_type("Senior Engineer, Placement Supervision") == "Full-time Job"
+    assert infer_type("Software Engineer Industrial Placement") == "Industrial Placement"
+
+
 def test_detect_category_company_first_then_title():
     assert detect_category("Google", "Marketing Intern") == "FAANG+"
     assert detect_category("Optiver", "Software Intern") == "Quant Developer"

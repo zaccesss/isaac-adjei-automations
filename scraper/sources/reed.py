@@ -51,6 +51,16 @@ def scrape_reed(ctx) -> int:
          "locationName": "London", "distanceFromLocation": 20},
         {"keywords": "year in industry",
          "locationName": "London", "distanceFromLocation": 20},
+        # Embedded and hardware passes: I am hunting embedded and hardware
+        # placements as much as software ones, so these get their own queries.
+        {"keywords": "embedded software placement",
+         "locationName": "United Kingdom"},
+        {"keywords": "electronics placement",
+         "locationName": "United Kingdom"},
+        {"keywords": "hardware engineering internship",
+         "locationName": "United Kingdom"},
+        {"keywords": "embedded internship",
+         "locationName": "London", "distanceFromLocation": 20},
     ]
 
     count = 0

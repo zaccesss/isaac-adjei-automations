@@ -59,7 +59,7 @@ US_LOCATIONS = [
     # Canada (separate from UK/EU)
     "toronto", "vancouver", "montreal", "canada",
     # Asia-Pacific
-    "tokyo", "bangalore", "hyderabad", "india", "china",
+    "tokyo", "bangalore", "bengaluru", "hyderabad", "india", "china",
     # Exclude honolulu, hawaii specifically
     "honolulu", "hawaii",
     # I add these normalised remote-US strings because the scraper lowercases

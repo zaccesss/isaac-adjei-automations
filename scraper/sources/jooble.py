@@ -32,6 +32,9 @@ def scrape_jooble(ctx) -> int:
         {"keywords": "technology intern", "location": "London"},
         {"keywords": "industrial placement", "location": "London"},
         {"keywords": "engineering internship", "location": "London"},
+        # Embedded and hardware passes, per my placement hunt.
+        {"keywords": "embedded internship", "location": "United Kingdom"},
+        {"keywords": "electronics placement", "location": "United Kingdom"},
     ]
 
     count = 0
