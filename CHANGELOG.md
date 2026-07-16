@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- The URL heal matches on company and role now: the fallback link changes the url-based dedupe key, so the first healing pass inserted linked twins next to the old url-less rows instead of filling them. The one-off workflow cleans those twins up and, separately approved, purges scraped rows no scrape has stamped in 14 days - dead listings like the job-not-found Google link. Rows I have progressed are never touched by either (#65)
 - A scraped row whose title carries no student signal at all resolves to the Jobs tab now, whatever it was stamped with before: the new resolve_type sits behind every source and the retype workflow, so "Networking Architect" and friends can never keep an Internship or Event label. The senior-title pattern also learns Sr, Architect and roman numeral grades, which is what let those rows keep hiding (#65)
 - Rows that were inserted while the parser could not read their apply link heal themselves now: when a scrape meets a known company-and-role row that carries no URL, it fills the link in place, so the linkless Trackr rows from before the parser fix pick their links up on the next run (#65)
 - The retype workflow also reports, without touching anything, the rows todays filters would no longer accept and the rows no scrape has seen in 14 days - the evidence base for a separately approved clean-up of listings that are gone from the boards (#65)
