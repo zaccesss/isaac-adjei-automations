@@ -25,8 +25,9 @@ _INTERNAL_FUNCTION_RE = re.compile(
 # I skip the department-name fallback for clearly senior or non-student titles
 # so MongoDB / Adyen roles tagged under a university dept do not slip through.
 _SENIOR_ROLE_RE = re.compile(
-    r'\b(staff|senior|lead|principal|director|vp\b|vice president|head of|'
-    r'manager|recruiter|auditor|contractor|contract\b|associate recruiter)\b',
+    r'\b(staff|senior|sr\.?|lead|principal|architect|director|vp\b|'
+    r'vice president|head of|manager|recruiter|auditor|contractor|'
+    r'contract\b|associate recruiter|ii|iii|iv)\b',
     re.IGNORECASE
 )
 
@@ -201,6 +202,19 @@ def infer_type(title: str, default: str = "Internship") -> str:
     if _SENIOR_ROLE_RE.search(title):
         return "Full-time Job"
     return default
+
+def resolve_type(title: str, fallback: str = "Internship") -> str:
+    """infer_type with an honest default for signal-free titles.
+
+    A title with no student signal at all is a full-time job whatever tab it
+    used to sit in - "Networking Architect" carries nothing student-facing, so
+    it must never keep an Internship or Event label. Student-facing titles
+    whose specific type cannot be read fall back to the caller's default.
+    """
+    if not is_student_role(title, None):
+        return infer_type(title, default="Full-time Job")
+    return infer_type(title, default=fallback)
+
 
 
 _FAANG = {"google", "meta", "amazon", "apple", "microsoft", "netflix", "deepmind", "openai", "anthropic"}

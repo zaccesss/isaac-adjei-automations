@@ -1,7 +1,7 @@
 # Cases derived from the inline comments in scraper/filters.py: the whole-word intern
 # match, the Internal exclusions, the senior-title guard on the department fallback and
 # the per-category ordering of infer_type.
-from scraper.filters import detect_category, infer_type, is_relevant, is_student_role
+from scraper.filters import detect_category, infer_type, is_relevant, is_student_role, resolve_type
 
 
 def test_internal_titles_are_rejected():
@@ -77,3 +77,16 @@ def test_detect_category_company_first_then_title():
     assert detect_category("Acme", "Machine Learning Intern") == "AI and Machine Learning"
     assert detect_category("Acme", "Firmware Engineer Intern") == "Embedded"
     assert detect_category("Acme", "Software Intern") == "Software Engineering"
+
+
+def test_resolve_type_sends_signal_free_titles_to_jobs():
+    # Professional titles with no student signal must never keep a student tab,
+    # whatever they were stamped with before.
+    assert resolve_type("Networking Architect", fallback="Event") == "Full-time Job"
+    assert resolve_type("Sr Software Engineer-Networking", fallback="Event") == "Full-time Job"
+    assert resolve_type("Python Developer II", fallback="Internship") == "Full-time Job"
+    assert resolve_type("Solutions Architect, Networking - Hyperscale", fallback="Event") == "Full-time Job"
+    # Real student roles and real events keep their meaning.
+    assert resolve_type("Software Engineer Industrial Placement") == "Industrial Placement"
+    assert resolve_type("Engineering Open Day", fallback="Internship") == "Event"
+    assert resolve_type("Aarhus Networking Event for Students", fallback="Internship") == "Event"

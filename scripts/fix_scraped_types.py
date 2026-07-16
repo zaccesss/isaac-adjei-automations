@@ -4,9 +4,9 @@ The Trackr scraper spent a while stamping rows with whichever category page reac
 them first (all four routes serve the same table), and rows without an external
 apply link never take the update path that would have healed them on re-scrape.
 This recomputes each scraped row's type from its own title, exactly as the scraper
-does now, and only changes rows whose title carries a real signal: infer_type gets
-the row's current type as the default, so a title with no placement, spring, grad,
-event or intern term keeps whatever it has.
+does now. A title with no student signal at all resolves to Full-time Job (it was
+never an internship, placement or event, whatever tab it sat in); student-facing
+titles without a specific type term keep their current value.
 
 Only rows with status='scraped' are touched (type is scraper-owned on those; rows
 I have progressed stay exactly as I left them). Ghost rows whose role equals their
@@ -24,7 +24,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from supabase import create_client  # noqa: E402
 
-from scraper.filters import infer_type  # noqa: E402
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+from scraper.filters import is_relevant, resolve_type  # noqa: E402
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].strip()
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
@@ -38,7 +40,7 @@ def main():
     rows = []
     for start in range(0, 200_000, 1000):
         res = supabase.table("applications").select(
-            "id,company,role,type,source"
+            "id,company,role,type,source,location,last_scraped_at"
         ).eq("status", "scraped").range(start, start + 999).execute()
         page = res.data or []
         rows.extend(page)
@@ -55,7 +57,7 @@ def main():
         if role and company and role.lower() == company.lower():
             ghosts.append(r)
             continue
-        expected = infer_type(role, default=current)
+        expected = resolve_type(role, fallback=current)
         if expected != current:
             print(f"  retype {company} | {role}: {current} -> {expected}")
             retyped += 1
@@ -66,7 +68,26 @@ def main():
 
     print(f"\n{retyped} rows {'would be' if DRY_RUN else ''} retyped")
 
-    print(f"{len(ghosts)} ghost rows (role equals company, unrecoverable):")
+    # Report-only: rows the strengthened filters would no longer accept at all
+    # (commercial titles, non-tech roles) and rows the boards have stopped listing
+    # (no freshness stamp for 14 days). Nothing here is changed or deleted - these
+    # counts are the evidence for a separate, explicitly approved clean-up.
+    irrelevant = [
+        r for r in rows
+        if (r.get("role") or "") and (r.get("company") or "")
+        and not is_relevant(r["role"], r["company"], r.get("location") or "")
+    ]
+    print(f"\n{len(irrelevant)} rows would no longer pass todays filters (report only):")
+    for r in irrelevant[:20]:
+        print(f"  no-longer-relevant: {r['company']} | {r['role']}")
+    if len(irrelevant) > 20:
+        print(f"  ... plus {len(irrelevant) - 20} more")
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    stale = [r for r in rows if (r.get("last_scraped_at") or "") < cutoff]
+    print(f"\n{len(stale)} rows not seen by any scrape in 14 days (report only - likely gone from the boards)")
+
+    print(f"\n{len(ghosts)} ghost rows (role equals company, unrecoverable):")
     for g in ghosts:
         print(f"  ghost {g.get('source') or '?'}: {g['company']} | {g['role']}")
     if ghosts and FIX_GHOSTS and not DRY_RUN:

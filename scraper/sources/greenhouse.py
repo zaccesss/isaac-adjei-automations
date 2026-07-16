@@ -4,7 +4,7 @@ import time
 from ..dates import _parse_greenhouse_date
 from ..db import insert_job
 from ..detect import _strip_html, detect_cover_letter_required, detect_sponsors_visa
-from ..filters import infer_type, is_relevant, is_relevant_job
+from ..filters import resolve_type, is_relevant, is_relevant_job
 from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import GREENHOUSE_COMPANIES
@@ -105,7 +105,7 @@ def scrape_greenhouse(
                 if insert_job(ctx, {
                     "company":              company_name,
                     "role":                 title,
-                    "type":                 infer_type(title),
+                    "type":                 resolve_type(title),
                     "url":                  job_url,
                     "location":             location,
                     "source":               "Greenhouse",

@@ -3,7 +3,7 @@
 import time
 from ..data.companies import PRIORITY_COMPANIES
 from ..db import insert_job
-from ..filters import infer_type, is_relevant, is_relevant_job
+from ..filters import resolve_type, is_relevant, is_relevant_job
 from ..http import HEADERS
 from ..locations import is_location_ok
 from ..budget import over_budget
@@ -86,7 +86,7 @@ def scrape_workday(
                     if insert_job(ctx, {
                         "company":  company_name,
                         "role":     title,
-                        "type":     infer_type(title),
+                        "type":     resolve_type(title),
                         "url":      job_url,
                         "location": location_text,
                         "source":   "Workday",

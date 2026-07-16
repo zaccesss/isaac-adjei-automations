@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from ..dates import _parse_trackr_date
 from ..db import insert_job
-from ..filters import _SENIOR_ROLE_RE, infer_type, is_relevant
+from ..filters import _SENIOR_ROLE_RE, resolve_type, is_relevant
 from ..stats import record_stat
 
 # ─── THE TRACKR (Playwright - JS rendered) ──────────────────────────────────
@@ -248,7 +248,7 @@ def scrape_trackr_all(ctx) -> int:
                         continue
                     # The row's own title decides its type now that every
                     # category route serves the same table.
-                    row_type = infer_type(programme, default="Internship")
+                    row_type = resolve_type(programme, default="Internship")
                     # I bypass the student-term check for placement, spring-week
                     # and graduate rows because their type already came from a
                     # placement or scheme term in the title - requiring

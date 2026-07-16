@@ -1,7 +1,7 @@
 """Source: arbeitnow."""
 
 from ..db import insert_job
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..locations import normalize_location
 from ..stats import record_stat
 from ..http import SESSION
@@ -37,7 +37,7 @@ def scrape_arbeitnow(ctx) -> int:
             if insert_job(ctx, {
                 "company":  company,
                 "role":     title,
-                "type":     infer_type(title),
+                "type":     resolve_type(title),
                 "url":      job_url,
                 "location": normalize_location(location),
                 "source":   "Arbeitnow",

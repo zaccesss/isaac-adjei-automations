@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from ..db import insert_job
 from ..detect import detect_cover_letter_required, detect_sponsors_visa
-from ..filters import infer_type, is_relevant
+from ..filters import resolve_type, is_relevant
 from ..http import HEADERS
 from ..stats import record_stat
 from ..http import SESSION
@@ -66,7 +66,7 @@ def scrape_amazon(ctx) -> int:
                     if insert_job(ctx, {
                         "company":               "Amazon",
                         "role":                  title,
-                        "type":                  infer_type(title),
+                        "type":                  resolve_type(title),
                         "url":                   job_url,
                         "location":              location,
                         "source":                "Amazon Jobs",
