@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-17
+
+### Added
+
+- RateMyPlacement joins the scraper as a browserless source. The board (part of the Higher In platform) server-renders its results and embeds the whole page of jobs as JSON in a window assignment, so I read that directly and page through it, no browser needed. I pull the three job-type slugs the site actually filters on (placements, internships and insight or vacation schemes) across every page, keep only genuine tech roles with the shared whole-word classifier and file each under its type. The links point straight at the individual role on higherin.com, which is exactly the specific per-role link the careers-page-only Trackr rows lack, so this adds a source of direct apply links for the placement year I am hunting. Early in the cycle most listings are "Register Your Interest" pre-registration entries, which are worth keeping (registering early is the right move); I strip that prefix so the stored title is clean and classifies correctly, and real open roles fill in on later pages as the season opens (#65)
+
 ## 2026-07-16
 
 ### Fixed
