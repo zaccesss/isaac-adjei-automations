@@ -209,6 +209,15 @@ ASHBY_COMPANIES = [
 # unknown tenants rather than a 404, so the whole list was silently contributing
 # nothing). These are the tenants that verifiably return postings on the anonymous
 # API today; Version1 is a major UK and Ireland placement employer.
+EIGHTFOLD_COMPANIES = [
+    # (tenant, domain, display_name) for the Eightfold public jobs API. STMicro
+    # is a major semiconductor maker with a UK design centre in Edinburgh, exactly
+    # the embedded and hardware placements I am hunting; verified live July 2026
+    # (514 positions). Eightfold is a whole ATS platform, so more tenants can join
+    # this list as I verify their exact slug.
+    ("stmicroelectronics", "stmicroelectronics.com", "STMicroelectronics"),
+]
+
 SMARTRECRUITERS_COMPANIES = [
     ("ServiceNow", "ServiceNow"),
     ("Experian",   "Experian"),
