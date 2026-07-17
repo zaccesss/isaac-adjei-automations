@@ -5,9 +5,11 @@ source belongs to. gated marks the sources the old main() wrapped in an over-bud
 check; The Trackr, the company-sites browser source and the first four API families
 manage the budget internally, so they stay ungated to keep the behaviour identical.
 
-The Trackr now runs in the fast "api" job: it reads the api.the-trackr.com
-programmes JSON directly, so it no longer needs the Playwright install the browser
-job carries for the company-sites source.
+The Trackr and RateMyPlacement run in the fast "api" job: they read JSON directly
+and need no browser. Gradcracker, Bright Network and Milkround run in the "browser"
+job because their Cloudflare fallback is a real Camoufox browser (via Scrapling)
+that the job installs alongside Playwright; their fast path is still a browserless
+curl_cffi fetch, so only the boards Cloudflare hard-challenges pay the browser cost.
 """
 from . import (
     adzuna,
@@ -36,9 +38,9 @@ from . import (
 SOURCES = [
     ("The Trackr", "api", False, trackr.run),
     ("RateMyPlacement", "api", True, ratemyplacement.run),
-    ("Gradcracker", "api", True, gradcracker.run),
-    ("Bright Network", "api", True, brightnetwork.run),
-    ("Milkround", "api", True, milkround.run),
+    ("Gradcracker", "browser", True, gradcracker.run),
+    ("Bright Network", "browser", True, brightnetwork.run),
+    ("Milkround", "browser", True, milkround.run),
     ("Company career sites", "browser", False, company_sites.run),
     ("Greenhouse", "api", False, greenhouse.run),
     ("Lever", "api", False, lever.run),
