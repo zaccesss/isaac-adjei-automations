@@ -30,7 +30,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 
 | Job | Status | Cadence | What it does |
 |---|---|---|---|
-| Job scraper | ![job-scraper](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/osSSm2dX/job-scraper.svg) | daily 01:23 UTC | Scrapes the job boards and posts new roles to `#jobs` |
+| Job scraper | ![job-scraper](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/osSSm2dX/job-scraper.svg) | daily, two off-peak tries | Scrapes the job boards and career sites and posts new roles to `#jobs` |
 | Spotify history | ![spotify-history](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/VYd-foem/spotify-history.svg) | every 30 min | Records my Spotify plays into `listening_history` for the analytics pages |
 | Recategorise | ![recategorise](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/rpqZYXYy/recategorise.svg) | 05-08 UK | Re-tags scraped applications, idempotently |
 
