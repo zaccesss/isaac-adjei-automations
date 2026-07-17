@@ -6,7 +6,7 @@ name: Spotify history
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "23 * * * *" # hourly backup; the API serves the last 50 plays so even this alone misses nothing
   workflow_dispatch:
 
 permissions:

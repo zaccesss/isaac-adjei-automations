@@ -8,7 +8,7 @@ on:
   schedule:
     # Fire every 30 min across 07:00-10:00 UTC (covers the 08:00-10:00 UK window in BST and GMT). GitHub
     # drops many scheduled runs, so several tries guarantee one lands; the script claims once per day.
-    - cron: "17,47 7-10 * * *"
+    - cron: "17,47 8 * * *" # backup pair at 08:17/08:47 UTC: inside the 08:00-10:00 UK window in GMT and BST
   workflow_dispatch:
     inputs:
       force:

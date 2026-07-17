@@ -8,7 +8,7 @@ on:
   schedule:
     # The sync is idempotent, so run it every 3 hours to keep the coding dashboard fresh and to survive
     # GitHub dropping any single scheduled run. No time gate needed.
-    - cron: "19 */3 * * *"
+    - cron: "19 */6 * * *" # backup every 6 hours, matching the primary cadence; idempotent upsert
   workflow_dispatch:
 
 concurrency:
