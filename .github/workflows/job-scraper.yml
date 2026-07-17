@@ -105,6 +105,21 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
 
+      # Scrapling's Camoufox browser is the Cloudflare-challenge fallback for the
+      # student boards (Gradcracker, Bright Network, Milkround). I cache the
+      # ~150 MB browser download so repeat runs skip it.
+      - name: Cache Camoufox browser
+        id: camoufox-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/camoufox
+          key: ${{ runner.os }}-camoufox-v1
+
+      - name: Install Scrapling and Camoufox
+        run: |
+          pip install "scrapling[fetchers]==0.4.11"
+          scrapling install
+
       - name: Run browser scrapers
         env:
           SCRAPER_MODE: browser
