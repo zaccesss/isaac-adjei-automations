@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-07-17
 
+### Fixed
+
+- The student boards reach Cloudflare from CI now. curl_cffi clears Cloudflare's TLS-fingerprint check but not its IP-reputation layer, and GitHub's shared runner IPs are flagged, so Bright Network and Milkround returned 403 in Actions while working from a home IP. The fetch helper now falls back, only on that 403, to Scrapling's StealthyFetcher, a real Camoufox browser that solves the managed Turnstile challenge; a dispatch experiment confirmed it reaches both boards from an Actions runner with no proxy and no external VM. curl_cffi stays the fast first attempt (it is enough for Gradcracker), so only the boards Cloudflare hard-challenges pay the browser cost. Gradcracker, Bright Network and Milkround move to the browser job, which installs the Camoufox browser next to Playwright and caches it (#65)
+
 ### Added
 
 - STMicroelectronics joins the scraper through a new Eightfold source. Eightfold is an ATS platform whose careers widget is backed by a public JSON endpoint (/api/apply/v2/jobs) that needs no browser and no key; each position carries its own canonical role URL, location and full description, so I read it like the other ATS families and scope the query to the UK, since these global chipmakers would otherwise flood the Jobs tab with fab roles I cannot take a placement at. STMicro is a major semiconductor maker with a UK design centre in Edinburgh, exactly the hardware placements I am hunting; the source is generic, so more Eightfold tenants can join as I verify each one's slug (#65)
