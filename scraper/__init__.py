@@ -2,22 +2,23 @@
 """Job scraper package - runs daily via GitHub Actions as python -m scraper (two off-peak
 tries; the upsert de-duplicates).
 
-Sources:
-  - The Trackr (Playwright - JS rendered, best UK internship aggregator)
-  - Google Careers     (Playwright - React SPA, no public REST API)
-  - Meta Careers       (Playwright - React SPA, no public REST API)
-  - ARM Careers        (Playwright - Workday with proprietary session auth)
-  - Goldman Sachs      (Playwright - higher.gs.com React portal)
-  - JPMorgan Careers   (Playwright - React SPA, Workday with proprietary auth)
+Sources (api-mode run in the fast job, browser-mode in the Playwright/Camoufox job):
+  - The Trackr         (api.the-trackr.com programmes JSON, all UK Tech tabs)
+  - RateMyPlacement    (embedded search JSON, placements/internships/insights)
   - Greenhouse JSON API  (50+ companies)
-  - Lever JSON API       (5+ companies)
-  - Ashby REST API       (30+ companies)
-  - Amazon Jobs JSON API (custom scraper)
-  - Workday CXS API    (NVIDIA, Intel, Morgan Stanley)
-  - SmartRecruiters    (JSON API)
-  - Apple, Microsoft   (custom JSON APIs)
+  - Lever JSON API       (companies list)
+  - Ashby REST API       (companies list)
+  - SmartRecruiters      (JSON API, live tenants)
+  - Eightfold            (public /api/apply jobs, e.g. STMicroelectronics)
+  - Oracle Recruiting    (recruitingCEJobRequisitions REST, JPMorgan + Texas Instruments)
+  - Amazon, Apple, Microsoft (custom JSON APIs)
+  - Workday CXS API      (NVIDIA, Intel, Morgan Stanley, Analog Devices, Micron, NXP, Marvell)
   - Reed, Adzuna, Jooble, Remotive, Arbeitnow, Jobicy (job board APIs)
-  - Gradcracker, RateMyPlacement, TargetJobs, BrightNetwork (BeautifulSoup)
+  - Gradcracker, Bright Network, Milkround (curl_cffi HTML, Scrapling Camoufox
+    fallback that solves the Cloudflare challenge from a data-centre IP)
+  - Goldman Sachs        (Scrapling Camoufox render of higher.gs.com)
+  - Company career sites (Playwright - ARM via Radancy JSON; Google/Meta/Goldman/
+    JPMorgan legacy passes now superseded by the sources above)
 
 Only student-facing roles are saved: internships, placements, spring/insight
 weeks, graduate schemes, apprenticeships. Full-time permanent roles are
