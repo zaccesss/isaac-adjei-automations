@@ -46,6 +46,7 @@ PRIORITY_COMPANIES = {
     "riverlane", "quantinuum", "phasecraft", "pasqal",
     "oxford nanopore", "illumina", "10x genomics",
     "wayve", "five ai", "oxbotica", "oxa",
+    "axelera", "psiquantum", "lightmatter",
     # More UK tech companies
     "revolut", "checkout.com", "weaveworks", "thought machine",
     "onfido", "improbable", "babylon health", "benevolentai",
@@ -138,6 +139,13 @@ GREENHOUSE_COMPANIES = [
     ("helsing",            "Helsing"),
     ("ocadogroup",         "Ocado Group"),
     ("andurilindustries",  "Anduril"),
+    # Silicon photonics, quantum and robotics - each verified live July 2026
+    # (job counts probed before adding). Their software roles come through too,
+    # not only the hardware ones.
+    ("lightmatter",        "Lightmatter"),
+    ("psiquantum",         "PsiQuantum"),
+    ("figure",             "Figure"),
+    ("agilityrobotics",    "Agility Robotics"),
 ]
 
 # Lever slugs confirmed to return HTTP 200 with real listings.
@@ -146,6 +154,8 @@ LEVER_COMPANIES = [
     ("wealthsimple", "Wealthsimple"),
     ("cloudinary",   "Cloudinary"),
     ("spotify",      "Spotify"),
+    # Robotic manipulation - verified live July 2026.
+    ("dexterity",    "Dexterity"),
 ]
 
 # (ashby_slug, display_name) - confirmed against live API.
@@ -186,6 +196,12 @@ ASHBY_COMPANIES = [
     ("cerebras",        "Cerebras"),
     ("cognition",       "Cognition"),
     ("ramp",            "Ramp"),
+    # AI-accelerator and robotics silicon, each verified live July 2026. Axelera
+    # is an Eindhoven edge-AI chip firm; Etched builds transformer ASICs; Physical
+    # Intelligence builds robot foundation models. Their software roles come too.
+    ("axelera",             "Axelera AI"),
+    ("etched",              "Etched"),
+    ("physicalintelligence", "Physical Intelligence"),
 ]
 
 # SmartRecruiters, rebuilt July 2026 after a full live sweep: every one of the 26
