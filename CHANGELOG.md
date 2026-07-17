@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-07-17
 
+### Added
+
+- Goldman Sachs and JPMorgan join the scraper, two of the FAANG-plus career sites whose old Playwright scrapers returned zero. Goldman runs a JavaScript app with an obfuscated backing fetch, so I render its roles results with Scrapling's Camoufox browser and read the UK tech cards out of the populated DOM, each linking to the specific role. JPMorgan runs on Oracle Recruiting Cloud, whose REST API is reachable with a plain request once the expand parameter is supplied (without it the keyword search returns a count but an empty list), so it needs no browser; I keep the UK early-careers tech roles by their location. Google and Meta are deliberately left out: Google's results app serves its job list only intermittently to an automated browser, and Meta keeps its listings behind a Relay GraphQL query whose persisted id rotates, so both would be fragile, and their internships already arrive through the Trackr (#71)
+
 ### Fixed
 
 - The student boards reach Cloudflare from CI now. curl_cffi clears Cloudflare's TLS-fingerprint check but not its IP-reputation layer, and GitHub's shared runner IPs are flagged, so Bright Network and Milkround returned 403 in Actions while working from a home IP. The fetch helper now falls back, only on that 403, to Scrapling's StealthyFetcher, a real Camoufox browser that solves the managed Turnstile challenge; a dispatch experiment confirmed it reaches both boards from an Actions runner with no proxy and no external VM. curl_cffi stays the fast first attempt (it is enough for Gradcracker), so only the boards Cloudflare hard-challenges pay the browser cost. Gradcracker, Bright Network and Milkround move to the browser job, which installs the Camoufox browser next to Playwright and caches it (#65)
