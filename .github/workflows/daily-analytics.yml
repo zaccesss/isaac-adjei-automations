@@ -8,7 +8,7 @@ name: Daily Analytics
 
 on:
   schedule:
-    - cron: "23,53 0-3 * * *" # every 30 min, 00:23-03:53 UTC (covers the 01:00-04:00 UK window in BST and GMT)
+    - cron: "23,53 2 * * *" # backup pair at 02:23/02:53 UTC: inside the 01:00-04:00 UK window in GMT (02:23 UK) and BST (03:23 UK)
   workflow_dispatch:
     inputs:
       force:

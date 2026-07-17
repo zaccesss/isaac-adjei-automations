@@ -7,8 +7,8 @@ name: Routine checklist
 
 on:
   schedule:
-    - cron: "9,39 6-9 * * *" # morning: 06:09-09:39 UTC covers the 07:00-09:00 UK window in BST and GMT
-    - cron: "9,39 19-21 * * *" # evening: 19:09-21:39 UTC covers the 20:00-22:00 UK window in BST and GMT
+    - cron: "9,39 7 * * *" # morning backup pair at 07:09/07:39 UTC: inside the 07:00-09:00 UK window in GMT and BST
+    - cron: "9,39 20 * * *" # evening backup pair at 20:09/20:39 UTC: inside the 20:00-22:00 UK window in GMT and BST
   workflow_dispatch:
     inputs:
       force:

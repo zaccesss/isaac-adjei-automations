@@ -8,8 +8,8 @@ name: Daily Streak Reminder
 
 on:
   schedule:
-    - cron: "13,43 7-10 * * *" # morning: 07:13-10:43 UTC covers the 08:00-10:00 UK window in BST and GMT
-    - cron: "13,43 19-21 * * *" # evening: 19:13-21:43 UTC covers the 20:00-22:00 UK window in BST and GMT
+    - cron: "13,43 8 * * *" # morning backup pair at 08:13/08:43 UTC: inside the 08:00-10:00 UK window in GMT and BST
+    - cron: "13,43 20 * * *" # evening backup pair at 20:13/20:43 UTC: inside the 20:00-22:00 UK window in GMT and BST
   workflow_dispatch:
     inputs:
       force:
