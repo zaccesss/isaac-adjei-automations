@@ -17,3 +17,6 @@ secrets.*
 # os / logs
 .DS_Store
 *.log
+
+# scraper run artifact - the per-source summary table the workflow cats, not source
+source-stats.md

@@ -19,6 +19,14 @@ import time
 
 import requests
 
+# I reuse the scraper package's own category set and company lists rather than
+# keeping a second copy here that could drift out of step with what the scraper
+# stamps on insert. filters and ai import nothing heavier than requests, so this
+# adds no dependency to the recategorise workflow.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from scraper.ai import AI_CATEGORIES as CATEGORIES  # noqa: E402
+from scraper.filters import _FAANG, _QUANT_COMPANIES  # noqa: E402
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
@@ -28,24 +36,12 @@ GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
 DRY_RUN = bool(os.environ.get("RECATEGORISE_DRY_RUN", "").strip())
 BATCH = 40
 
-CATEGORIES = {
-    "AI and Machine Learning", "Cyber Security", "Data Science", "DevOps and Infrastructure",
-    "Embedded", "FAANG+", "Hardware", "IT", "Quant Developer", "Software Engineering",
-    "Startups", "Tech Consulting",
-}
-_FAANG = {"google", "meta", "amazon", "apple", "microsoft", "netflix", "deepmind", "openai", "anthropic"}
-_QUANT = {
-    "citadel", "optiver", "jane street", "imc", "jump", "two sigma", "susquehanna", "hudson river",
-    "de shaw", "akuna", "virtu", "drw", "flow traders",
-}
-
-
 def company_category(company: str):
     """The high-confidence company-based tabs, kept exactly as the scraper's regex assigns them."""
     c = (company or "").lower()
     if any(f in c for f in _FAANG):
         return "FAANG+"
-    if any(q in c for q in _QUANT):
+    if any(q in c for q in _QUANT_COMPANIES):
         return "Quant Developer"
     return None
 

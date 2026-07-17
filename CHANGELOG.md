@@ -9,6 +9,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Gradcracker, Bright Network and Milkround join the scraper, three student boards that sit behind Cloudflare. Plain requests gets a 403 from all three on its TLS fingerprint alone, but each server-renders its listings as ordinary HTML, so I fetch them with curl_cffi replaying a real Chrome fingerprint (far cheaper and steadier than a headless browser, which Cloudflare blocks anyway from a data-centre IP). Gradcracker is the main UK STEM board: I read its computing-technology discipline, take the employer from each logo, the deadline, salary and location from the labelled card and the type from the role's own URL segment. Bright Network and Milkround parse the same way off their result cards, with the specific role page as the link every time. All three mix disciplines, so the shared whole-word classifier keeps only genuine tech roles, and Milkround carries the widest reject list because totaljobs floods a technology search with recruitment reposts and unrelated sectors. The fetch helper degrades to zero rows if curl_cffi is ever absent rather than taking the run down (#65)
+- Eight more direct-API companies, each probed for live listings before adding so none are the dead slugs a guessed list leaves behind: Lightmatter, PsiQuantum, Figure and Agility Robotics on Greenhouse; Axelera AI, Etched and Physical Intelligence on Ashby; Dexterity on Lever. They lean silicon, quantum and robotics for the hardware placements I am hunting, and their software roles come through the same tech filter too. Axelera, PsiQuantum and Lightmatter also join the priority list so their UK and unlabelled roles are kept (#65)
+
+### Changed
+
+- The recategorise script reads the scraper package's own category set and company lists instead of keeping a second copy that could drift from what the scraper stamps on insert. filters and ai import nothing heavier than requests, so the recategorise workflow needs no new dependency (#67)
+
+### Fixed
+
+- The retype report no longer counts Full-time Job rows as "no longer relevant". A full-time role is not a student role, so the student filter rightly rejects it, but testing every row against that filter counted the whole Jobs tab as failing and inflated the number; the report now skips Full-time Job rows (#65)
+- source-stats.md is git-ignored. It is the per-source summary the workflow writes and cats each run, a build artifact rather than source (#65)
+
 - RateMyPlacement joins the scraper as a browserless source. The board (part of the Higher In platform) server-renders its results and embeds the whole page of jobs as JSON in a window assignment, so I read that directly and page through it, no browser needed. I pull the three job-type slugs the site actually filters on (placements, internships and insight or vacation schemes) across every page, keep only genuine tech roles with the shared whole-word classifier and file each under its type. The links point straight at the individual role on higherin.com, which is exactly the specific per-role link the careers-page-only Trackr rows lack, so this adds a source of direct apply links for the placement year I am hunting. Early in the cycle most listings are "Register Your Interest" pre-registration entries, which are worth keeping (registering early is the right move); I strip that prefix so the stored title is clean and classifies correctly, and real open roles fill in on later pages as the season opens (#65)
 
 ## 2026-07-16
