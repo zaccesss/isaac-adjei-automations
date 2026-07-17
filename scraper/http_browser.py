@@ -52,22 +52,23 @@ def _curl_cffi_get(url: str, params: "dict | None", timeout: int) -> "tuple[str,
         return "", 0
 
 
-def _scrapling_get(url: str, params: "dict | None") -> str:
-    """Fetch through Scrapling's Camoufox browser, solving Cloudflare, or ''."""
+def _scrapling_get(url: str, params: "dict | None", wait_selector: "str | None" = None) -> str:
+    """Fetch through Scrapling's Camoufox browser, solving Cloudflare, or ''.
+
+    wait_selector holds the render until a matching element appears, which the
+    JavaScript careers apps need because their jobs load after network idle.
+    """
     try:
         from scrapling.fetchers import StealthyFetcher
     except Exception:
         print("  [scrapling] not installed - skipping fallback")
         return ""
     full = _full_url(url, params)
+    kwargs = {"headless": True, "solve_cloudflare": True, "network_idle": True, "timeout": 90000}
+    if wait_selector:
+        kwargs["wait_selector"] = wait_selector
     try:
-        page = StealthyFetcher.fetch(
-            full,
-            headless=True,
-            solve_cloudflare=True,
-            network_idle=True,
-            timeout=90000,
-        )
+        page = StealthyFetcher.fetch(full, **kwargs)
         if getattr(page, "status", 0) == 200:
             return page.html_content or ""
         print(f"  [scrapling] {full}: status {getattr(page, 'status', '?')}")
@@ -80,8 +81,9 @@ def _scrapling_get(url: str, params: "dict | None") -> str:
 def browser_get(url: str, params: "dict | None" = None, timeout: int = 25) -> str:
     """Return the page HTML, trying curl_cffi first then the Scrapling solver.
 
-    Any failure at both layers returns "" so the caller simply finds no jobs that
-    run rather than crashing the scraper.
+    For server-rendered pages behind Cloudflare (the student boards): curl_cffi
+    returns the full HTML when it clears the fingerprint check, and only a block
+    falls through to the browser solver. Any failure at both layers returns "".
     """
     html, status = _curl_cffi_get(url, params, timeout)
     if html:
@@ -92,3 +94,15 @@ def browser_get(url: str, params: "dict | None" = None, timeout: int = 25) -> st
         return _scrapling_get(url, params)
     print(f"  [browser] {url}: HTTP {status}")
     return ""
+
+
+def browser_render(url: str, params: "dict | None" = None, wait_selector: "str | None" = None) -> str:
+    """Return the fully rendered HTML, always through the Scrapling browser.
+
+    For JavaScript single-page careers sites (Google, Goldman Sachs) curl_cffi
+    would return an empty shell with a 200, so it must not be tried first - the
+    jobs only exist after the page's scripts run. This always renders and reads
+    the populated DOM. Pass wait_selector to hold for a job element that loads
+    late (Google's list arrives after network idle).
+    """
+    return _scrapling_get(url, params, wait_selector=wait_selector)
