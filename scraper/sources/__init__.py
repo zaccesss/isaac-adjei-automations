@@ -21,6 +21,7 @@ from . import (
     jooble,
     lever,
     microsoft,
+    ratemyplacement,
     reed,
     remotive,
     smartrecruiters,
@@ -30,6 +31,7 @@ from . import (
 
 SOURCES = [
     ("The Trackr", "api", False, trackr.run),
+    ("RateMyPlacement", "api", True, ratemyplacement.run),
     ("Company career sites", "browser", False, company_sites.run),
     ("Greenhouse", "api", False, greenhouse.run),
     ("Lever", "api", False, lever.run),
