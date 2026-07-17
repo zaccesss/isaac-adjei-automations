@@ -74,9 +74,13 @@ def main():
     # (commercial titles, non-tech roles) and rows the boards have stopped listing
     # (no freshness stamp for 14 days). Nothing here is changed or deleted - these
     # counts are the evidence for a separate, explicitly approved clean-up.
+    # A Full-time Job row is not a student role, so is_relevant rightly rejects it;
+    # testing those against the student filter counted every Jobs-tab row as "no
+    # longer relevant" and inflated the number, so I exclude them here.
     irrelevant = [
         r for r in rows
         if (r.get("role") or "") and (r.get("company") or "")
+        and (r.get("type") or "") != "Full-time Job"
         and not is_relevant(r["role"], r["company"], r.get("location") or "")
     ]
     print(f"\n{len(irrelevant)} rows would no longer pass todays filters (report only):")
