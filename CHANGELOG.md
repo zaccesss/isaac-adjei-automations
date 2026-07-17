@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-07-17
 
+### Changed
+
+- JPMorgan moves into a new generic Oracle Recruiting Cloud source, and Texas Instruments joins it. Both run their careers site on Oracle, whose REST API returns jobs with a plain request once the expand parameter is supplied, so each is one (host, site, name) entry with no browser needed. It runs in the fast API job now that it is off the render path, and more Oracle employers can join as I verify each host and site number. TI is a semiconductor maker with a UK site at Northampton; it shows no matching UK tech role today but will fill in seasonally the same way STMicro does. JLR stays out because its careers run on SuccessFactors, which gates its search behind a session rather than a plain API (#71)
+
 ### Added
 
 - Goldman Sachs and JPMorgan join the scraper, two of the FAANG-plus career sites whose old Playwright scrapers returned zero. Goldman runs a JavaScript app with an obfuscated backing fetch, so I render its roles results with Scrapling's Camoufox browser and read the UK tech cards out of the populated DOM, each linking to the specific role. JPMorgan runs on Oracle Recruiting Cloud, whose REST API is reachable with a plain request once the expand parameter is supplied (without it the keyword search returns a count but an empty list), so it needs no browser; I keep the UK early-careers tech roles by their location. Google and Meta are deliberately left out: Google's results app serves its job list only intermittently to an automated browser, and Meta keeps its listings behind a Relay GraphQL query whose persisted id rotates, so both would be fragile, and their internships already arrive through the Trackr (#71)
