@@ -9,7 +9,7 @@ on:
     # Engineering" catch-all rows. Two UTC crons (05:00 and 06:00) cover BST and GMT; a gate step runs
     # it only at 06:xx UK. Idempotent, so it changes nothing once everything is already sorted. A
     # scheduled run applies for real (dry-run only defaults on for the manual trigger).
-    - cron: "11,41 5-8 * * *" # every 30 min, 05:00-08:30 UTC (covers 06:00-09:00 UK in BST and GMT); idempotent
+    - cron: "11,41 6 * * *" # backup pair at 06:11/06:41 UTC: inside the 06:00-09:00 UK window in GMT and BST; idempotent
   workflow_dispatch:
     inputs:
       dry_run:
