@@ -26,6 +26,12 @@ WORKDAY_COMPANIES = [
     ("micron",        "1", "micron",        "External",       "Micron"),
     ("nxp",           "3", "nxp",           "careers",        "NXP"),
     ("marvell",       "1", "marvell",       "MarvellCareers", "Marvell"),
+    # Confirmed live July 2026. Broadcom answered 101 postings to an intern
+    # search; HPE also covers Juniper since the acquisition. Qualcomm stays out:
+    # its CXS endpoint returns 422 to every plain payload, so it wants the
+    # front-end's session tokens like the other auth-gated tenants above.
+    ("broadcom", "1", "broadcom", "External_Career", "Broadcom"),
+    ("hpe",      "5", "hpe",      "ACJobSite",       "HPE"),
 ]
 
 
