@@ -20,7 +20,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
 | [`spotify-history.mjs`](spotify-history.mjs) | Node | spotify-history | Records recent Spotify plays into `listening_history` for the listening analytics |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
-| [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (REST APIs, plus HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, plus a Playwright pass) and upserts them into the applications table |
+| [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
 
 ## Shared helper
 

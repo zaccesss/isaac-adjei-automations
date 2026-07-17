@@ -218,6 +218,50 @@ EIGHTFOLD_COMPANIES = [
     ("stmicroelectronics", "stmicroelectronics.com", "STMicroelectronics"),
 ]
 
+# (slug, display_name) for the Workable widget API - the UK deep-tech startups
+# that never post on the big boards: defence AI (Arondite), satcom terminals
+# (ALL.SPACE), power electronics (IONATE), education hardware (Micro:bit).
+# Every slug probed live July 2026; a tenant with zero openings today
+# (Marshmallow, Oxa) stays because the probe costs one request and their
+# student roles appear seasonally.
+WORKABLE_COMPANIES = [
+    ("arondite",                         "Arondite"),
+    ("allspace",                         "ALL.SPACE"),
+    ("ionate",                           "IONATE"),
+    ("micro-bit-educational-foundation", "Micro:bit Foundation"),
+    ("homey",                            "Homey"),
+    ("marshmallow",                      "Marshmallow"),
+    ("oxa",                              "Oxa"),
+]
+
+# (slug, display_name) for the Recruitee offers API, probed live July 2026:
+# Lucid Games (Liverpool studio), DeepHealth and BCN Group answered with live
+# postings; the rest are valid UK tenants currently between openings.
+RECRUITEE_COMPANIES = [
+    ("lucidgames",      "Lucid Games"),
+    ("deephealth",      "DeepHealth"),
+    ("bcngroup",        "BCN Group"),
+    ("evergreenenergy", "Evergreen Energy"),
+    ("getchip",         "Chip"),
+    ("citymapper",      "Citymapper"),
+    ("zeelo",           "Zeelo"),
+]
+
+# (feed_host, display_name) for the Personio XML feed. Quantum Motion is a
+# London quantum-computing company designing cryogenic silicon qubit chips -
+# exactly the UK deep-tech hardware employer I want on the list.
+PERSONIO_COMPANIES = [
+    ("quantummotion.jobs.personio.com", "Quantum Motion"),
+]
+
+# (careers_host, display_name) for the Jibe/iCIMS careers API. AMD's UK site
+# (the former Xilinx design centres) posts its student roles here seasonally;
+# today it lists 17 UK silicon roles and the intern postings join them each
+# autumn.
+JIBE_COMPANIES = [
+    ("careers.amd.com", "AMD"),
+]
+
 SMARTRECRUITERS_COMPANIES = [
     ("ServiceNow", "ServiceNow"),
     ("Experian",   "Experian"),

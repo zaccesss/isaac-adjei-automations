@@ -1,6 +1,7 @@
 """Supabase access: dedupe keys, existing-row loading, the insert-or-refresh upsert and the freshness stamp."""
 
 import hashlib
+import re
 
 from . import config
 from datetime import datetime, timezone
@@ -34,6 +35,29 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
     return hashlib.md5(raw.encode()).hexdigest()[:16]
 
 
+# Boards and aggregators: their links point at their own posting page, not the
+# employer's application page, so a direct ATS or company link always beats one.
+_AGGREGATOR_RE = re.compile(
+    r"linkedin\.com|milkround\.com|totaljobs\.com|studentjob\.co\.uk|"
+    r"e4s\.co\.uk|targetjobs\.co\.uk|prospects\.ac\.uk|gradcracker\.com|"
+    r"brightnetwork\.co\.uk|ratemyplacement\.co\.uk|reed\.co\.uk|adzuna|"
+    r"jooble|jobicy\.com|remotive\.(?:com|io)|arbeitnow\.com|indeed\.com",
+    re.I,
+)
+
+
+def url_rank(url: str) -> int:
+    """2 for a direct company or ATS link, 1 for a board or aggregator page, 0 for none.
+
+    Used to decide which link a job keeps when two sources carry the same role
+    under different URLs: the one that lands on the employer's own application
+    page wins over one that lands on a board's posting page.
+    """
+    if not url or not url.startswith("http"):
+        return 0
+    return 1 if _AGGREGATOR_RE.search(url) else 2
+
+
 def load_existing_keys(ctx) -> None:
     # I load all existing keys at the start of each run so every insert check
     # is an O(1) set lookup rather than a DB query per row. PostgREST caps a
@@ -52,6 +76,16 @@ def load_existing_keys(ctx) -> None:
             )
             # Remember which URLs already exist so insert_job updates them in place rather than skipping.
             ctx.existing_urls.update(r["url"] for r in rows if r.get("url"))
+            # And the best link already stored per company+role, so the same job
+            # arriving from another source under a different URL is recognised
+            # instead of inserted again.
+            for r in rows:
+                u = r.get("url") or ""
+                if not u:
+                    continue
+                bare = dedupe_key(r["company"], r["role"], "")
+                if url_rank(u) > url_rank(ctx.url_by_bare_key.get(bare, "")):
+                    ctx.url_by_bare_key[bare] = u
             if len(rows) < 1000:
                 break
         if not ctx.existing_keys:
@@ -137,6 +171,35 @@ def insert_job(ctx, job: dict) -> bool:
             ctx.seen_urls.add(url)
             return False
 
+    # The same company+role stored under a different link is the same posting
+    # seen through another source - a board, LinkedIn and the employer's ATS
+    # each carry their own URL for one job. I never insert a second row for it.
+    # When the new link is more direct than the stored one I upgrade the
+    # scraped row's URL in place; progressed rows and user-owned fields are
+    # never touched, and an equal or worse link just marks the row as seen.
+    if url and key not in ctx.existing_keys:
+        bare_key = dedupe_key(job["company"], job["role"], "")
+        prev_url = ctx.url_by_bare_key.get(bare_key, "")
+        if prev_url and prev_url != url:
+            if url_rank(url) > url_rank(prev_url):
+                if config.DRY_RUN:
+                    ctx.dry_run_actions.append(("upgrade-url", job["company"], job["role"]))
+                    print(f"  [dry run] would upgrade url for {job['company']} | {job['role']}")
+                else:
+                    try:
+                        ctx.supabase.table("applications").update({"url": url}).eq(
+                            "url", prev_url
+                        ).eq("status", "scraped").execute()
+                    except Exception as e:
+                        print(f"  ~ url upgrade failed {job['company']}: {e}")
+                ctx.url_by_bare_key[bare_key] = url
+                ctx.existing_keys.add(key)
+                ctx.existing_urls.add(url)
+                ctx.seen_urls.add(url)
+            else:
+                ctx.seen_urls.add(prev_url)
+            return False
+
     record = {
         "company":  job["company"],
         "role":     job["role"],
@@ -220,6 +283,9 @@ def insert_job(ctx, job: dict) -> bool:
         if url:
             ctx.existing_urls.add(url)
             ctx.seen_urls.add(url)
+            bare_key = dedupe_key(job["company"], job["role"], "")
+            if url_rank(url) > url_rank(ctx.url_by_bare_key.get(bare_key, "")):
+                ctx.url_by_bare_key[bare_key] = url
         if record.get("type") != "Full-time Job":
             ctx.new_jobs.append(job)
         ctx.dry_run_actions.append(("insert", job["company"], job["role"]))
@@ -234,6 +300,9 @@ def insert_job(ctx, job: dict) -> bool:
         if url:
             ctx.existing_urls.add(url)
             ctx.seen_urls.add(url)
+            bare_key = dedupe_key(job["company"], job["role"], "")
+            if url_rank(url) > url_rank(ctx.url_by_bare_key.get(bare_key, "")):
+                ctx.url_by_bare_key[bare_key] = url
         if record.get("type") != "Full-time Job":
             ctx.new_jobs.append(job)
         print(f"  + {job['company']} | {job['role']} {url}")

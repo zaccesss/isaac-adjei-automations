@@ -19,6 +19,10 @@ class RunContext:
     supabase: object
     existing_keys: set = field(default_factory=set)
     existing_urls: set = field(default_factory=set)
+    # The best URL already stored per company+role, so a second source carrying
+    # the same job under a different link refreshes or upgrades the existing row
+    # instead of inserting a lookalike.
+    url_by_bare_key: dict = field(default_factory=dict)
     seen_urls: set = field(default_factory=set)
     new_jobs: list = field(default_factory=list)
     source_stats: list = field(default_factory=list)
