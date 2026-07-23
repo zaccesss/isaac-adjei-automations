@@ -22,25 +22,45 @@ if (!CID || !SEC || !RT) {
   process.exit(0)
 }
 
+// Spotify occasionally throws a one-off network error or a transient 403/5xx that clears on the very
+// next call - retrying beats letting a blip page #errors for a job that runs hourly anyway.
+async function retry(fn, attempts = 3) {
+  let lastErr
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (e) {
+      lastErr = e
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 1000 * (i + 1)))
+    }
+  }
+  throw lastErr
+}
+
 async function accessToken() {
-  const res = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${CID}:${SEC}`).toString("base64")}`,
-    },
-    body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: RT }),
+  return retry(async () => {
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${CID}:${SEC}`).toString("base64")}`,
+      },
+      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: RT }),
+    })
+    if (!res.ok) throw new Error(`token ${res.status} ${await res.text()}`)
+    return (await res.json()).access_token
   })
-  if (!res.ok) throw new Error(`token ${res.status} ${await res.text()}`)
-  return (await res.json()).access_token
 }
 
 async function main() {
   const token = await accessToken()
-  const res = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await retry(async () => {
+    const r = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!r.ok) throw new Error(`recently-played ${r.status} ${await r.text()}`)
+    return r
   })
-  if (!res.ok) throw new Error(`recently-played ${res.status} ${await res.text()}`)
   const items = (await res.json()).items || []
   if (!items.length) {
     console.log("No recent plays to record.")
