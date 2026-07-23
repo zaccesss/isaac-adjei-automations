@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-23
+
+### Fixed
+
+- spotify-history retries its two Spotify fetch calls (the token refresh and the recently-played read) with a short backoff before giving up. The job had failed twice in two days: a transient 403 "Insufficient client scope" and a bare `fetch failed`. Neither repeated on the very next run with the same credentials, so both were one-off blips rather than a real scope or secrets problem, and the job was treating a single failed call as fatal. `recently-played` returns the last 50 plays and the job runs hourly, so nothing is actually lost when a call blips; retrying beats paging #errors for a non-issue (#90)
+
 ## 2026-07-17
 
 ### Added
