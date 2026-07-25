@@ -1,0 +1,53 @@
+# Tops up today's GitHub contribution count more often than the portfolio's own once-daily 05:00
+# London Vercel cron (Hobby plan caps a cron at one execution per day). cron-ops dispatches this
+# every couple of hours on its own real London-time schedule; GitHub's own cron below is the
+# same-pattern backup every other job here carries.
+
+name: GitHub contributions sync
+
+on:
+  schedule:
+    - cron: "11 */2 * * *" # backup every 2 hours, matching the primary cadence; idempotent upsert
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: github-contributions-sync
+          status: start
+
+      - run: node scripts/github-contributions-sync.mjs
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Healthcheck success
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: github-contributions-sync
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: github-contributions-sync
+          status: fail
