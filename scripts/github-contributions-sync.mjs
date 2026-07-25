@@ -24,7 +24,7 @@ if (!PAT) {
 }
 
 // A one-off GraphQL blip clears on the next call - retrying beats letting it page #errors for a job
-// that runs every couple of hours anyway.
+// that runs every 3 hours anyway.
 async function retry(fn, attempts = 3) {
   let lastErr
   for (let i = 0; i < attempts; i++) {
@@ -76,7 +76,7 @@ async function main() {
   // GitHub's contributionCalendar returns one entry per day across the whole requested range,
   // including days later in the year that have not happened yet - the same future-padding bug the
   // portfolio's own sync had to filter out, so this carries the identical guard rather than storing
-  // placeholder rows a frequent sync would then upsert every couple of hours.
+  // placeholder rows a frequent sync would then upsert every 3 hours.
   const todayIso = new Date().toISOString().slice(0, 10)
   const days = col.contributionCalendar.weeks
     .flatMap((w) => w.contributionDays)

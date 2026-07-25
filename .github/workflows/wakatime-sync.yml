@@ -1,14 +1,12 @@
-# Midday WakaTime sync so the coding dashboard shows the morning's hours during the day. Runs at 12:30
-# Europe/London (two UTC crons cover BST and GMT; a gate step runs it only at 12:xx UK). The full
-# previous day is synced separately by the 00:30 coding recap workflow before it posts.
+# Keeps the coding dashboard fresh through the day. The sync is idempotent and needs no time gate,
+# so it just runs every 3 hours, paired with the same cadence as github-contributions-sync.yml. The
+# full previous day is synced separately by the 00:30 coding recap workflow before it posts.
 
 name: WakaTime Sync
 
 on:
   schedule:
-    # The sync is idempotent, so run it every 3 hours to keep the coding dashboard fresh and to survive
-    # GitHub dropping any single scheduled run. No time gate needed.
-    - cron: "19 */6 * * *" # backup every 6 hours, matching the primary cadence; idempotent upsert
+    - cron: "19 */3 * * *" # backup every 3 hours, matching the primary cadence; idempotent upsert
   workflow_dispatch:
 
 concurrency:
