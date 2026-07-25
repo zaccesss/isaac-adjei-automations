@@ -19,6 +19,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`medication-reminders.mjs`](medication-reminders.mjs) | Node | medication-reminders | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
 | [`spotify-history.mjs`](spotify-history.mjs) | Node | spotify-history | Records recent Spotify plays into `listening_history` for the listening analytics |
+| [`github-contributions-sync.mjs`](github-contributions-sync.mjs) | Node | github-contributions-sync | Tops up the current year's row in `github_contributions_days`/`_years` between the portfolio's own once-daily sync |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
 | [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
 
@@ -47,6 +48,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `daily-analytics.mjs` | `DISCORD_WEBHOOK_APPLICATIONS`, `DISCORD_WEBHOOK_POSTS`, `DISCORD_WEBHOOK_FITNESS`, `DISCORD_WEBHOOK_MUSIC` (each optional; a channel is skipped if its webhook is unset) |
 | `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL`, and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
+| `github-contributions-sync.mjs` | `GH_PAT` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` / `GH_MODELS_TOKEN` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 

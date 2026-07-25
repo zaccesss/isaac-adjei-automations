@@ -20,7 +20,7 @@ is what the workflow file holds).
 | Workflow | Worker (UK) | GHA backup (UTC) | Script | Purpose |
 | --- | --- | --- | --- | --- |
 | [daily-coding-summary](daily-coding-summary.yml) | 00:30 | 01:07 + 01:37 | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) then [`daily-coding-summary.mjs`](../../scripts/daily-coding-summary.mjs) | Syncs the just-ended day's WakaTime data then posts a Discord recap comparing it to the 30-day average |
-| [wakatime-sync](wakatime-sync.yml) | every 6 hours | every 6 hours (:19) | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Keeps the coding stats fresh through the day (idempotent, so a dropped run is harmless) |
+| [wakatime-sync](wakatime-sync.yml) | every 3 hours | every 3 hours (:19) | [`wakatime-sync.py`](../../scripts/wakatime-sync.py) | Keeps the coding stats fresh through the day (idempotent, so a dropped run is harmless) |
 | [routine](routine.yml) | 07:00 + 20:00 | 07:09/07:39 + 20:09/20:39 | [`routine.mjs`](../../scripts/routine.mjs) | Posts the morning habit and streak checklist to Discord; the evening pass chases only what is still unlogged and stays silent when the day is done |
 | [streak-reminder](streak-reminder.yml) | 08:00 + 20:00 | 08:13/08:43 + 20:13/20:43 | [`send-streak-reminder.mjs`](../../scripts/send-streak-reminder.mjs) | Reminds me on Discord which streaks are not yet logged today; the evening pass posts only while something is still unlogged |
 | [vault-expiry-check](vault-expiry-check.yml) | 08:00 | 08:17 + 08:47 | [`vault-expiry-check.mjs`](../../scripts/vault-expiry-check.mjs) | Alerts on Discord when vault or inventory items are near their expiry date |
@@ -29,6 +29,7 @@ is what the workflow file holds).
 | [medication-reminders](medication-reminders.yml) | every 15 min | every 30 min | [`medication-reminders.mjs`](../../scripts/medication-reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [reminders](reminders.yml) | every 15 min | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
 | [spotify-history](spotify-history.yml) | every 30 min | hourly (:23) | [`spotify-history.mjs`](../../scripts/spotify-history.mjs) | Records my Spotify plays into `listening_history` so the analytics build up real history |
+| [github-contributions-sync](github-contributions-sync.yml) | every 3 hours | every 3 hours (:11) | [`github-contributions-sync.mjs`](../../scripts/github-contributions-sync.mjs) | Tops up the current year's GitHub contribution count, since the portfolio's own Vercel cron only syncs once a day |
 | [job-scraper](job-scraper.yml) | 03:00 | 01:23 + 04:41 (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
 
 ## Repo automation
