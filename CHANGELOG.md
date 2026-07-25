@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-07-25
+
+### Added
+
+- A new `github-contributions-sync.mjs` job, dispatched every 3 hours, tops up the current year's row in `github_contributions_days`/`_years`. The portfolio's own sync only runs once a day (a Vercel Hobby cron limit), so the dashboard's contribution calendar previously only reflected a day's commits after the next 05:00 London run. Mirrors `spotify-history.mjs`'s own direct-Supabase-write pattern, including the same future-date-padding guard the portfolio's own sync needed for GitHub's contribution calendar API
+
+### Changed
+
+- `wakatime-sync` moves from every 6 hours to every 3 hours, paired with the new `github-contributions-sync` job's cadence above, so the coding dashboard reflects the day sooner too
+
 ## 2026-07-23
 
 ### Fixed

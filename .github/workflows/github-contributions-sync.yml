@@ -1,13 +1,13 @@
 # Tops up today's GitHub contribution count more often than the portfolio's own once-daily 05:00
 # London Vercel cron (Hobby plan caps a cron at one execution per day). cron-ops dispatches this
-# every couple of hours on its own real London-time schedule; GitHub's own cron below is the
-# same-pattern backup every other job here carries.
+# every 3 hours on its own real London-time schedule, paired with wakatime-sync.yml's same cadence;
+# GitHub's own cron below is the same-pattern backup every other job here carries.
 
 name: GitHub contributions sync
 
 on:
   schedule:
-    - cron: "11 */2 * * *" # backup every 2 hours, matching the primary cadence; idempotent upsert
+    - cron: "11 */3 * * *" # backup every 3 hours, matching the primary cadence; idempotent upsert
   workflow_dispatch:
 
 permissions:

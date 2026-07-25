@@ -24,7 +24,8 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 |---|---|---|---|
 | Daily coding summary | ![daily-coding-summary](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/ANzypoxl/daily-coding-summary.svg) | 00:30-03 UK | Posts the WakaTime coding summary to `#coding` |
 | Daily analytics | ![daily-analytics](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/gwYAU-IS/daily-analytics.svg) | 01-04 UK | Posts blog, fitness, applications and music digests to their channels |
-| WakaTime sync | ![wakatime-sync](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/yd__upOn/wakatime-sync.svg) | every 6 hours | Syncs WakaTime coding time into the database |
+| WakaTime sync | ![wakatime-sync](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/yd__upOn/wakatime-sync.svg) | every 3 hours | Syncs WakaTime coding time into the database |
+| GitHub contributions sync | ![github-contributions-sync](https://healthchecks.io/b/2/aa112efc-17a2-4520-b8a2-7cf316733c97.svg) | every 3 hours | Tops up the current year's GitHub contribution count into the database |
 
 ## Data and jobs
 
