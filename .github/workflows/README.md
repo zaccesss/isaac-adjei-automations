@@ -29,6 +29,7 @@ is what the workflow file holds).
 | [medication-reminders](medication-reminders.yml) | every 15 min | every 30 min | [`medication-reminders.mjs`](../../scripts/medication-reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [reminders](reminders.yml) | every 15 min | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
 | [spotify-history](spotify-history.yml) | every 30 min | hourly (:23) | [`spotify-history.mjs`](../../scripts/spotify-history.mjs) | Records my Spotify plays into `listening_history` so the analytics build up real history |
+| [github-contributions-sync](github-contributions-sync.yml) | every 2 hours | every 2 hours (:11) | [`github-contributions-sync.mjs`](../../scripts/github-contributions-sync.mjs) | Tops up the current year's GitHub contribution count, since the portfolio's own Vercel cron only syncs once a day |
 | [job-scraper](job-scraper.yml) | 03:00 | 01:23 + 04:41 (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
 
 ## Repo automation
