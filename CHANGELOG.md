@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-08-05
+
+### Security
+
+- Four exception-logging sites in db.py's Supabase update and insert paths printed the raw exception on failure. If the underlying client ever stringified request or response detail into that exception, the Supabase service role key could have landed in Actions logs. Each now logs only the exception type
+
 ## 2026-07-25
 
 ### Added
