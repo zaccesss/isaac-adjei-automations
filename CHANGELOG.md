@@ -10,6 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Security
 
 - Four exception-logging sites in db.py's Supabase update and insert paths printed the raw exception on failure. If the underlying client ever stringified request or response detail into that exception, the Supabase service role key could have landed in Actions logs. Each now logs only the exception type
+- CodeQL kept reopening those same 4 alerts on every main scan since a dismissal only applies to one alert instance, not future scans of the same line. An inline lgtm suppression comment did not help either, GitHub's default setup does not honour that legacy syntax. Switched this repo from default setup to a repo-owned advanced setup workflow with a config file that excludes the query at scan time, which is permanent
 
 ## 2026-07-25
 
