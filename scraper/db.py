@@ -165,7 +165,7 @@ def insert_job(ctx, job: dict) -> bool:
                         "status", "scraped"
                     ).is_("url", "null").execute()
                 except Exception as e:
-                    print(f"  ~ url fill failed {job['company']}: {e}")
+                    print(f"  ~ url fill failed {job['company']}: {type(e).__name__}")
             ctx.existing_keys.add(key)
             ctx.existing_urls.add(url)
             ctx.seen_urls.add(url)
@@ -191,7 +191,7 @@ def insert_job(ctx, job: dict) -> bool:
                             "url", prev_url
                         ).eq("status", "scraped").execute()
                     except Exception as e:
-                        print(f"  ~ url upgrade failed {job['company']}: {e}")
+                        print(f"  ~ url upgrade failed {job['company']}: {type(e).__name__}")
                 ctx.url_by_bare_key[bare_key] = url
                 ctx.existing_keys.add(key)
                 ctx.existing_urls.add(url)
@@ -274,7 +274,7 @@ def insert_job(ctx, job: dict) -> bool:
                             "status", "scraped"
                         ).is_("url", "null").execute()
                     except Exception as e:
-                        print(f"  ~ url fill failed {job['company']}: {e}")
+                        print(f"  ~ url fill failed {job['company']}: {type(e).__name__}")
                 ctx.existing_urls.add(url)
         return False
 
@@ -318,7 +318,7 @@ def insert_job(ctx, job: dict) -> bool:
             ctx.existing_urls.add(url)
             ctx.seen_urls.add(url)
             return False
-        print(f"  ! Failed to insert {job['company']}: {e}")
+        print(f"  ! Failed to insert {job['company']}: {type(e).__name__}")
         return False
 
 
