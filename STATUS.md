@@ -12,8 +12,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 
 | Job | Status | Cadence | What it does |
 |---|---|---|---|
-| Reminders | ![reminders](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/PBHg40DK/reminders.svg) | every 15 min | Fires one-off appointment and meeting reminders over Discord, email and SMS |
-| Medication reminders | ![medication-reminders](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/LlvuveB0/medication-reminders.svg) | every 15 min | Sends due medication doses over Discord, email and SMS, logging each so none repeats |
+| Reminders & medication reminders | ![reminders](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/PBHg40DK/reminders.svg) | every 15 min | Fires one-off appointment/meeting reminders and due medication doses over Discord, email and SMS. Shares one check between the two workflows - both post a user-visible message, so a silent failure of either is obvious anyway |
 | Routine checklist | ![routine](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/4B5WCt1O/routine.svg) | 07-09 + 20-22 UK | Posts the morning habit and streak checklist to `#routine`, then an evening pass of what is still unlogged |
 | Streak reminder | ![streak-reminder](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/mRKs2Rhy/streak-reminder.svg) | 08-10 + 20-22 UK | Nudges me to keep the coding and study streaks alive, morning and evening |
 | Vault expiry check | ![vault-expiry-check](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/zwhJK1gB/vault-expiry-check.svg) | 07-10 UK | Warns about vault credentials that are about to expire |
@@ -34,6 +33,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 | Job scraper | ![job-scraper](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/osSSm2dX/job-scraper.svg) | daily, two off-peak tries | Scrapes the job boards and career sites and posts new roles to `#jobs` |
 | Spotify history | ![spotify-history](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/VYd-foem/spotify-history.svg) | every 30 min | Records my Spotify plays into `listening_history` for the analytics pages |
 | Recategorise | ![recategorise](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/rpqZYXYy/recategorise.svg) | 05-08 UK | Re-tags scraped applications, idempotently |
+| Control status sync | ![control-status-sync](https://healthchecks.io/b/2/d7b9e721-9293-4a4b-8478-4581e0a9adcd.svg) | every 15 min | Snapshots every dispatchable job's GitHub Actions runs and Healthchecks status into isaac-adjei-portfolio's Ops page history |
 
 ---
 
