@@ -135,7 +135,7 @@ def insert_job(ctx, job: dict) -> bool:
 
     # I skip dead links before touching the DB, but only for genuinely new URLs.
     # Re-HEAD-checking the thousands of already-stored URLs every run was the main
-    # thing eating the time budget, and a known URL is never deleted even if it
+    # thing eating the time budget and a known URL is never deleted even if it
     # 404s now, so that check was wasted work.
     url = job.get("url", "")
     if url and url not in ctx.existing_urls and not is_url_alive(url):
@@ -176,7 +176,7 @@ def insert_job(ctx, job: dict) -> bool:
     # each carry their own URL for one job. I never insert a second row for it.
     # When the new link is more direct than the stored one I upgrade the
     # scraped row's URL in place; progressed rows and user-owned fields are
-    # never touched, and an equal or worse link just marks the row as seen.
+    # never touched and an equal or worse link just marks the row as seen.
     if url and key not in ctx.existing_keys:
         bare_key = dedupe_key(job["company"], job["role"], "")
         prev_url = ctx.url_by_bare_key.get(bare_key, "")
@@ -231,9 +231,9 @@ def insert_job(ctx, job: dict) -> bool:
         "cover_letter_required":  _cover_letter_label(job.get("cover_letter_required")),
         "written_answers":        job.get("written_answers"),
     }
-    # Only the scraper-owned columns are written to an existing row, and on a refresh I never overwrite
+    # Only the scraper-owned columns are written to an existing row and on a refresh I never overwrite
     # an AI-enriched field with an empty or regex value. category is left untouched (it is set on insert
-    # or by the re-categorise backfill), and an empty value never clobbers one already there. This stops
+    # or by the re-categorise backfill) and an empty value never clobbers one already there. This stops
     # the daily re-scrape from quietly reverting the AI categorisation and salary/work mode.
     patch = {
         k: v for k, v in record.items()

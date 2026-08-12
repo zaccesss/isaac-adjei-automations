@@ -16,7 +16,7 @@ def test_prereg_prefix_is_stripped_for_every_dash():
     assert _strip("Register Your Interest - Engineering Placement 2027") == "Engineering Placement 2027"
     assert _strip("Register Your Interest – Industrial Placement") == "Industrial Placement"
     assert _strip("Register Your Interest: Software Engineer Intern") == "Software Engineer Intern"
-    # Case-insensitive, and only the leading prefix is removed.
+    # Case-insensitive and only the leading prefix is removed.
     assert _strip("REGISTER YOUR INTEREST - Data Placement") == "Data Placement"
 
 

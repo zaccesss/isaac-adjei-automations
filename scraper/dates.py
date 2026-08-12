@@ -37,7 +37,7 @@ def _parse_greenhouse_date(dt_str: "str | None") -> "str | None":
 
 def _parse_trackr_date(s: "str | None") -> "str | None":
     """Parse a Trackr date cell ('21 May 26', '21 May 2026', '21/05/2026') to
-    YYYY-MM-DD, or None for blanks and rolling/TBC placeholders."""
+    YYYY-MM-DD or None for blanks and rolling/TBC placeholders."""
     if not s:
         return None
     s = s.strip()

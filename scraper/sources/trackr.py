@@ -9,7 +9,7 @@ missing-links problem: the real posting URL was never in the row the browser rea
 The public programmes endpoint returns every field the table shows as clean
 JSON, including the direct apply `url` and, where that is blank, the company
 `careersSite`. Both are real external destinations, never a the-trackr.com page,
-so I query the API directly. No browser, no missing links, and the per-role CV /
+so I query the API directly. No browser, no missing links and the per-role CV /
 cover-letter / written-answer / visa flags and the opening and closing dates all
 arrive structured instead of being scraped out of table cells.
 
@@ -56,7 +56,7 @@ _API_HEADERS = {
 
 
 def _iso_date(value) -> "str | None":
-    """Return the YYYY-MM-DD slice of an ISO timestamp, or None."""
+    """Return the YYYY-MM-DD slice of an ISO timestamp or None."""
     if isinstance(value, str) and len(value) >= 10 and value[4] == "-":
         return value[:10]
     return None
@@ -96,7 +96,7 @@ def _seasons() -> "list[str]":
 
     The Trackr labels a cycle by its intake year and keeps two live at once
     (verified July 2026: 2026 and 2027 both return data). Pulling the current
-    year and the year after tracks the roll-over without a code change, and the
+    year and the year after tracks the roll-over without a code change and the
     owner - a second year hunting a 2027 year-long placement - needs the later
     cycle as much as the current one.
     """
@@ -105,7 +105,7 @@ def _seasons() -> "list[str]":
 
 
 def fetch_programmes(season: str, type_slug: str) -> list:
-    """GET one tab of one cycle as JSON, or [] on any non-200 or error."""
+    """GET one tab of one cycle as JSON or [] on any non-200 or error."""
     try:
         resp = SESSION.get(
             API,

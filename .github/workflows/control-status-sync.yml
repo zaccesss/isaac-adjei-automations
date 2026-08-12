@@ -1,0 +1,58 @@
+# Snapshots every dispatchable job's recent GitHub Actions runs and every Healthchecks check's
+# current status into isaac-adjei-portfolio's control_job_runs/control_check_snapshots tables, so
+# the dashboard's /dashboard/ops page can chart real history. cron-ops dispatches this every 15
+# minutes (its own minimum wake granularity) since several of the jobs it snapshots themselves run
+# every 15-30 minutes - a once-daily Vercel cron would lose almost all of that resolution.
+
+name: Control status sync
+
+on:
+  schedule:
+    - cron: "37 * * * *" # hourly backup; the primary cadence is cron-ops every 15 min
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Healthcheck start
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: control-status-sync
+          status: start
+
+      - run: node scripts/control-status-sync.mjs
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PORTFOLIO_URL: ${{ secrets.PORTFOLIO_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HEALTHCHECKS_API_KEY: ${{ secrets.HEALTHCHECKS_API_KEY }}
+          HEALTHCHECKS_FLEET_API_KEY: ${{ secrets.HEALTHCHECKS_FLEET_API_KEY }}
+
+      - name: Healthcheck success
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: control-status-sync
+
+      - name: Healthcheck fail
+        if: failure()
+        uses: ./.github/actions/healthcheck
+        with:
+          ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
+          slug: control-status-sync
+          status: fail

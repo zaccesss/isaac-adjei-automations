@@ -12,7 +12,7 @@ they server-render their job listings as ordinary HTML. I try two layers:
    back to Scrapling's StealthyFetcher, a real Camoufox browser that solves the
    challenge. A CI experiment confirmed this reaches Bright Network and Milkround
    from a GitHub Actions runner where curl_cffi is blocked, so it needs no proxy
-   and no external VM. It is slow (a browser boot plus a solve per page), which is
+  and no external VM. It is slow (a browser boot plus a solve per page), which is
    why it is only the fallback.
 
 Both layers are optional imports: if a dependency is missing the layer is skipped,
@@ -53,7 +53,7 @@ def _curl_cffi_get(url: str, params: "dict | None", timeout: int) -> "tuple[str,
 
 
 def _scrapling_get(url: str, params: "dict | None", wait_selector: "str | None" = None) -> str:
-    """Fetch through Scrapling's Camoufox browser, solving Cloudflare, or ''.
+    """Fetch through Scrapling's Camoufox browser, solving Cloudflare or ''.
 
     wait_selector holds the render until a matching element appears, which the
     JavaScript careers apps need because their jobs load after network idle.
@@ -82,7 +82,7 @@ def browser_get(url: str, params: "dict | None" = None, timeout: int = 25) -> st
     """Return the page HTML, trying curl_cffi first then the Scrapling solver.
 
     For server-rendered pages behind Cloudflare (the student boards): curl_cffi
-    returns the full HTML when it clears the fingerprint check, and only a block
+    returns the full HTML when it clears the fingerprint check and only a block
     falls through to the browser solver. Any failure at both layers returns "".
     """
     html, status = _curl_cffi_get(url, params, timeout)

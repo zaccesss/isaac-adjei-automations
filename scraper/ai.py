@@ -32,7 +32,7 @@ _AI_NULLISH = {"", "null", "none", "n/a", "na", "not specified", "unspecified", 
 
 
 def _ai_label(v):
-    """Coerce a model value to the 'Yes'/'No'/'Optional' labels the app stores, or None."""
+    """Coerce a model value to the 'Yes'/'No'/'Optional' labels the app stores or None."""
     if isinstance(v, bool):
         return "Yes" if v else "No"
     if isinstance(v, str):
@@ -235,12 +235,12 @@ def _ai_fill(ctx, job: dict) -> None:
     regex_cat = detect_category(job["company"], job["role"])
     fields_complete = (
         job.get("sponsors_visa") is not None
-        and job.get("salary_range")
-        and job.get("work_mode")
-        and job.get("deadline")
-        and job.get("opening_date")
-        and job.get("cv_required")
-        and job.get("cover_letter_required") is not None
+       and job.get("salary_range")
+       and job.get("work_mode")
+       and job.get("deadline")
+       and job.get("opening_date")
+       and job.get("cv_required")
+       and job.get("cover_letter_required") is not None
     )
     # Skip the call only when the company-based category is high-confidence and nothing is missing.
     if regex_cat in ("FAANG+", "Quant Developer") and fields_complete:

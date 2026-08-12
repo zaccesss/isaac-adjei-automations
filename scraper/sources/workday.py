@@ -10,7 +10,7 @@ from ..budget import over_budget
 from ..stats import record_stat
 from ..http import SESSION
 
-# ─── WORKDAY API (NVIDIA, Intel, and other Workday-hosted companies) ─────────
+# ─── WORKDAY API (NVIDIA, Intel and other Workday-hosted companies) ─────────
 
 # Confirmed Workday configurations: (subdomain, wdnum, tenant, site_id, display_name)
 # Validated against live API - POST to /wday/cxs/{tenant}/{site_id}/jobs.

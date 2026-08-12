@@ -5,10 +5,10 @@ it categorises from title + company only - still far better than the original re
 of roles into "Software Engineering" and never produced the Hardware or Startups tabs at all.
 
 It keeps the reliable company-based FAANG+/Quant categories, updates ONLY the category column (never
-status, notes, starred, applied_date or any user field), and is safe to re-run. Set
+status, notes, starred, applied_date or any user field) and is safe to re-run. Set
 RECATEGORISE_DRY_RUN=1 to preview the changes without writing them.
 
-Env required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and at least one of GROQ_API_KEY /
+Env required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and at least one of GROQ_API_KEY /
 GOOGLE_AI_API_KEY / OPENROUTER_API_KEY.
 """
 

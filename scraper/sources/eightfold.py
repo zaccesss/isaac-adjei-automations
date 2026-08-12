@@ -26,7 +26,7 @@ def scrape_eightfold(ctx, tenant: str, domain: str, company_name: str) -> int:
     while total is None or start < total:
         try:
             # The API scopes to the UK for me: these are global employers whose
-            # worldwide fabs would otherwise flood the Jobs tab, and the UK design
+            # worldwide fabs would otherwise flood the Jobs tab and the UK design
             # centres are the only ones I can take a placement at.
             resp = SESSION.get(
                 base,

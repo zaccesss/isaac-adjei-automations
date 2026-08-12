@@ -1,6 +1,6 @@
 # I scrape tech internships and placements from 30+ sources and upsert them into Supabase so my application tracker stays fresh without manual searching.
 """Job scraper package - runs daily via GitHub Actions as python -m scraper (two off-peak
-tries; the upsert de-duplicates, and the same job arriving from two sources under
+tries; the upsert de-duplicates and the same job arriving from two sources under
 different links collapses onto one row with the most direct link kept).
 
 Sources (api-mode run in the fast job, browser-mode in the Playwright/Camoufox job):

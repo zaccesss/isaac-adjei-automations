@@ -1,7 +1,7 @@
 # The July 2026 source wave: the ATS families (Workable, Recruitee, Personio,
 # Jibe), the LinkedIn guest search and the three boards (StudentJob, E4S,
 # Prospects, TARGETjobs). Each parser is pinned against a compact fixture built
-# from the live page it was written on, and the cross-source URL dedupe is
+# from the live page it was written on and the cross-source URL dedupe is
 # exercised through insert_job in dry-run mode.
 import json
 

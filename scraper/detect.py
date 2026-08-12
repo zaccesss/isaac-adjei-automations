@@ -8,7 +8,7 @@ def detect_sponsors_visa(text: str) -> "bool | None":
     """Scan job description text for visa sponsorship signals.
 
     Returns True if the company explicitly sponsors, False if they state they
-    cannot/do not, or None when the description is silent on the topic.
+    cannot/do not or None when the description is silent on the topic.
     """
     if not text:
         return None

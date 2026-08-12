@@ -1,7 +1,7 @@
 // Sends one-off appointment, meeting and general reminders from the reminders table. Runs every 30
-// minutes: each reminder can have several lead times (a week before and a day before, say), and each fires
+// minutes: each reminder can have several lead times (a week before and a day before, say) and each fires
 // once when its moment arrives, to any of Discord, email and SMS. sent_leads records which lead times have
-// gone out so none repeats, and reminded_at is stamped once every lead has fired or the event has passed, so
+// gone out so none repeats and reminded_at is stamped once every lead has fired or the event has passed, so
 // the row drops out of the scan. Because event_at is an absolute timestamp there is no local-hour handling to
 // do, unlike the recurring medication reminders. Node only, no deps.
 //

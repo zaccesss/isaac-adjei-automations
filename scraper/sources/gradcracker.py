@@ -7,7 +7,7 @@ plain server-rendered HTML: each job is an anchor to its own
 alt text and the deadline, salary and location labelled in the card.
 
 I read the computing-technology discipline directly, so the feed is already tech
-scoped, and I take both the placements/internships listing and the graduate-jobs
+scoped and I take both the placements/internships listing and the graduate-jobs
 listing. Every link is the specific role page, which is exactly the direct apply
 link the careers-page-only rows lack.
 """

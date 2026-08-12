@@ -2,7 +2,7 @@
 // own Vercel cron does. Vercel Hobby caps a cron at once a day, so the dashboard's contribution
 // calendar only reflects a day's commits after the next 05:00 London sync; this fills that gap by
 // dispatching the same idempotent sync several times a day. Only the current year is re-fetched -
-// past years never change once they have ended, and a full historical backfill is the daily cron's
+// past years never change once they have ended and a full historical backfill is the daily cron's
 // job, not this one's. Node only, no deps.
 
 import { guard } from "./lib/report-failure.mjs"
