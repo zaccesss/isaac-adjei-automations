@@ -50,7 +50,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
 | `github-contributions-sync.mjs` | `GH_PAT` |
-| `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY` |
+| `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY`, `HEALTHCHECKS_PORTFOLIO_API_KEY` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` / `GH_MODELS_TOKEN` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 
