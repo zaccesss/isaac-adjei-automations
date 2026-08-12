@@ -2,7 +2,7 @@
 
 The job scraper as a package: 20+ sources of student tech roles scraped daily and
 upserted into the Supabase `applications` table. It only ever inserts and updates,
-never deletes, and never touches user-owned columns (status, notes, starred,
+never deletes and never touches user-owned columns (status, notes, starred,
 applied date) on an existing row.
 
 ## Layout

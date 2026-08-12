@@ -1,7 +1,7 @@
 """One-off backfill: move already-scraped rows to their correct type tabs.
 
 The Trackr scraper spent a while stamping rows with whichever category page reached
-them first (all four routes serve the same table), and rows without an external
+them first (all four routes serve the same table) and rows without an external
 apply link never take the update path that would have healed them on re-scrape.
 This recomputes each scraped row's type from its own title, exactly as the scraper
 does now. A title with no student signal at all resolves to Full-time Job (it was
@@ -80,8 +80,8 @@ def main():
     irrelevant = [
         r for r in rows
         if (r.get("role") or "") and (r.get("company") or "")
-        and (r.get("type") or "") != "Full-time Job"
-        and not is_relevant(r["role"], r["company"], r.get("location") or "")
+       and (r.get("type") or "") != "Full-time Job"
+       and not is_relevant(r["role"], r["company"], r.get("location") or "")
     ]
     print(f"\n{len(irrelevant)} rows would no longer pass todays filters (report only):")
     for r in irrelevant[:20]:

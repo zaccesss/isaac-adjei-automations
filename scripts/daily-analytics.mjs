@@ -2,7 +2,7 @@
 // Music) for the day that just ended. Runs just after midnight UK, once the coding recap is out, so the
 // numbers are waiting first thing. Resilient to GitHub Actions cron being delayed or
 // dropped: the workflow fires from a frequent morning schedule, this proceeds only once the London hour has
-// reached the target, and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
+// reached the target and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
 // finally lands. Node only, no deps. Each channel is optional - a page is skipped if its webhook is unset.
 import { londonDate, londonHour, alreadyRanToday, releaseClaim } from "./lib/uk-cron.mjs"
 import { guard } from "./lib/report-failure.mjs"
@@ -193,7 +193,7 @@ try {
 }
 
 // If every section failed, the day produced nothing. alreadyRanToday already claimed it up front to
-// stop a double-post, so release that claim for a later run to retry, and exit non-zero so Healthchecks
+// stop a double-post, so release that claim for a later run to retry and exit non-zero so Healthchecks
 // /fail fires instead of this reading as a clean, complete run.
 if (sent === 0) {
   await releaseClaim("daily-analytics")

@@ -1,7 +1,7 @@
 # Workflows
 
 Every job is a GitHub Actions workflow here, wrapping a script in [`../../scripts`](../../scripts).
-The scheduled jobs are split into two groups: the scheduled jobs that do the actual work, and the
+The scheduled jobs are split into two groups: the scheduled jobs that do the actual work and the
 repo-automation workflows that keep the repository itself healthy.
 
 ## Scheduled jobs
@@ -49,7 +49,7 @@ hour. So instead of one fragile slot, each daily job keeps **a backup pair of cr
 half an hour apart, in a UTC hour that sits inside the job's UK window in both GMT and BST) behind the
 exact-time dispatch. A **gate** (either a workflow step running
 `TZ=Europe/London date +%H` or the same check in the script) lets it act only once the local hour has
-reached the target, and it **claims the day** in the shared `cron_runs` table via
+reached the target and it **claims the day** in the shared `cron_runs` table via
 [`../../scripts/lib/uk-cron.mjs`](../../scripts/lib/uk-cron.mjs) so whichever run lands first does the work
 and later runs in the window skip. A manual `workflow_dispatch` runs straight away (the gates let a
 dispatch through) but still claims the day, so a dispatch cannot double-post against the window; tick the
@@ -59,7 +59,7 @@ The all-day jobs (medication, reminders, Spotify) do not gate to an hour: they r
 de-duplicate their own work, with their crons as the safety net (the reminder pair keeps a half-hourly
 cron so its tight health checks stay honest; Spotify's is hourly, which the API's 50-play history absorbs
 easily). `job-scraper` fires from two off-peak UTC crons (a dropped one does not cost
-a day, and the scrape upserts so running twice is harmless).
+a day and the scrape upserts so running twice is harmless).
 
 ## Monitoring
 
@@ -71,7 +71,7 @@ A job that stops running, fails or hangs then shows as down or late on the statu
 `HEALTHCHECK_PING_KEY` secret, so with no key set it is a no-op and the jobs run unchanged. `job-scraper`
 reports success only when both its parallel jobs succeed.
 
-The overall status badge is in the [root README](../../README.md), and the down/late/fail alert is wired
+The overall status badge is in the [root README](../../README.md) and the down/late/fail alert is wired
 in the Healthchecks.io project itself (Integrations, then Discord) rather than in this repo, so the alert
 routing stays out of the code. Only the read-only Healthchecks API key is used to read check status.
 

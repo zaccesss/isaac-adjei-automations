@@ -1,5 +1,5 @@
 # Same query coverage as the managed default setup this replaces, minus one query: I log
-# type(e).__name__ deliberately for the 4 Supabase exception sites in scraper/db.py, and this
+# type(e).__name__ deliberately for the 4 Supabase exception sites in scraper/db.py and this
 # rule cannot tell that a class-level attribute cannot carry the instance data it flags. A
 # dismissal only applies to one alert instance, a fresh scan of main does not carry it forward,
 # so this query is excluded at scan time instead, which does.

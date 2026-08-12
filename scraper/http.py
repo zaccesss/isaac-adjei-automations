@@ -18,7 +18,7 @@ HEADERS = {
 
 
 # One shared session for connection reuse across the thousands of small API and
-# detail calls; it carries the same browser headers, and per-call headers merge
+# detail calls; it carries the same browser headers and per-call headers merge
 # over it exactly as they did over bare requests, so semantics are unchanged.
 SESSION = requests.Session()
 SESSION.headers.update(HEADERS)

@@ -6,7 +6,7 @@
 //
 // The workflow fires across both windows either side of the hour to ride out British Summer Time
 // and GitHub's cron slop; each slot posts once and claims (job-slot, UK-day). A manual run can pick
-// its slot with the SLOT input, and FORCE=1 always posts, for testing.
+// its slot with the SLOT input and FORCE=1 always posts, for testing.
 
 import { londonHour, alreadyRanToday } from "./lib/uk-cron.mjs"
 import { guard } from "./lib/report-failure.mjs"
@@ -29,7 +29,7 @@ if (!SUPABASE_URL || !SERVICE_KEY || !webhook) {
 const slot = process.env.SLOT === "am" || process.env.SLOT === "pm" ? process.env.SLOT : londonHour() < 12 ? "am" : "pm"
 
 // GitHub Actions cron is unreliable (it delays and drops runs), so the workflow fires every 30 min
-// across each window. Post once per slot, on the first run inside the window, and claim
+// across each window. Post once per slot, on the first run inside the window and claim
 // (job-slot, UK-day) so a later run in the window never repeats it. A manual run (FORCE=1) always
 // posts, for testing.
 if (process.env.FORCE !== "1") {
@@ -87,7 +87,7 @@ if (slot === "am") {
     "**Streaks**",
     streakList,
     "",
-    "Mark them off with `/habit done`, `/streak log`, or on the dashboard.",
+    "Mark them off with `/habit done`, `/streak log` or on the dashboard.",
   ].join("\n")
 } else {
   const sections = []
@@ -97,7 +97,7 @@ if (slot === "am") {
     "🌙 **Evening check - still unlogged today**",
     "",
     ...sections,
-    "There is still time - mark them off with `/habit done`, `/streak log`, or on the dashboard.",
+    "There is still time - mark them off with `/habit done`, `/streak log` or on the dashboard.",
   ].join("\n")
 }
 
