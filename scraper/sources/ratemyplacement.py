@@ -55,14 +55,14 @@ def _first_location(names: str) -> str:
 
 
 def _clean_deadline(value) -> "str | None":
-    """Return an ISO date deadline, or None - the feed often has no deadline."""
+    """Return an ISO date deadline or None - the feed often has no deadline."""
     if isinstance(value, str) and _ISO_DATE_RE.match(value):
         return value[:10]
     return None
 
 
 def fetch_page(job_type: str, page: int) -> "tuple[list, int]":
-    """Return (jobs, last_page) for one job-type page, or ([], 1) on failure."""
+    """Return (jobs, last_page) for one job-type page or ([], 1) on failure."""
     try:
         resp = SESSION.get(
             BASE,

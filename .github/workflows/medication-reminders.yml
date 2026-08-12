@@ -32,7 +32,7 @@ jobs:
         uses: ./.github/actions/healthcheck
         with:
           ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
-          slug: medication-reminders
+          slug: reminders
           status: start
       - run: node scripts/medication-reminders.mjs
         env:
@@ -51,11 +51,11 @@ jobs:
         uses: ./.github/actions/healthcheck
         with:
           ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
-          slug: medication-reminders
+          slug: reminders
       - name: Healthcheck fail
         if: failure()
         uses: ./.github/actions/healthcheck
         with:
           ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
-          slug: medication-reminders
+          slug: reminders
           status: fail

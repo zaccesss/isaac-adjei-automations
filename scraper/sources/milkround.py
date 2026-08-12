@@ -1,7 +1,7 @@
 """Source: Milkround (Cloudflare-fronted HTML).
 
 Milkround is a broad graduate board on the StepStone platform. It sits behind
-Cloudflare, so I fetch it with the browser-fingerprint helper, and its results
+Cloudflare, so I fetch it with the browser-fingerprint helper and its results
 are server-rendered: each job is an <article> whose heading links to the role's
 own totaljobs.com page, with the employer, location and salary as ordered text
 nodes underneath. Those totaljobs links are the specific role pages.

@@ -16,17 +16,18 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`send-streak-reminder.mjs`](send-streak-reminder.mjs) | Node | streak-reminder | Posts which active streaks are not yet logged today |
 | [`vault-expiry-check.mjs`](vault-expiry-check.mjs) | Node | vault-expiry-check | Alerts when vault or `inventory_items` entries are near their expiry date |
 | [`daily-analytics.mjs`](daily-analytics.mjs) | Node | daily-analytics | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel for the day that just ended |
-| [`medication-reminders.mjs`](medication-reminders.mjs) | Node | medication-reminders | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
+| [`medication-reminders.mjs`](medication-reminders.mjs) | Node | reminders (shared with reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
 | [`spotify-history.mjs`](spotify-history.mjs) | Node | spotify-history | Records recent Spotify plays into `listening_history` for the listening analytics |
 | [`github-contributions-sync.mjs`](github-contributions-sync.mjs) | Node | github-contributions-sync | Tops up the current year's row in `github_contributions_days`/`_years` between the portfolio's own once-daily sync |
+| [`control-status-sync.mjs`](control-status-sync.mjs) | Node | control-status-sync | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's `control_job_runs`/`control_check_snapshots` tables, so `/dashboard/ops` can chart real history |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
 | [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
 
 ## Shared helper
 
 [`lib/uk-cron.mjs`](lib/uk-cron.mjs) provides the UK-time helpers the message-sending jobs share:
-`londonHour()` / `londonDate()` for the gate, and `alreadyRanToday(job)`, which claims `(job, run_date)`
+`londonHour()` / `londonDate()` for the gate and `alreadyRanToday(job)`, which claims `(job, run_date)`
 in the `cron_runs` table so a delayed run cannot double-post. `FORCE=1` (set on a manual
 `workflow_dispatch`) bypasses the claim. See the
 [workflows README](../.github/workflows/README.md#uk-time-and-the-windowed-schedule) for the full pattern.
@@ -46,9 +47,10 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `send-streak-reminder.mjs` | `DISCORD_WEBHOOK_STREAKS` |
 | `vault-expiry-check.mjs` | `DISCORD_WEBHOOK_VAULT` |
 | `daily-analytics.mjs` | `DISCORD_WEBHOOK_APPLICATIONS`, `DISCORD_WEBHOOK_POSTS`, `DISCORD_WEBHOOK_FITNESS`, `DISCORD_WEBHOOK_MUSIC` (each optional; a channel is skipped if its webhook is unset) |
-| `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL`, and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
+| `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
 | `github-contributions-sync.mjs` | `GH_PAT` |
+| `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` / `GH_MODELS_TOKEN` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 

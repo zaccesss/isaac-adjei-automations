@@ -2,7 +2,7 @@
 //
 // Neither GitHub Actions nor Vercel observes British Summer Time - crons are always UTC - so each
 // time-pinned job fires from TWO crons (a GMT branch and a BST branch, one hour apart). A workflow
-// gate step (TZ=Europe/London date) runs the job only at the intended local hour, and message-senders
+// gate step (TZ=Europe/London date) runs the job only at the intended local hour and message-senders
 // additionally claim (job, UK-day) in the cron_runs table so a run that GitHub delayed into the target
 // hour cannot double-post. Mirrors the portfolio lib/london-time.ts and the older scripts/routine.mjs.
 

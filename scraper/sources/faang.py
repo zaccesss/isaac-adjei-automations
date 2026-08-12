@@ -6,9 +6,9 @@ browser - which also clears the bot wall that made the old Playwright scraper re
 zero - and read the job cards out of the populated DOM.
 
 Google and Meta are deliberately left out: Google's results app serves the job list
-only intermittently to an automated browser (it more often renders empty), and Meta
+only intermittently to an automated browser (it more often renders empty) and Meta
 keeps its listings behind a Relay GraphQL query whose persisted id rotates. Both
-would be fragile, and their internships already arrive through the Trackr. JPMorgan
+would be fragile and their internships already arrive through the Trackr. JPMorgan
 is on Oracle Recruiting Cloud and lives in the oracle_ce source, not here.
 """
 import re
