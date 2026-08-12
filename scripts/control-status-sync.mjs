@@ -16,6 +16,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const HC_AUTOMATIONS_KEY = process.env.HEALTHCHECKS_API_KEY
 const HC_FLEET_KEY = process.env.HEALTHCHECKS_FLEET_API_KEY
+const HC_PORTFOLIO_KEY = process.env.HEALTHCHECKS_PORTFOLIO_API_KEY
 // 90-day retention, matching the cron_runs ledger's own precedent in the portfolio repo.
 const RETENTION_DAYS = 90
 
@@ -131,18 +132,20 @@ async function main() {
   }
   await upsert("control_job_runs", runRows, "job_id,github_run_id")
 
-  const [autoChecks, fleetChecks] = await Promise.all([
+  const [autoChecks, fleetChecks, portfolioChecks] = await Promise.all([
     fetchChecks(HC_AUTOMATIONS_KEY, "automations"),
     fetchChecks(HC_FLEET_KEY, "fleet"),
+    fetchChecks(HC_PORTFOLIO_KEY, "portfolio"),
   ])
-  await upsert("control_check_snapshots", [...autoChecks, ...fleetChecks], "hc_slug,checked_at")
+  const allChecks = [...autoChecks, ...fleetChecks, ...portfolioChecks]
+  await upsert("control_check_snapshots", allChecks, "hc_slug,checked_at")
 
   await Promise.all([
     prune("control_job_runs", "started_at"),
     prune("control_check_snapshots", "checked_at"),
   ])
 
-  console.log(`Synced ${runRows.length} runs across ${jobs.length} jobs, ${autoChecks.length + fleetChecks.length} check snapshots.`)
+  console.log(`Synced ${runRows.length} runs across ${jobs.length} jobs, ${allChecks.length} check snapshots.`)
 }
 
 // No local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
