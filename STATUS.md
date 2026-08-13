@@ -34,6 +34,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 | Spotify history | ![spotify-history](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/VYd-foem/spotify-history.svg) | every 30 min | Records my Spotify plays into `listening_history` for the analytics pages |
 | Recategorise | ![recategorise](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/rpqZYXYy/recategorise.svg) | 05-08 UK | Re-tags scraped applications, idempotently |
 | Control status sync | ![control-status-sync](https://healthchecks.io/b/2/d7b9e721-9293-4a4b-8478-4581e0a9adcd.svg) | every 15 min | Snapshots every dispatchable job's GitHub Actions runs and Healthchecks status into isaac-adjei-portfolio's Ops page history |
+| Portfolio site up | ![portfolio-site-up](https://healthchecks.io/b/2/b838c2f8-3740-4acd-b475-c09ddc95a762.svg) | every 15 min | Confirms isaacadjei.me's own `/api/health` is reachable from the outside |
 
 ---
 
