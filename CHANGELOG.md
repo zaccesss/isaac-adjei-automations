@@ -19,6 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - `backfill-control-history.mjs`, a manual-only (`workflow_dispatch`) deep backfill for the two history tables the regular sync only ever sees a shallow slice of: it pages GitHub's Actions API past the last-30-runs cap the regular sync uses. It also replays Healthchecks' pings history (up to 100 events per check on the free plan) into check-status snapshots. Best-effort on the Healthchecks side - pings only record self-reported success/fail, not a silently missed check-in, so it under-counts real downtime compared to what the regular sync's own live reads capture going forward
+- `portfolio-site-up.mjs`, a new job that checks isaacadjei.me's own `/api/health` route from the outside every 15 minutes and pings a dedicated check in the Portfolio Website Health project, which had zero real checks in it before now. No separate meta-monitoring check for the workflow itself: the account is at its 20-check free-plan cap. One is not needed anyway since a dead workflow already shows up as missed pings on the same check
 
 ## 2026-08-12
 
