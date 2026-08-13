@@ -32,7 +32,6 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
 DRY_RUN = bool(os.environ.get("RECATEGORISE_DRY_RUN", "").strip())
 BATCH = 40
 
@@ -89,33 +88,61 @@ def update_category(row_id, category: str) -> None:
     resp.raise_for_status()
 
 
+# Free-tier model ids per provider, most-capable first, verified live against each provider's own
+# catalog. Several per provider (not just one) so a single model being rate-limited or temporarily
+# pulled from the free tier does not fail the whole provider - GitHub Models is gone entirely
+# (retired 2026-07-30), so that provider is dropped rather than pointed at a dead endpoint.
+_GROQ_MODELS = ("llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b")
+_OPENROUTER_MODELS = (
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "inclusionai/ling-3.0-flash:free",
+    "poolside/laguna-s-2.1:free",
+    "poolside/laguna-xs-2.1:free",
+)
+
+
+def _try_chat_models(url: str, headers: dict, models: tuple, prompt: str):
+    """Try each OpenAI-compatible chat/completions model in turn, returning the first real reply."""
+    last_exc = None
+    for model in models:
+        try:
+            resp = requests.post(
+                url,
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": "You categorise job adverts and reply with JSON only."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "max_tokens": 900,
+                },
+                timeout=45,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+        except Exception as e:
+            last_exc = e
+            continue
+    if last_exc:
+        raise last_exc
+    return None
+
+
 def _call_groq(prompt: str):
     if not GROQ_API_KEY:
         return None
-    resp = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-        json={
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": "You categorise job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 900,
-        },
-        timeout=45,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    headers = {"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"}
+    return _try_chat_models("https://api.groq.com/openai/v1/chat/completions", headers, _GROQ_MODELS, prompt)
 
 
 def _call_gemini(prompt: str):
     if not GOOGLE_AI_API_KEY:
         return None
     resp = requests.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
         # The key travels in a header so an exception's URL text can never carry it.
         headers={"x-goog-api-key": GOOGLE_AI_API_KEY},
         json={
@@ -131,48 +158,11 @@ def _call_gemini(prompt: str):
 def _call_openrouter(prompt: str):
     if not OPENROUTER_API_KEY:
         return None
-    resp = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"},
-        json={
-            "model": "meta-llama/llama-3.3-70b-instruct:free",
-            "messages": [
-                {"role": "system", "content": "You categorise job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 900,
-        },
-        timeout=45,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
+    return _try_chat_models("https://openrouter.ai/api/v1/chat/completions", headers, _OPENROUTER_MODELS, prompt)
 
 
-def _call_github(prompt: str):
-    if not GH_MODELS_TOKEN:
-        return None
-    resp = requests.post(
-        "https://models.github.ai/inference/chat/completions",
-        headers={"Authorization": f"Bearer {GH_MODELS_TOKEN}", "Content-Type": "application/json"},
-        json={
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {"role": "system", "content": "You categorise job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 900,
-        },
-        timeout=45,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
-
-_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter), ("GitHub", _call_github))
+_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter))
 
 
 def ai_categorise(batch: list[tuple]) -> dict:
@@ -218,8 +208,8 @@ def ai_categorise(batch: list[tuple]) -> dict:
 def main() -> None:
     if not SUPABASE_URL or not SUPABASE_KEY:
         sys.exit("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
-    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY or GH_MODELS_TOKEN):
-        sys.exit("Set at least one AI key (Groq / Google / OpenRouter / GitHub Models).")
+    if not (GROQ_API_KEY or GOOGLE_AI_API_KEY or OPENROUTER_API_KEY):
+        sys.exit("Set at least one AI key (Groq / Google / OpenRouter).")
 
     rows = fetch_scraped()
     # Only touch the "Software Engineering" catch-all - rows already sorted into a specific tab are

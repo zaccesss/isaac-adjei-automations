@@ -29,9 +29,9 @@ How I work in this repo, so the history stays clean and nothing lands broken.
 ## Secrets
 
 - Every credential is an Actions secret, never in the code. A workflow maps the secret to an env var and the script reads it.
-- A secret name cannot start with `GITHUB_` (GitHub reserves that prefix), so the GitHub Models token is `GH_MODELS_TOKEN`.
+- A secret name cannot start with `GITHUB_` (GitHub reserves that prefix).
 
 ## Scheduled jobs
 
 - The data jobs run on a cron and are safe to re-run: they upsert, never delete and never overwrite a value that is already good.
-- AI calls try Groq, then Gemini, then OpenRouter, then GitHub Models. If every provider fails, the next scheduled run picks up whatever was missed.
+- AI calls try Groq, then Gemini, then OpenRouter, each itself trying several free models before moving on. If every provider fails, the next scheduled run picks up whatever was missed.
