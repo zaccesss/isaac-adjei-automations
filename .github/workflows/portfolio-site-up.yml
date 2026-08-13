@@ -1,0 +1,35 @@
+# Confirms isaacadjei.me is reachable from the outside every 15 minutes and pings Healthchecks'
+# Portfolio Website Health project so a real outage actually raises an alert there. cron-ops dispatches
+# this (its own minimum wake granularity); the hourly schedule below is just a backup in case a
+# cron-ops dispatch is ever missed.
+#
+# No separate meta-monitoring check here (unlike every other workflow in this repo): the account is
+# already at its 20-check free-plan cap. One is not needed anyway - if this workflow itself stops
+# running, no pings reach the site-up check either, so that single check already covers both signals.
+
+name: Portfolio site up
+
+on:
+  schedule:
+    - cron: "11 * * * *" # hourly backup; the primary cadence is cron-ops every 15 min
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - run: node scripts/portfolio-site-up.mjs
+        env:
+          PORTFOLIO_URL: ${{ secrets.PORTFOLIO_URL }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          HEALTHCHECKS_PORTFOLIO_SITE_PING_URL: ${{ secrets.HEALTHCHECKS_PORTFOLIO_SITE_PING_URL }}
