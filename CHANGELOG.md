@@ -14,6 +14,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Groq and OpenRouter each try several free models in turn now (`llama-3.3-70b-versatile` then `gpt-oss-120b` then `gpt-oss-20b` for Groq; `nemotron-3-ultra-550b-a55b` then `ling-3.0-flash` then two Poolside Laguna models for OpenRouter) instead of one fixed model each, so a single model being rate-limited or temporarily pulled from a provider's free tier no longer benches that whole provider for the rest of the run
+- `control-status-sync.mjs` no longer prunes rows past a retention window. The data is small (short rows, no blobs), so there is no real reason to delete good history. The portfolio Ops page's "all" period option should mean all, not "the last 90 days" wearing an all label
+
+### Added
+
+- `backfill-control-history.mjs`, a manual-only (`workflow_dispatch`) deep backfill for the two history tables the regular sync only ever sees a shallow slice of: it pages GitHub's Actions API past the last-30-runs cap the regular sync uses. It also replays Healthchecks' pings history (up to 100 events per check on the free plan) into check-status snapshots. Best-effort on the Healthchecks side - pings only record self-reported success/fail, not a silently missed check-in, so it under-counts real downtime compared to what the regular sync's own live reads capture going forward
 
 ## 2026-08-12
 
