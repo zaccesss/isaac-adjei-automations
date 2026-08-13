@@ -30,7 +30,11 @@ is what the workflow file holds).
 | [reminders](reminders.yml) | every 15 min | every 30 min | [`reminders.mjs`](../../scripts/reminders.mjs) | Sends one-off appointment and meeting reminders at their lead times, stamped so none repeats |
 | [spotify-history](spotify-history.yml) | every 30 min | hourly (:23) | [`spotify-history.mjs`](../../scripts/spotify-history.mjs) | Records my Spotify plays into `listening_history` so the analytics build up real history |
 | [github-contributions-sync](github-contributions-sync.yml) | every 3 hours | every 3 hours (:11) | [`github-contributions-sync.mjs`](../../scripts/github-contributions-sync.mjs) | Tops up the current year's GitHub contribution count, since the portfolio's own Vercel cron only syncs once a day |
+| [control-status-sync](control-status-sync.yml) | every 15 min | hourly (:37) | [`control-status-sync.mjs`](../../scripts/control-status-sync.mjs) | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's history tables, so `/dashboard/ops` can chart real trends |
+| [portfolio-site-up](portfolio-site-up.yml) | every 15 min | hourly (:11) | [`portfolio-site-up.mjs`](../../scripts/portfolio-site-up.mjs) | Confirms isaacadjei.me is reachable from the outside and pings the Portfolio Website Health project's own site-up check |
 | [job-scraper](job-scraper.yml) | 03:00 | 01:23 + 04:41 (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
+
+[backfill-control-history](backfill-control-history.yml) is not scheduled - `workflow_dispatch` only, run by hand to deepen `control_job_runs`/`control_check_snapshots` past what the regular 15-minute sync ever sees on its own.
 
 ## Repo automation
 
