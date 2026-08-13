@@ -1,9 +1,14 @@
 // Populates control_job_runs and control_check_snapshots (isaac-adjei-portfolio migration 048), so
 // the dashboard's /dashboard/ops page can chart real historical trends. Neither GitHub's Actions API
-// (last ~20-100 runs per workflow, no stored history) nor Healthchecks (current status only) can
-// answer a "how healthy was this over the last 30 days" query on their own - this snapshots both
-// every time it runs. Reads the job list from the portfolio's own CONTROL_JOBS via its control-jobs
-// route, so this script never keeps its own copy that could drift. Node only, no deps.
+// (last 30 runs per workflow here, no stored history) nor Healthchecks (current status only) can
+// answer a "how healthy was this over the last year" query on their own - this snapshots both
+// every time it runs. No retention pruning: this data is small (short rows, no blobs), so nothing
+// is ever deleted - each 15-minute sync only needs the last 30 runs to catch whatever is new since
+// the previous cycle, the accumulated history underneath just keeps growing. A one-time backfill
+// (see backfill-control-history.mjs) seeds deeper history than a fresh sync would ever see on its
+// own, since GitHub's own API and Healthchecks' pings endpoint both cap how far back a single call
+// can look. Reads the job list from the portfolio's own CONTROL_JOBS via its control-jobs route, so
+// this script never keeps its own copy that could drift. Node only, no deps.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -17,8 +22,6 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const HC_AUTOMATIONS_KEY = process.env.HEALTHCHECKS_API_KEY
 const HC_FLEET_KEY = process.env.HEALTHCHECKS_FLEET_API_KEY
 const HC_PORTFOLIO_KEY = process.env.HEALTHCHECKS_PORTFOLIO_API_KEY
-// 90-day retention, matching the cron_runs ledger's own precedent in the portfolio repo.
-const RETENTION_DAYS = 90
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.")
@@ -112,15 +115,6 @@ async function upsert(table, rows, onConflict) {
   if (!res.ok) throw new Error(`${table} upsert ${res.status} ${await res.text()}`)
 }
 
-async function prune(table, column) {
-  const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString()
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${column}=lt.${encodeURIComponent(cutoff)}`, {
-    method: "DELETE",
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-  })
-  if (!res.ok) console.error(`[control-status-sync] ${table} prune ${res.status} ${await res.text()}`)
-}
-
 async function main() {
   const jobs = await fetchJobs()
   if (!jobs?.length) throw new Error("control-jobs returned no jobs")
@@ -139,11 +133,6 @@ async function main() {
   ])
   const allChecks = [...autoChecks, ...fleetChecks, ...portfolioChecks]
   await upsert("control_check_snapshots", allChecks, "hc_slug,checked_at")
-
-  await Promise.all([
-    prune("control_job_runs", "started_at"),
-    prune("control_check_snapshots", "checked_at"),
-  ])
 
   console.log(`Synced ${runRows.length} runs across ${jobs.length} jobs, ${allChecks.length} check snapshots.`)
 }
