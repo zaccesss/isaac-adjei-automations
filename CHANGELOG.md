@@ -5,6 +5,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-08-13
+
+### Fixed
+
+- `ai.py` and `recategorise.py` carried the same stale AI references the portfolio dashboard had before this session's model catalog refresh: Gemini pinned to `gemini-2.5-flash`, OpenRouter's free fallback pointed at `meta-llama/llama-3.3-70b-instruct:free` (confirmed gone from OpenRouter's free tier). Both files also still called GitHub Models (retired 2026-07-30) as a fourth provider. Removed the GitHub Models provider entirely from both files plus `GH_MODELS_TOKEN` from config, workflow env blocks and docs. Moved Gemini to `gemini-3.6-flash` and replaced the dead OpenRouter fallback with a confirmed-live free model
+
+### Changed
+
+- Groq and OpenRouter each try several free models in turn now (`llama-3.3-70b-versatile` then `gpt-oss-120b` then `gpt-oss-20b` for Groq; `nemotron-3-ultra-550b-a55b` then `ling-3.0-flash` then two Poolside Laguna models for OpenRouter) instead of one fixed model each, so a single model being rate-limited or temporarily pulled from a provider's free tier no longer benches that whole provider for the rest of the run
+
 ## 2026-08-12
 
 ### Added

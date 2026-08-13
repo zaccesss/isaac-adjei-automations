@@ -1,4 +1,4 @@
-"""Optional AI field extraction: Groq then Gemini then OpenRouter then GitHub Models."""
+"""Optional AI field extraction: Groq then Gemini then OpenRouter, each trying several free models."""
 
 import re
 import time
@@ -13,8 +13,9 @@ from . import config
 # sponsorship, CV and cover letter requirements).
 # It only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant
 # categories from the regex, never overrides an ATS value and never touches user-owned columns. Groq
-# is tried first, then Gemini, then OpenRouter, so a rate limit or outage on one still leaves a
-# working fallback. The whole step is skipped when none of the three keys is set.
+# is tried first, then Gemini, then OpenRouter, each itself trying several free models before
+# moving on, so a rate limit or outage on any single model or provider still leaves a working
+# fallback. The whole step is skipped when none of the three keys is set.
 
 
 # The exact category tabs the dashboard groups by - the model must pick one of these or null.
@@ -99,33 +100,63 @@ def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
     )
 
 
+# Free-tier model ids per provider, most-capable first, verified live against each provider's own
+# catalog. Several per provider (not just one) so a single model being rate-limited or temporarily
+# pulled from the free tier does not bench the whole provider - GitHub Models is gone entirely
+# (retired 2026-07-30), so that provider is dropped rather than pointed at a dead endpoint.
+_GROQ_MODELS = ("llama-3.3-70b-versatile", "openai/gpt-oss-120b", "openai/gpt-oss-20b")
+_OPENROUTER_MODELS = (
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "inclusionai/ling-3.0-flash:free",
+    "poolside/laguna-s-2.1:free",
+    "poolside/laguna-xs-2.1:free",
+)
+
+
+def _try_chat_models(url: str, headers: dict, models: tuple, prompt: str, timeout: int):
+    """Try each OpenAI-compatible chat/completions model in turn, returning the first real reply.
+    A model that errors or comes back empty (rate-limited, temporarily pulled from the free tier)
+    just falls through to the next one in the same provider, rather than failing the whole call."""
+    last_exc = None
+    for model in models:
+        try:
+            resp = requests.post(
+                url,
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
+                        {"role": "user", "content": prompt},
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0,
+                    "max_tokens": 220,
+                },
+                timeout=timeout,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+        except Exception as e:
+            last_exc = e
+            continue
+    if last_exc:
+        raise last_exc
+    return None
+
+
 def _call_groq(prompt: str):
     if not config.GROQ_API_KEY:
         return None
-    resp = requests.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {config.GROQ_API_KEY}", "Content-Type": "application/json"},
-        json={
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 220,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    headers = {"Authorization": f"Bearer {config.GROQ_API_KEY}", "Content-Type": "application/json"}
+    return _try_chat_models("https://api.groq.com/openai/v1/chat/completions", headers, _GROQ_MODELS, prompt, 30)
 
 
 def _call_gemini(prompt: str):
     if not config.GOOGLE_AI_API_KEY:
         return None
     resp = requests.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
         # The key travels in a header so an exception's URL text can never carry it.
         headers={"x-goog-api-key": config.GOOGLE_AI_API_KEY},
         json={
@@ -141,60 +172,24 @@ def _call_gemini(prompt: str):
 def _call_openrouter(prompt: str):
     if not config.OPENROUTER_API_KEY:
         return None
-    resp = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={"Authorization": f"Bearer {config.OPENROUTER_API_KEY}", "Content-Type": "application/json"},
-        json={
-            "model": "meta-llama/llama-3.3-70b-instruct:free",
-            "messages": [
-                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 220,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    headers = {"Authorization": f"Bearer {config.OPENROUTER_API_KEY}", "Content-Type": "application/json"}
+    return _try_chat_models("https://openrouter.ai/api/v1/chat/completions", headers, _OPENROUTER_MODELS, prompt, 30)
 
 
-def _call_github(prompt: str):
-    if not config.GH_MODELS_TOKEN:
-        return None
-    resp = requests.post(
-        "https://models.github.ai/inference/chat/completions",
-        headers={"Authorization": f"Bearer {config.GH_MODELS_TOKEN}", "Content-Type": "application/json"},
-        json={
-            "model": "openai/gpt-4o-mini",
-            "messages": [
-                {"role": "system", "content": "You extract structured facts from job adverts and reply with JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-            "temperature": 0,
-            "max_tokens": 220,
-        },
-        timeout=45,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
-
-_AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter), ("GitHub", _call_github))
+_AI_PROVIDERS = (("Groq", _call_groq), ("Gemini", _call_gemini), ("OpenRouter", _call_openrouter))
 
 
 def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
-    """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter -> GitHub
-    Models in turn. A rate-limited provider is benched for the rest of the run so the others carry it.
-    Returns {} on exhausted budget, no key or total failure, so the scraper degrades gracefully."""
+    """Extract scraper-owned fields from a description, trying Groq -> Gemini -> OpenRouter in turn,
+    each itself trying several free models first. A rate-limited provider is benched for the rest
+    of the run so the others carry it. Returns {} on exhausted budget, no key or total failure, so
+    the scraper degrades gracefully."""
     if ctx.ai_calls >= config.AI_BUDGET:
         return {}
     snippet = (text or "").strip()[:6000]
     if len(snippet) < 80:
         return {}
-    if not (config.GROQ_API_KEY or config.GOOGLE_AI_API_KEY or config.OPENROUTER_API_KEY or config.GH_MODELS_TOKEN):
+    if not (config.GROQ_API_KEY or config.GOOGLE_AI_API_KEY or config.OPENROUTER_API_KEY):
         return {}
     ctx.ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)

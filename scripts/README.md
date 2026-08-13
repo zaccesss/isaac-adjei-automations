@@ -51,7 +51,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
 | `github-contributions-sync.mjs` | `GH_PAT` |
 | `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY`, `HEALTHCHECKS_PORTFOLIO_API_KEY` |
-| `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` / `GH_MODELS_TOKEN` |
+| `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 
 Some scripts also read **optional behaviour flags** that are not secrets and that you do not provision:

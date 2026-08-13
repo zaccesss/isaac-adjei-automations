@@ -22,7 +22,6 @@ BUDGET_SECONDS = int(os.environ.get("SCRAPER_BUDGET_MIN", "110")) * 60
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 GOOGLE_AI_API_KEY = os.environ.get("GOOGLE_AI_API_KEY", "").strip()
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
-GH_MODELS_TOKEN = os.environ.get("GH_MODELS_TOKEN", "").strip()
 AI_BUDGET = int(os.environ.get("SCRAPER_AI_BUDGET", "150"))
 
 REED_API_KEY = os.environ.get("REED_API_KEY", "")
