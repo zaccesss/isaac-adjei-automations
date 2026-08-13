@@ -20,7 +20,7 @@ applied date) on an existing row.
 | `locations.py` | Location vocabulary and the UK and Europe filter (London leaning) |
 | `dates.py` | Season cutoffs, the 14 day grace window and the source date parsers |
 | `db.py` | Dedupe keys, existing-row loading, the insert-or-refresh upsert, the freshness stamp |
-| `ai.py` | Optional field extraction: Groq, Gemini, OpenRouter then GitHub Models, with rate-limited providers benched per run |
+| `ai.py` | Optional field extraction: Groq, Gemini, OpenRouter, each trying several free models, with rate-limited providers benched per run |
 | `detect.py` | Plain-text detectors: visa sponsorship and cover letter mentions |
 | `notify.py` | The end-of-run Discord alert for new student roles |
 | `stats.py` | Per-source stats and the `source-stats.md` summary |
@@ -45,6 +45,6 @@ python -m pytest tests/                  # the pure-logic test suite
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for a real run.
 Optional: `SCRAPER_MODE`, `SCRAPER_BUDGET_MIN`, `SCRAPER_DRY_RUN`, `SCRAPER_AI_TEST`,
 `SCRAPER_AI_BUDGET`, the AI keys (`GROQ_API_KEY`, `GOOGLE_AI_API_KEY`,
-`OPENROUTER_API_KEY`, `GH_MODELS_TOKEN`), the board keys (`REED_API_KEY`,
+`OPENROUTER_API_KEY`), the board keys (`REED_API_KEY`,
 `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `JOOBLE_API_KEY`) and `DISCORD_WEBHOOK_URL` for
 the new-roles alert. A missing optional key skips its feature; nothing crashes.
