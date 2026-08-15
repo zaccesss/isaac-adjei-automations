@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-08-15
+
+### Added
+
+- `geocode-locations.mjs`, a new hourly job that geocodes any `applications.location` string not yet cached in the portfolio's new `location_geocodes` table, feeding a real interactive map on the Applications analytics page. OpenCage is the primary geocoder; a location it fails to resolve gets one retry through Nominatim (free, no key) before being cached as unresolved (null lat/lng) so it is never retried forever. No Healthchecks check of its own - a missed run is low-stakes (some map pins stay stale a bit longer), genuine crashes already reach `#errors` through every job's shared `guard()`, plus a missed cron-ops dispatch is cron-ops's own reliability to catch
+
 ## 2026-08-13
 
 ### Fixed

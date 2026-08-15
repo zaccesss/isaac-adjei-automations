@@ -23,6 +23,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`control-status-sync.mjs`](control-status-sync.mjs) | Node | control-status-sync | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's `control_job_runs`/`control_check_snapshots` tables, so `/dashboard/ops` can chart real history |
 | [`backfill-control-history.mjs`](backfill-control-history.mjs) | Node | backfill-control-history | Manual-only deep backfill of the same two tables, paging further back than the regular sync ever sees |
 | [`portfolio-site-up.mjs`](portfolio-site-up.mjs) | Node | portfolio-site-up | Confirms isaacadjei.me is reachable from the outside and pings the Portfolio Website Health project's own site-up check |
+| [`geocode-locations.mjs`](geocode-locations.mjs) | Node | none (see STATUS.md) | Geocodes new `applications.location` strings through OpenCage (Nominatim fallback) into the portfolio's `location_geocodes` cache, feeding the Applications map |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
 | [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
 
@@ -55,6 +56,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY`, `HEALTHCHECKS_PORTFOLIO_API_KEY` |
 | `backfill-control-history.mjs` | same as `control-status-sync.mjs`, but all 3 Healthchecks keys need read/write (the regular sync only needs read-only) |
 | `portfolio-site-up.mjs` | `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_PORTFOLIO_SITE_PING_URL` |
+| `geocode-locations.mjs` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENCAGE_API_KEY` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 
