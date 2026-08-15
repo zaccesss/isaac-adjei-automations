@@ -1,0 +1,35 @@
+# Geocodes any application locations not yet cached in the portfolio's location_geocodes table, so
+# the Applications map has coordinates to plot. cron-ops dispatches this hourly; the schedule below
+# is just a backup in case a cron-ops dispatch is ever missed.
+#
+# No Healthchecks check here: this is low-stakes (a missed run just means some map pins stay stale
+# a bit longer, nothing breaks), a genuine crash is already reported to #errors by guard(), plus a
+# missed dispatch is cron-ops's own reliability to catch, not a second check on top of it.
+
+name: Geocode locations
+
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly backup; the primary cadence is cron-ops every hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  geocode:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - run: node scripts/geocode-locations.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENCAGE_API_KEY: ${{ secrets.OPENCAGE_API_KEY }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
