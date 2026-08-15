@@ -35,6 +35,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 | Recategorise | ![recategorise](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/rpqZYXYy/recategorise.svg) | 05-08 UK | Re-tags scraped applications, idempotently |
 | Control status sync | ![control-status-sync](https://healthchecks.io/b/2/d7b9e721-9293-4a4b-8478-4581e0a9adcd.svg) | every 15 min | Snapshots every dispatchable job's GitHub Actions runs and Healthchecks status into isaac-adjei-portfolio's Ops page history |
 | Portfolio site up | ![portfolio-site-up](https://healthchecks.io/b/2/b838c2f8-3740-4acd-b475-c09ddc95a762.svg) | every 15 min | Confirms isaacadjei.me's own `/api/health` is reachable from the outside |
+| Geocode locations | no check (see below) | hourly | Geocodes new application locations for the Applications map into `location_geocodes` |
 
 ---
 
@@ -43,3 +44,8 @@ jobs additionally gate on the Europe/London hour so they land at the right local
 reminder jobs use a period check (at least one ping an hour, 15 minutes grace) rather than a strict
 per-slot schedule, so a single late or skipped run never raises a false alarm while the half-hourly
 backup alone still keeps the check green.
+
+Geocode locations deliberately has no Healthchecks check of its own, same as portfolio site up did
+when it first shipped: it is low-stakes (a missed run just leaves some map pins stale a bit longer),
+a genuine crash is already reported to `#errors` by every job's own `guard()`, plus a missed cron-ops
+dispatch is cron-ops's own reliability to catch rather than a second check layered on top of it.
