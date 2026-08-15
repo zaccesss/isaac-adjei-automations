@@ -76,9 +76,11 @@ async function main() {
     return
   }
 
-  const cached = await sbGet(
-    `location_geocodes?select=location&location=in.(${distinctLocations.map((l) => `"${l.replace(/"/g, '""')}"`).join(",")})`,
-  )
+  // Fetches every cached location unfiltered rather than building a PostgREST in.() filter with
+  // hundreds of arbitrary strings - location text can contain commas, semicolons and parentheses
+  // (e.g. "Berlin; London; Munich"), which breaks a hand-built in.() list at this scale. The table
+  // only ever holds one row per distinct location ever seen, so this stays small and cheap.
+  const cached = await sbGet("location_geocodes?select=location")
   const cachedSet = new Set(cached.map((c) => c.location))
   const pending = distinctLocations.filter((l) => !cachedSet.has(l))
 
