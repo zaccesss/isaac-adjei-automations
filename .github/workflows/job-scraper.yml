@@ -4,12 +4,15 @@
 
 name: Job Scraper
 
+# No native schedule: trigger - cron-ops dispatches this at a precise UK 03:00 daily instead. It
+# used to carry its own "two off-peak tries" schedule as a GitHub-drops-runs safety net, from
+# before cron-ops covered this job. That native schedule (nominally 01:23 UTC) runs 30-45 minutes
+# late in practice and was landing mid-run on top of cron-ops' own precise dispatch every single
+# day, so cancel-in-progress below killed the good cron-ops-triggered run daily rather than the
+# stray one - the check was flagging this as "down" for about an hour every morning. cron-ops is
+# the reliable mechanism this job actually needs; the redundant native schedule was actively
+# fighting it, not backing it up.
 on:
-  schedule:
-    # Two off-peak tries (GitHub drops top-of-hour runs), so a dropped run does not cost a day of scraping.
-    # The scrape upserts and de-duplicates, so running twice is harmless.
-    - cron: "23 1 * * *"
-    - cron: "41 4 * * *"
   workflow_dispatch:
     inputs:
       ai_test:
