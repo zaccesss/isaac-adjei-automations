@@ -68,8 +68,27 @@ async function geocodeNominatim(location) {
   return hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null
 }
 
+// PostgREST caps a single select at 1000 rows. With ~12,000 applications (most scraped) a plain
+// select only ever saw the first 1000 - since those happened to already be cached, the script
+// concluded "everything's geocoded" and exited before ever calling a geocoder, silently stranding
+// every location outside that window forever. Pages through explicitly so the full table is seen.
+async function fetchAllLocations() {
+  const pageSize = 1000
+  let offset = 0
+  const all = []
+  for (;;) {
+    const page = await sbGet(
+      `applications?select=location&location=not.is.null&limit=${pageSize}&offset=${offset}`,
+    )
+    all.push(...page)
+    if (page.length < pageSize) break
+    offset += pageSize
+  }
+  return all
+}
+
 async function main() {
-  const applications = await sbGet("applications?select=location&location=not.is.null")
+  const applications = await fetchAllLocations()
   const distinctLocations = [...new Set(applications.map((a) => a.location).filter((l) => l && l.trim()))]
   if (!distinctLocations.length) {
     console.log("No application locations to check.")
