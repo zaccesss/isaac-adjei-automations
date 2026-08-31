@@ -3,4 +3,4 @@ beautifulsoup4==4.15.0
 supabase==2.31.0
 lxml==6.1.2
 playwright==1.62.0
-curl_cffi==0.16.1
+curl_cffi==0.16.2
