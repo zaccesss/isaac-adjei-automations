@@ -17,6 +17,18 @@
 // would itself blow the time budget on a large backlog). Untouched locations are simply left
 // pending for the next run rather than cached as unresolved, since a quota exhaustion says nothing
 // about whether any individual address is actually resolvable.
+//
+// Also backfills city/country_code (isaac-adjei-portfolio migration 054) for rows that already
+// have a cached lat/lng but predate those two columns, since the raw scraped location string is
+// sometimes genuinely uninformative (a fab/site code, a job board's own "N Locations" placeholder
+// for a multi-site listing) rather than just inconsistently formatted - the Applications map and
+// Top 10 cities charts need a real "City, Country code" label, not the original text. Deliberately
+// reverse-geocodes the ALREADY-STORED coordinate rather than re-running the original text through a
+// forward geocode again - some raw strings already resolved to a genuinely wrong place, so a
+// second independent forward geocode could return components for a DIFFERENT match than the pin
+// that is already showing, turning a display bug into a data-mismatch bug. Reverse geocoding keeps
+// the shown label consistent with whatever coordinate is already on the map, right or wrong. Uses
+// the same chunked-flush and quota-exceeded handling as the main geocoding loop above.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -62,6 +74,13 @@ async function sbUpsert(table, rows, onConflict) {
 // the same try/catch every other OpenCage failure already goes through without a second code path.
 class OpenCageQuotaExceeded extends Error {}
 
+function componentsToCityCountry(components) {
+  if (!components) return { city: null, countryCode: null }
+  const city = components.city || components.town || components.village || components.municipality || components.county || null
+  const countryCode = components.country_code ? components.country_code.toUpperCase() : null
+  return { city, countryCode }
+}
+
 async function geocodeOpenCage(location) {
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(location)}&key=${OPENCAGE_API_KEY}&limit=1&no_annotations=1`
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
@@ -70,14 +89,27 @@ async function geocodeOpenCage(location) {
   if (res.status === 402) throw new OpenCageQuotaExceeded()
   if (!res.ok) return null
   const data = await res.json()
-  const hit = data?.results?.[0]?.geometry
-  return hit ? { lat: hit.lat, lng: hit.lng } : null
+  const hit = data?.results?.[0]
+  if (!hit?.geometry) return null
+  const { city, countryCode } = componentsToCityCountry(hit.components)
+  return { lat: hit.geometry.lat, lng: hit.geometry.lng, city, countryCode }
+}
+
+async function reverseGeocodeOpenCage(lat, lng) {
+  const url = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${OPENCAGE_API_KEY}&limit=1&no_annotations=1`
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+  if (res.status === 402) throw new OpenCageQuotaExceeded()
+  if (!res.ok) return null
+  const data = await res.json()
+  const hit = data?.results?.[0]
+  if (!hit) return null
+  return componentsToCityCountry(hit.components)
 }
 
 // Fallback only - Nominatim's usage policy caps requests at 1/sec, which this respects since it
 // is only ever reached for the small remainder OpenCage could not resolve, one location at a time.
 async function geocodeNominatim(location) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1&addressdetails=1`
   const res = await fetch(url, {
     signal: AbortSignal.timeout(8000),
     headers: { "User-Agent": "isaacadjei.me application-map geocoder (contact via isaacadjei.me)" },
@@ -85,7 +117,11 @@ async function geocodeNominatim(location) {
   if (!res.ok) return null
   const data = await res.json()
   const hit = data?.[0]
-  return hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null
+  if (!hit) return null
+  const addr = hit.address || {}
+  const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || null
+  const countryCode = addr.country_code ? addr.country_code.toUpperCase() : null
+  return { lat: Number(hit.lat), lng: Number(hit.lon), city, countryCode }
 }
 
 // PostgREST caps a single select at 1000 rows. A plain unpaginated select only ever sees the first
@@ -109,27 +145,19 @@ async function fetchAllPages(pathWithoutPaging) {
   return all
 }
 
+const CHUNK_SIZE = 50
+
 async function main() {
   const applications = await fetchAllPages("applications?select=location&location=not.is.null")
   const distinctLocations = [...new Set(applications.map((a) => a.location).filter((l) => l && l.trim()))]
-  if (!distinctLocations.length) {
-    console.log("No application locations to check.")
-    return
-  }
 
   // Fetches every cached location unfiltered rather than building a PostgREST in.() filter with
   // hundreds of arbitrary strings - location text can contain commas, semicolons and parentheses
   // (e.g. "Berlin; London; Munich"), which breaks a hand-built in.() list at this scale.
-  const cached = await fetchAllPages("location_geocodes?select=location")
-  const cachedSet = new Set(cached.map((c) => c.location))
-  const pending = distinctLocations.filter((l) => !cachedSet.has(l))
+  const cached = await fetchAllPages("location_geocodes?select=location,lat,lng,city,country_code")
+  const cachedByLocation = new Map(cached.map((c) => [c.location, c]))
+  const pending = distinctLocations.filter((l) => !cachedByLocation.has(l))
 
-  if (!pending.length) {
-    console.log("All application locations already geocoded.")
-    return
-  }
-
-  const CHUNK_SIZE = 50
   let buffer = []
   let totalProcessed = 0
   let totalResolved = 0
@@ -143,42 +171,104 @@ async function main() {
     buffer = []
   }
 
-  for (const location of pending) {
+  if (!pending.length) {
+    console.log("No new application locations to geocode.")
+  } else {
+    for (const location of pending) {
+      let hit = null
+      try {
+        hit = await geocodeOpenCage(location)
+      } catch (err) {
+        if (err instanceof OpenCageQuotaExceeded) {
+          quotaExceeded = true
+          break
+        }
+        hit = null
+      }
+      if (!hit) {
+        try {
+          hit = await geocodeNominatim(location)
+        } catch {
+          hit = null
+        }
+        // Only reached when a Nominatim fallback attempt actually happened - stays under its 1/sec policy.
+        await new Promise((r) => setTimeout(r, 1000))
+      }
+      buffer.push({
+        location,
+        lat: hit?.lat ?? null,
+        lng: hit?.lng ?? null,
+        city: hit?.city ?? null,
+        country_code: hit?.countryCode ?? null,
+        resolved_at: new Date().toISOString(),
+      })
+      if (buffer.length >= CHUNK_SIZE) await flush()
+    }
+    await flush()
+
+    if (quotaExceeded) {
+      const remaining = pending.length - totalProcessed
+      console.log(
+        `OpenCage quota exceeded, stopped early. Geocoded ${totalResolved}/${totalProcessed} before stopping, ` +
+        `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run once quota resets.`,
+      )
+      return
+    }
+    console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
+  }
+
+  // Backfill: rows that already resolved to a real coordinate before city/country_code existed.
+  // country_code (not city) is the completion marker - almost every resolvable coordinate has a
+  // country even when it has no specific city (a remote site, an ocean platform), so using city
+  // instead would keep re-querying those forever with no new information ever coming back.
+  const needsBackfill = cached.filter((c) => c.lat != null && c.lng != null && !c.country_code)
+  if (!needsBackfill.length) return
+
+  let backfillBuffer = []
+  let backfillProcessed = 0
+  let backfillFound = 0
+  let backfillQuotaExceeded = false
+
+  async function flushBackfill() {
+    if (!backfillBuffer.length) return
+    await sbUpsert("location_geocodes", backfillBuffer, "location")
+    backfillProcessed += backfillBuffer.length
+    backfillFound += backfillBuffer.filter((r) => r.country_code != null).length
+    backfillBuffer = []
+  }
+
+  for (const c of needsBackfill) {
     let hit = null
     try {
-      hit = await geocodeOpenCage(location)
+      hit = await reverseGeocodeOpenCage(c.lat, c.lng)
     } catch (err) {
       if (err instanceof OpenCageQuotaExceeded) {
-        quotaExceeded = true
+        backfillQuotaExceeded = true
         break
       }
       hit = null
     }
-    if (!hit) {
-      try {
-        hit = await geocodeNominatim(location)
-      } catch {
-        hit = null
-      }
-      // Only reached when a Nominatim fallback attempt actually happened - stays under its 1/sec policy.
-      await new Promise((r) => setTimeout(r, 1000))
-    }
-    buffer.push({ location, lat: hit?.lat ?? null, lng: hit?.lng ?? null, resolved_at: new Date().toISOString() })
-    if (buffer.length >= CHUNK_SIZE) await flush()
+    backfillBuffer.push({
+      location: c.location,
+      lat: c.lat,
+      lng: c.lng,
+      city: hit?.city ?? null,
+      country_code: hit?.countryCode ?? null,
+      resolved_at: new Date().toISOString(),
+    })
+    if (backfillBuffer.length >= CHUNK_SIZE) await flushBackfill()
   }
+  await flushBackfill()
 
-  await flush()
-
-  if (quotaExceeded) {
-    const remaining = pending.length - totalProcessed
+  if (backfillQuotaExceeded) {
+    const remaining = needsBackfill.length - backfillProcessed
     console.log(
-      `OpenCage quota exceeded, stopped early. Geocoded ${totalResolved}/${totalProcessed} before stopping, ` +
-      `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run once quota resets.`,
+      `OpenCage quota exceeded during backfill, stopped early. Backfilled ${backfillFound}/${backfillProcessed} before stopping, ` +
+      `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run.`,
     )
     return
   }
-
-  console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
+  console.log(`Backfilled city/country for ${backfillFound}/${backfillProcessed} previously-geocoded locations.`)
 }
 
 await main()

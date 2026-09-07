@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-09-08
+
+### Fixed
+
+- `geocode-locations.mjs` only ever stored a raw lat/lng per location, so the portfolio's Applications map and Top 10 cities charts displayed the exact scraped location string verbatim - some of which are genuinely uninformative (semiconductor fab/site codes, a job board's own "N Locations" placeholder for a multi-site listing) rather than just inconsistently formatted. The job now also extracts city and a country code from the same OpenCage/Nominatim response already used for lat/lng (isaac-adjei-portfolio migration 054), plus reverse-geocodes every previously-cached coordinate once to backfill those two new fields without re-running the original messy text through a forward geocode a second time, which could otherwise return a different match than the pin already on the map. The backfill pass (roughly 1,450 locations) reuses the same chunked-flush and OpenCage quota-exceeded handling the main geocoding loop already has, since a run that size is close enough to the workflow's 10-minute timeout to need it
+
 ## 2026-08-15
 
 ### Added
