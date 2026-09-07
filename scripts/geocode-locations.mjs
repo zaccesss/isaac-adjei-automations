@@ -4,6 +4,19 @@
 // the primary geocoder (needs OPENCAGE_API_KEY); a location it fails to resolve gets one retry via
 // Nominatim (OpenStreetMap's own geocoder, free, no key) before being cached as unresolved
 // (lat/lng null) so it is never retried forever. Node only, no deps.
+//
+// Persists in chunks as it goes (CHUNK_SIZE) rather than one upsert after the whole loop. A large
+// backlog can take longer than the workflow's own 10-minute timeout; a killed run used to lose
+// every result it had already fetched since nothing was saved until the very end. Confirmed live:
+// this is exactly what burned OpenCage's account well past its free-tier daily limit for a week
+// straight (10k-18k calls/day against a 2,500 cap) - most of those calls were thrown away by a
+// killed run, so the same still-pending backlog got re-attempted from scratch on every subsequent
+// hourly run. Also stops the run outright the moment OpenCage reports its quota is exhausted
+// (HTTP 402) rather than continuing to burn calls against a service that is already refusing, or
+// falling every remaining location through to Nominatim's 1-request-per-second fallback (which
+// would itself blow the time budget on a large backlog). Untouched locations are simply left
+// pending for the next run rather than cached as unresolved, since a quota exhaustion says nothing
+// about whether any individual address is actually resolvable.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -45,9 +58,16 @@ async function sbUpsert(table, rows, onConflict) {
   if (!res.ok) throw new Error(`${table} upsert ${res.status} ${await res.text()}`)
 }
 
+// A dedicated error class rather than a boolean return, so the 402 case can propagate up through
+// the same try/catch every other OpenCage failure already goes through without a second code path.
+class OpenCageQuotaExceeded extends Error {}
+
 async function geocodeOpenCage(location) {
   const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(location)}&key=${OPENCAGE_API_KEY}&limit=1&no_annotations=1`
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
+  // OpenCage's documented quota-exceeded response is HTTP 402, distinct from a plain no-match
+  // (which is still a 200 with an empty results array) or a transient error.
+  if (res.status === 402) throw new OpenCageQuotaExceeded()
   if (!res.ok) return null
   const data = await res.json()
   const hit = data?.results?.[0]?.geometry
@@ -108,12 +128,29 @@ async function main() {
     return
   }
 
-  const rows = []
+  const CHUNK_SIZE = 50
+  let buffer = []
+  let totalProcessed = 0
+  let totalResolved = 0
+  let quotaExceeded = false
+
+  async function flush() {
+    if (!buffer.length) return
+    await sbUpsert("location_geocodes", buffer, "location")
+    totalProcessed += buffer.length
+    totalResolved += buffer.filter((r) => r.lat != null).length
+    buffer = []
+  }
+
   for (const location of pending) {
     let hit = null
     try {
       hit = await geocodeOpenCage(location)
-    } catch {
+    } catch (err) {
+      if (err instanceof OpenCageQuotaExceeded) {
+        quotaExceeded = true
+        break
+      }
       hit = null
     }
     if (!hit) {
@@ -125,12 +162,22 @@ async function main() {
       // Only reached when a Nominatim fallback attempt actually happened - stays under its 1/sec policy.
       await new Promise((r) => setTimeout(r, 1000))
     }
-    rows.push({ location, lat: hit?.lat ?? null, lng: hit?.lng ?? null, resolved_at: new Date().toISOString() })
+    buffer.push({ location, lat: hit?.lat ?? null, lng: hit?.lng ?? null, resolved_at: new Date().toISOString() })
+    if (buffer.length >= CHUNK_SIZE) await flush()
   }
 
-  await sbUpsert("location_geocodes", rows, "location")
-  const resolved = rows.filter((r) => r.lat != null).length
-  console.log(`Geocoded ${resolved}/${rows.length} new locations (${rows.length - resolved} unresolved, cached to avoid retrying).`)
+  await flush()
+
+  if (quotaExceeded) {
+    const remaining = pending.length - totalProcessed
+    console.log(
+      `OpenCage quota exceeded, stopped early. Geocoded ${totalResolved}/${totalProcessed} before stopping, ` +
+      `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run once quota resets.`,
+    )
+    return
+  }
+
+  console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
 }
 
 await main()
