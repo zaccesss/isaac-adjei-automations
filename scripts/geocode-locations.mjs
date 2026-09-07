@@ -88,18 +88,20 @@ async function geocodeNominatim(location) {
   return hit ? { lat: Number(hit.lat), lng: Number(hit.lon) } : null
 }
 
-// PostgREST caps a single select at 1000 rows. With ~12,000 applications (most scraped) a plain
-// select only ever saw the first 1000 - since those happened to already be cached, the script
-// concluded "everything's geocoded" and exited before ever calling a geocoder, silently stranding
-// every location outside that window forever. Pages through explicitly so the full table is seen.
-async function fetchAllLocations() {
+// PostgREST caps a single select at 1000 rows. A plain unpaginated select only ever sees the first
+// 1000 of a bigger table - originally found stranding applications (~12,000 rows, most scraped)
+// outside that window forever. Re-found live when location_geocodes itself grew past 1000 rows: an
+// unpaginated fetch of the cache started silently missing several hundred already-cached rows, so
+// the script wrongly treated real, already-resolved locations as pending and started re-hitting
+// OpenCage for them. Both queries in this file that can plausibly exceed 1000 rows page through
+// explicitly via this one shared helper rather than assuming either table stays small.
+async function fetchAllPages(pathWithoutPaging) {
   const pageSize = 1000
   let offset = 0
   const all = []
+  const sep = pathWithoutPaging.includes("?") ? "&" : "?"
   for (;;) {
-    const page = await sbGet(
-      `applications?select=location&location=not.is.null&limit=${pageSize}&offset=${offset}`,
-    )
+    const page = await sbGet(`${pathWithoutPaging}${sep}limit=${pageSize}&offset=${offset}`)
     all.push(...page)
     if (page.length < pageSize) break
     offset += pageSize
@@ -108,7 +110,7 @@ async function fetchAllLocations() {
 }
 
 async function main() {
-  const applications = await fetchAllLocations()
+  const applications = await fetchAllPages("applications?select=location&location=not.is.null")
   const distinctLocations = [...new Set(applications.map((a) => a.location).filter((l) => l && l.trim()))]
   if (!distinctLocations.length) {
     console.log("No application locations to check.")
@@ -117,9 +119,8 @@ async function main() {
 
   // Fetches every cached location unfiltered rather than building a PostgREST in.() filter with
   // hundreds of arbitrary strings - location text can contain commas, semicolons and parentheses
-  // (e.g. "Berlin; London; Munich"), which breaks a hand-built in.() list at this scale. The table
-  // only ever holds one row per distinct location ever seen, so this stays small and cheap.
-  const cached = await sbGet("location_geocodes?select=location")
+  // (e.g. "Berlin; London; Munich"), which breaks a hand-built in.() list at this scale.
+  const cached = await fetchAllPages("location_geocodes?select=location")
   const cachedSet = new Set(cached.map((c) => c.location))
   const pending = distinctLocations.filter((l) => !cachedSet.has(l))
 
