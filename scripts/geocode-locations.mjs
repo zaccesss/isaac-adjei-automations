@@ -260,9 +260,11 @@ async function main() {
         `OpenCage quota exceeded, stopped early. Geocoded ${totalResolved}/${totalProcessed} before stopping, ` +
         `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run once quota resets.`,
       )
-      return
+      // No return here - the corrections pass below makes no API calls at all, so a quota
+      // exhaustion on brand new locations should never block it from still running.
+    } else {
+      console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
     }
-    console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
   }
 
   // Corrections: rows already cached with a coordinate before isPlaceholderLocation existed, which
