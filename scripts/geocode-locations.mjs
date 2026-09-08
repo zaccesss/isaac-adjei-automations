@@ -28,7 +28,11 @@
 // second independent forward geocode could return components for a DIFFERENT match than the pin
 // that is already showing, turning a display bug into a data-mismatch bug. Reverse geocoding keeps
 // the shown label consistent with whatever coordinate is already on the map, right or wrong. Uses
-// the same chunked-flush and quota-exceeded handling as the main geocoding loop above.
+// the same chunked-flush handling as the main geocoding loop above, but falls through to a
+// Nominatim reverse-geocode fallback once OpenCage's quota is exhausted rather than stopping
+// outright - the backfill's own backlog is fixed and finite, so Nominatim's slower 1/sec pace
+// spread across a few hourly runs is an acceptable one-time cost here, unlike the main loop's
+// open-ended stream of brand new locations.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -122,6 +126,27 @@ async function geocodeNominatim(location) {
   const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || null
   const countryCode = addr.country_code ? addr.country_code.toUpperCase() : null
   return { lat: Number(hit.lat), lng: Number(hit.lon), city, countryCode }
+}
+
+// Reverse-geocode fallback for the backfill loop only. The backfill's own backlog is fixed and
+// finite (every already-cached location, a one-time historical debt) rather than an
+// open-ended stream, unlike the main forward-geocoding loop above - so falling through to
+// Nominatim's slower 1/sec pace here for the remainder of a quota-exceeded run is a bounded,
+// acceptable cost, spread across a few hourly runs if needed, not the unbounded blowout the main
+// loop's own comment warns against for a genuinely large backlog of brand new locations.
+async function reverseGeocodeNominatim(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(8000),
+    headers: { "User-Agent": "isaacadjei.me application-map geocoder (contact via isaacadjei.me)" },
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const addr = data?.address
+  if (!addr) return null
+  const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || null
+  const countryCode = addr.country_code ? addr.country_code.toUpperCase() : null
+  return { city, countryCode }
 }
 
 // PostgREST caps a single select at 1000 rows. A plain unpaginated select only ever sees the first
@@ -227,7 +252,11 @@ async function main() {
   let backfillBuffer = []
   let backfillProcessed = 0
   let backfillFound = 0
-  let backfillQuotaExceeded = false
+  let usedNominatimFallback = false
+  // Once OpenCage reports its quota exhausted, every subsequent call this run would fail the
+  // same way - skip straight to Nominatim for the rest rather than wasting a request confirming
+  // the same 402 over and over.
+  let openCageExhausted = false
 
   async function flushBackfill() {
     if (!backfillBuffer.length) return
@@ -239,14 +268,24 @@ async function main() {
 
   for (const c of needsBackfill) {
     let hit = null
-    try {
-      hit = await reverseGeocodeOpenCage(c.lat, c.lng)
-    } catch (err) {
-      if (err instanceof OpenCageQuotaExceeded) {
-        backfillQuotaExceeded = true
-        break
+    if (!openCageExhausted) {
+      try {
+        hit = await reverseGeocodeOpenCage(c.lat, c.lng)
+      } catch (err) {
+        if (err instanceof OpenCageQuotaExceeded) openCageExhausted = true
+        hit = null
       }
-      hit = null
+    }
+    if (!hit && openCageExhausted) {
+      try {
+        hit = await reverseGeocodeNominatim(c.lat, c.lng)
+      } catch {
+        hit = null
+      }
+      usedNominatimFallback = true
+      // Nominatim's usage policy caps requests at 1/sec - only reached once OpenCage's quota is
+      // actually exhausted, not on every item.
+      await new Promise((r) => setTimeout(r, 1000))
     }
     backfillBuffer.push({
       location: c.location,
@@ -260,15 +299,12 @@ async function main() {
   }
   await flushBackfill()
 
-  if (backfillQuotaExceeded) {
-    const remaining = needsBackfill.length - backfillProcessed
-    console.log(
-      `OpenCage quota exceeded during backfill, stopped early. Backfilled ${backfillFound}/${backfillProcessed} before stopping, ` +
-      `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run.`,
-    )
-    return
-  }
-  console.log(`Backfilled city/country for ${backfillFound}/${backfillProcessed} previously-geocoded locations.`)
+  const remaining = needsBackfill.length - backfillProcessed
+  console.log(
+    `Backfilled city/country for ${backfillFound}/${backfillProcessed} previously-geocoded locations` +
+    `${usedNominatimFallback ? " (OpenCage quota exhausted partway, finished the rest via Nominatim)" : ""}` +
+    `${remaining > 0 ? `, ${remaining} left for a future run (job timeout reached)` : ""}.`,
+  )
 }
 
 await main()
