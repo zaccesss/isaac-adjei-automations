@@ -78,6 +78,24 @@ async function sbUpsert(table, rows, onConflict) {
 // the same try/catch every other OpenCage failure already goes through without a second code path.
 class OpenCageQuotaExceeded extends Error {}
 
+// Confirmed live: job-listing metadata like "2 Locations" (a board's own placeholder for a
+// multi-site posting) and "Remote"/"Remote (US)"/"US-Remote" carry no real place name at all, yet
+// both geocoders happily returned SOME coordinate for them anyway - "2 Locations" through "35
+// Locations" all landed on the exact same random Kenyan ward. Every bare "Remote" variant landed
+// on an actual unincorporated place literally named Remote, Oregon, since that real place name
+// happens to match the word. Once city/country_code merges same-label points together (the
+// Applications map and Top 10 cities chart both do), these coincidental matches compound into one
+// wildly inflated fake "city" standing in for hundreds of applications with no real location.
+// Stripped of digits, "locations"/"location" and remote-work filler words, anything with no
+// remaining run of 3+ letters carries no real place name and is treated as unresolvable - a bare
+// 2-letter code like "US" or "OR" does not count as a place on its own either, since the map can
+// only plot a specific pin, not a country- or state-level area.
+const PLACEHOLDER_FILLER = /\b(remote|hybrid|on[- ]?site|wfh|locations?|emea|apac|nam|amer)\b/gi
+function isPlaceholderLocation(location) {
+  const stripped = location.replace(/\d+/g, " ").replace(PLACEHOLDER_FILLER, " ")
+  return !/[a-zA-Z]{3,}/.test(stripped)
+}
+
 function componentsToCityCountry(components) {
   if (!components) return { city: null, countryCode: null }
   const city = components.city || components.town || components.village || components.municipality || components.county || null
@@ -200,6 +218,11 @@ async function main() {
     console.log("No new application locations to geocode.")
   } else {
     for (const location of pending) {
+      if (isPlaceholderLocation(location)) {
+        buffer.push({ location, lat: null, lng: null, city: null, country_code: null, resolved_at: new Date().toISOString() })
+        if (buffer.length >= CHUNK_SIZE) await flush()
+        continue
+      }
       let hit = null
       try {
         hit = await geocodeOpenCage(location)
@@ -240,6 +263,28 @@ async function main() {
       return
     }
     console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
+  }
+
+  // Corrections: rows already cached with a coordinate before isPlaceholderLocation existed, which
+  // resolved to exactly the coincidental-place-name bug this fix targets. Found live: 8 raw
+  // "N Locations" strings all sharing one random Kenyan ward, 28 "Remote" variants all sharing one
+  // Oregon county. Cleared back to unresolved rather than left showing a fake specific place.
+  const needsCorrection = cached.filter((c) => c.lat != null && isPlaceholderLocation(c.location))
+  if (needsCorrection.length) {
+    const correctionRows = needsCorrection.map((c) => ({
+      location: c.location, lat: null, lng: null, city: null, country_code: null, resolved_at: new Date().toISOString(),
+    }))
+    await sbUpsert("location_geocodes", correctionRows, "location")
+    console.log(`Corrected ${correctionRows.length} placeholder location(s) that had wrongly resolved to a real coordinate.`)
+    // Mutates the same object references `cached` and `needsBackfill` below both read from, so the
+    // just-cleared rows are excluded from backfill instead of immediately being re-reverse-geocoded
+    // back to the same wrong coordinate.
+    for (const c of needsCorrection) {
+      c.lat = null
+      c.lng = null
+      c.city = null
+      c.country_code = null
+    }
   }
 
   // Backfill: rows that already resolved to a real coordinate before city/country_code existed.
