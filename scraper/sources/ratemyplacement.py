@@ -34,7 +34,7 @@ _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}")
 # pre-registration listings. Those are worth keeping (registering early is the
 # right move for a placement year), but the prefix clutters the stored title and
 # blunts the tech filter, so I strip it and classify on the real role underneath.
-_PREREG_PREFIX_RE = re.compile(r"^register your interest\s*[-–—:]\s*", re.I)
+_PREREG_PREFIX_RE = re.compile(r"^register your interest\s*[---:]\s*", re.I)
 
 # Only these job-type slugs actually filter the server-rendered feed (verified
 # July 2026); the graduate slugs are ignored by the site and return the whole
