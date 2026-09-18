@@ -1,5 +1,19 @@
 # Code of Conduct
 
-This is a personal repository. It is public only so its scheduled jobs run on free GitHub Actions minutes - it is not an open project and is not set up to accept external contributions, pull requests, issues or discussions.
+## Our Standards
 
-If you believe you have found a security issue, please follow [SECURITY.md](SECURITY.md). For anything else, you can reach me at contact@isaacadjei.me.
+This is a personal automation repository, kept public so its scheduled jobs run on free GitHub Actions minutes. Interactions (issues, discussions, comments) should be:
+
+- Respectful and constructive
+- On-topic and relevant to the project
+- Free of spam, harassment or hate speech
+
+## Enforcement
+
+Violations will result in removal and blocking from the repository. To report an issue, contact: contact@isaacadjei.me
+
+If you believe you have found a security issue, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+
+## Attribution
+
+Adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1.
