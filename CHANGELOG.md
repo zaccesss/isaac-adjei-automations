@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-09-18
+
+### Added
+
+- CODEOWNERS and SUPPORT.md.
+- Markdown lint CI workflow with its own `.markdownlint.json`, added to the workflows README.
+- YAML issue forms for bug reports and feature requests plus a pull request template.
+- `.github/ISSUE_TEMPLATE/config.yml` disabling blank issues.
+
+### Changed
+
+- Rewrote CODE_OF_CONDUCT.md from a closed-to-external-input notice to the standard interaction guidelines used across my other repositories.
+
+---
+
 ## 2026-09-08
 
 ### Fixed
