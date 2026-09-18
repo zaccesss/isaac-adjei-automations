@@ -43,6 +43,7 @@ is what the workflow file holds).
 | --- | --- | --- |
 | [ci](ci.yml) | push, PR | Syntax-checks the Python and Node scripts so a broken change cannot land (no build step - the scripts are standalone) |
 | [gitleaks](gitleaks.yml) | push, PR | Scans for hard-coded secrets |
+| [markdownlint](markdownlint.yml) | push, PR | Lints every markdown file against [`.markdownlint.json`](../../.markdownlint.json) |
 
 Dependabot PR auto-merge and merged-branch cleanup are handled centrally by repo-ops, so this repo carries no auto-merge or branch-maintenance workflow of its own.
 
