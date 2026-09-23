@@ -10,7 +10,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 
 | Script | Lang | Runs from | Purpose |
 | --- | --- | --- | --- |
-| [`wakatime-sync.py`](wakatime-sync.py) | Python | wakatime-sync, daily-coding-summary | Fetches WakaTime daily totals and per-hour durations and upserts them into `wakatime_daily` (`on_conflict=date`, so re-runs are safe) |
+| [`wakatime-sync.py`](wakatime-sync.py) | Python | wakatime-sync, daily-coding-summary | Fetches WakaTime daily totals, per-hour durations, categories, machines and extra coding metrics and upserts them into `wakatime_daily` (`on_conflict=date`, so re-runs are safe) |
 | [`daily-coding-summary.mjs`](daily-coding-summary.mjs) | Node | daily-coding-summary | Posts the Discord coding recap for the day that just ended, comparing it to the 30-day average |
 | [`routine.mjs`](routine.mjs) | Node | routine | Reads the day's habits and streaks and posts a morning checklist to Discord |
 | [`send-streak-reminder.mjs`](send-streak-reminder.mjs) | Node | streak-reminder | Posts which active streaks are not yet logged today |

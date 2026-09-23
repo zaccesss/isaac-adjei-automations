@@ -19,9 +19,11 @@ from supabase import create_client
 # Fetch the last 14 days so a single missed run never leaves gaps.
 FETCH_DAYS = 14
 
-# On each run, also back-fill the hours column for rows within this many days
-# that have hours = null (catches rows created before this column existed).
-BACKFILL_DAYS = 90
+# On each run, also back-fill rows within this many days that are missing hourly or extra
+# metrics (catches rows created before those columns existed). A one-off manual run can
+# reach further back. Each run is capped so a big backlog drains over a few runs.
+BACKFILL_DAYS = int(os.environ.get("BACKFILL_DAYS", "90") or 90)
+MAX_BACKFILL_PER_RUN = int(os.environ.get("MAX_BACKFILL_PER_RUN", "120") or 120)
 
 WAKATIME_API_KEY = os.environ.get("WAKATIME_API_KEY", "").strip()
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
@@ -69,7 +71,48 @@ def aggregate_hours(durations: list[dict]) -> list[int]:
     return hours
 
 
-def build_row(day: dict, hours: list[int] | None = None) -> dict | None:
+def aggregate_ai(durations: list[dict]) -> dict:
+    """
+    Sum the per-duration AI metrics for one day. WakaTime reports GenAI and manually
+    typed line changes, token counts, prompt stats and a USD cost per model.
+    """
+    ai = {
+        "ai_additions": 0,
+        "ai_deletions": 0,
+        "human_additions": 0,
+        "human_deletions": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "prompts": 0,
+        "sessions": 0,
+        "prompt_chars": 0,
+        "costs": {},
+    }
+    for d in durations:
+        ai["ai_additions"] += int(d.get("ai_additions") or 0)
+        ai["ai_deletions"] += int(d.get("ai_deletions") or 0)
+        ai["human_additions"] += int(d.get("human_additions") or 0)
+        ai["human_deletions"] += int(d.get("human_deletions") or 0)
+        ai["input_tokens"] += int(d.get("ai_input_tokens") or 0)
+        ai["output_tokens"] += int(d.get("ai_output_tokens") or 0)
+        ai["prompts"] += int(d.get("ai_prompt_events_total") or 0)
+        ai["sessions"] += int(d.get("ai_sessions") or 0)
+        ai["prompt_chars"] += int(d.get("ai_prompt_length_sum") or 0)
+        for model, cost in (d.get("ai_model_costs") or {}).items():
+            ai["costs"][model] = round(ai["costs"].get(model, 0) + float(cost or 0), 6)
+    return ai
+
+
+def top(items: list[dict], limit: int) -> list[dict]:
+    """Keep the top entries by time as name and total_seconds pairs."""
+    return sorted(
+        [{"name": i["name"], "total_seconds": i["total_seconds"]} for i in items],
+        key=lambda x: x["total_seconds"],
+        reverse=True,
+    )[:limit]
+
+
+def build_row(day: dict, hours: list[int] | None = None, ai: dict | None = None) -> dict | None:
     """Convert one WakaTime summary day into a wakatime_daily row."""
     day_date = day.get("range", {}).get("date")
     if not day_date:
@@ -103,9 +146,13 @@ def build_row(day: dict, hours: list[int] | None = None) -> dict | None:
         "projects": projects,
         "editors": editors,
         "operating_systems": operating_systems,
+        "categories": top(day.get("categories", []), 10),
+        "machines": top(day.get("machines", []), 5),
     }
     if hours is not None:
         row["hours"] = hours
+    if ai is not None:
+        row["ai"] = ai
     return row
 
 
@@ -135,19 +182,19 @@ def main() -> None:
 
     # Fetch durations for each day in the sync window (gives hourly breakdown)
     print(f"Fetching WakaTime durations for {FETCH_DAYS} days...")
-    durations_by_date: dict[str, list[int]] = {}
+    durations_by_date: dict[str, tuple[list[int], dict]] = {}
     cursor = start_date
     while cursor <= end_date:
         raw = fetch_durations(cursor)
-        durations_by_date[cursor.isoformat()] = aggregate_hours(raw)
+        durations_by_date[cursor.isoformat()] = (aggregate_hours(raw), aggregate_ai(raw))
         cursor += timedelta(days=1)
         time.sleep(0.2)  # be polite to the API
 
     # Build rows for upsert
     rows = []
     for day_date, day in days_by_date.items():
-        hours = durations_by_date.get(day_date)
-        row = build_row(day, hours=hours)
+        hours, ai = durations_by_date.get(day_date, (None, None))
+        row = build_row(day, hours=hours, ai=ai)
         if row:
             rows.append(row)
 
@@ -161,27 +208,31 @@ def main() -> None:
         )
         print(f"  Upserted {len(rows)} row(s) with hourly data")
 
-    # Back-fill hours for recent rows that predate this column (hours = null)
+    # Back-fill hourly and AI data for recent rows that predate those columns
     backfill_start = (end_date - timedelta(days=BACKFILL_DAYS - 1)).isoformat()
     existing = (
         supabase.table("wakatime_daily")
         .select("date")
         .gte("date", backfill_start)
-        .is_("hours", "null")
+        .or_("hours.is.null,ai.is.null")
+        .order("date", desc=True)
         .execute()
     )
     backfill_dates = [r["date"] for r in (existing.data or [])]
     # Skip dates already fetched above
     recent_fetched = set(days_by_date.keys())
     backfill_dates = [d for d in backfill_dates if d not in recent_fetched]
+    remaining = max(0, len(backfill_dates) - MAX_BACKFILL_PER_RUN)
+    backfill_dates = backfill_dates[:MAX_BACKFILL_PER_RUN]
 
     if backfill_dates:
-        print(f"Back-filling hours for {len(backfill_dates)} row(s) with null hours...")
+        print(f"Back-filling {len(backfill_dates)} row(s) missing hourly or AI data ({remaining} left for later runs)...")
         for d_str in sorted(backfill_dates):
             d = date.fromisoformat(d_str)
             raw = fetch_durations(d)
-            hours = aggregate_hours(raw)
-            supabase.table("wakatime_daily").update({"hours": hours}).eq("date", d_str).execute()
+            supabase.table("wakatime_daily").update(
+                {"hours": aggregate_hours(raw), "ai": aggregate_ai(raw)}
+            ).eq("date", d_str).execute()
             print(f"  Back-filled {d_str}")
             time.sleep(0.2)
 
