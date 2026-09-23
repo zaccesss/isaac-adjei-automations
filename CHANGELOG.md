@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- wakatime-sync stores extra coding metrics (categories, machines and per-day totals from the durations feed) and backfills older rows in capped batches. A manual run can widen the backfill window.
+- wakatime-sync stores extra coding metrics (categories, machines and per-day totals from the durations feed) and backfills older rows in capped batches, including their categories and machines. A manual run can widen the backfill window.
 
 ---
 
