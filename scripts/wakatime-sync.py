@@ -214,7 +214,7 @@ def main() -> None:
         supabase.table("wakatime_daily")
         .select("date")
         .gte("date", backfill_start)
-        .or_("hours.is.null,ai.is.null")
+        .or_("hours.is.null,ai.is.null,categories.is.null")
         .order("date", desc=True)
         .execute()
     )
@@ -226,13 +226,21 @@ def main() -> None:
     backfill_dates = backfill_dates[:MAX_BACKFILL_PER_RUN]
 
     if backfill_dates:
-        print(f"Back-filling {len(backfill_dates)} row(s) missing hourly or AI data ({remaining} left for later runs)...")
+        print(f"Back-filling {len(backfill_dates)} row(s) missing hourly or extra metrics ({remaining} left for later runs)...")
+        first = date.fromisoformat(min(backfill_dates))
+        last = date.fromisoformat(max(backfill_dates))
+        older_summaries = {
+            d.get("range", {}).get("date"): d for d in fetch_summaries(first, last)
+        }
         for d_str in sorted(backfill_dates):
-            d = date.fromisoformat(d_str)
-            raw = fetch_durations(d)
-            supabase.table("wakatime_daily").update(
-                {"hours": aggregate_hours(raw), "ai": aggregate_ai(raw)}
-            ).eq("date", d_str).execute()
+            raw = fetch_durations(date.fromisoformat(d_str))
+            hours, ai = aggregate_hours(raw), aggregate_ai(raw)
+            day = older_summaries.get(d_str)
+            row = build_row(day, hours=hours, ai=ai) if day else None
+            if row:
+                supabase.table("wakatime_daily").upsert(row, on_conflict="date").execute()
+            else:
+                supabase.table("wakatime_daily").update({"hours": hours, "ai": ai}).eq("date", d_str).execute()
             print(f"  Back-filled {d_str}")
             time.sleep(0.2)
 
