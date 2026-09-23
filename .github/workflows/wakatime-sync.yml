@@ -8,6 +8,15 @@ on:
   schedule:
     - cron: "19 */3 * * *" # backup every 3 hours, matching the primary cadence; idempotent upsert
   workflow_dispatch:
+    inputs:
+      backfill_days:
+        description: "How many days back to backfill hourly and AI data (default 90)"
+        required: false
+        default: "90"
+      max_rows:
+        description: "Most rows to backfill in this run (default 120)"
+        required: false
+        default: "120"
 
 concurrency:
   group: ${{ github.workflow }}
@@ -58,6 +67,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BACKFILL_DAYS: ${{ inputs.backfill_days }}
+          MAX_BACKFILL_PER_RUN: ${{ inputs.max_rows }}
         run: python scripts/wakatime-sync.py
 
       - name: Healthcheck success
