@@ -11,14 +11,14 @@ from ..http import SESSION
 # ─── REED.CO.UK ─────────────────────────────────────────────────────────────
 
 def scrape_reed(ctx) -> int:
-    # I use Reed's public API - REED_API_KEY must be set as a GitHub Actions
+    # Use Reed's public API - REED_API_KEY must be set as a GitHub Actions
     # secret. Register free at reed.co.uk/developers/jobseeker to get one.
     api_key = config.REED_API_KEY
     if not api_key:
         print("  REED_API_KEY not set - skipping Reed.co.uk")
         return 0
 
-    # I run separate searches for each role type so I can use the graduate flag
+    # Run separate searches for each role type so I can use the graduate flag
     # and get broader keyword coverage than a single broad query.
     SEARCHES = [
         {"keywords": "software intern",
@@ -33,7 +33,7 @@ def scrape_reed(ctx) -> int:
          "locationName": "United Kingdom"},
         {"keywords": "industrial placement",
          "locationName": "United Kingdom"},
-        # I use graduate=true for these so Reed pre-filters to graduate roles.
+        # Use graduate=true for these so Reed pre-filters to graduate roles.
         {"keywords": "software engineer",
          "locationName": "United Kingdom", "graduate": "true"},
         {"keywords": "technology",

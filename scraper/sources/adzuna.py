@@ -11,7 +11,7 @@ from ..http import SESSION
 # ─── ADZUNA ──────────────────────────────────────────────────────────────────
 
 def scrape_adzuna(ctx) -> int:
-    # I use Adzuna's aggregated UK jobs API which covers hundreds of job boards.
+    # Use Adzuna's aggregated UK jobs API which covers hundreds of job boards.
     # ADZUNA_APP_ID and ADZUNA_APP_KEY must be set as GitHub Actions secrets.
     # Register free at developer.adzuna.com - 1000 requests/month on trial.
     app_id = config.ADZUNA_APP_ID
@@ -54,7 +54,7 @@ def scrape_adzuna(ctx) -> int:
     ]
 
     def _resolve_url(tracking_url: str) -> str:
-        # I follow the Adzuna redirect to get the actual company/ATS URL.
+        # Follow the Adzuna redirect to get the actual company/ATS URL.
         # If it still lands on adzuna.co.uk the tracking link is kept as fallback.
         try:
             r = SESSION.head(tracking_url, allow_redirects=True, timeout=5)

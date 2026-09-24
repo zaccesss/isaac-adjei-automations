@@ -1,7 +1,7 @@
 """The ATS company lists, the priority companies and the student department names."""
 
 
-# I apply a looser filter for priority companies because a Software Engineer
+# Apply a looser filter for priority companies because a Software Engineer
 # role at Google is still worth knowing about even if "intern" is absent.
 PRIORITY_COMPANIES = {
     "google", "amazon", "apple", "microsoft", "meta", "netflix", "nvidia",
@@ -61,7 +61,7 @@ PRIORITY_COMPANIES = {
     "edwards vacuum", "mbda", "babcock", "ocado", "helsing", "nothing technology",
 }
 
-# I also check Greenhouse department names because some companies tag their
+# Also check Greenhouse department names because some companies tag their
 # student pipeline departments rather than including "intern" in every title.
 STUDENT_DEPTS = {
     "early talent", "university", "intern", "internship", "student",
@@ -73,11 +73,11 @@ STUDENT_DEPTS = {
 
 # ─── COMPANY LISTS ──────────────────────────────────────────────────────────
 
-# I group companies by ATS vendor so it is easy to add new ones in the right
+# Group companies by ATS vendor so it is easy to add new ones in the right
 # section. Each tuple is (ats_slug, display_name).
 
 # (greenhouse_slug, display_name)
-# I keep only slugs confirmed to return HTTP 200 in recent runs.
+# Keep only slugs confirmed to return HTTP 200 in recent runs.
 # Companies that migrated away from Greenhouse return 404 for every request
 # and are not guessed - wrong slugs never match their new ATS.
 GREENHOUSE_COMPANIES = [

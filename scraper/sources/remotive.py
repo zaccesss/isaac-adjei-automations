@@ -10,8 +10,8 @@ from ..http import SESSION
 # ─── REMOTIVE (remote full-time tech jobs, worldwide) ────────────────────────
 
 def scrape_remotive(ctx) -> int:
-    # I use Remotive's free public API which returns currently open remote jobs.
-    # I filter to full_time only so internship/contract listings are excluded.
+    # Use Remotive's free public API which returns currently open remote jobs.
+    # Filter to full_time only so internship/contract listings are excluded.
     print("\nScraping Remotive (remote full-time jobs)...")
     count = 0
     categories = ["software-dev", "devops-sysadmin", "data", "product"]

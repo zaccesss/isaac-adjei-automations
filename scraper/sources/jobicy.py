@@ -10,7 +10,7 @@ from ..http import SESSION
 # ─── JOBICY ──────────────────────────────────────────────────────────────────
 
 def scrape_jobicy(ctx) -> int:
-    # I use Jobicy's free open API - no auth required.
+    # Use Jobicy's free open API - no auth required.
     # It covers remote-only tech roles so I skip the location check and accept
     # any matching student role since "Remote" is UK-acceptable.
     QUERIES = [
@@ -36,8 +36,8 @@ def scrape_jobicy(ctx) -> int:
                 company = job.get("companyName", "")
                 job_url = job.get("url", "")
 
-                # I skip the location check here because Jobicy is remote-only;
-                # I still require a student term and tech keyword.
+                # Skip the location check here because Jobicy is remote-only;
+                # Still require a student term and tech keyword.
                 if not is_student_role(title):
                     continue
                 if not any(k in title.lower() for k in TECH_KEYWORDS):

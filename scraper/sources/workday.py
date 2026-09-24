@@ -78,7 +78,7 @@ def scrape_workday(
                         if bf:
                             location_text = bf
                             break
-                # I pre-filter non-UK roles to avoid HEAD-checking hundreds of
+                # Pre-filter non-UK roles to avoid HEAD-checking hundreds of
                 # US job URLs. is_relevant does a second check inside.
                 is_priority = any(p in company_name.lower() for p in PRIORITY_COMPANIES)
                 if location_text and not is_location_ok(location_text, is_priority):

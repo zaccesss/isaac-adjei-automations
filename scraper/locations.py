@@ -62,10 +62,10 @@ US_LOCATIONS = [
     "tokyo", "bangalore", "bengaluru", "hyderabad", "india", "china",
     # Exclude honolulu, hawaii specifically
     "honolulu", "hawaii",
-    # I add these normalised remote-US strings because the scraper lowercases
+    # Add these normalised remote-US strings because the scraper lowercases
     # location before matching and these variants were slipping through.
     "remote - us", "remote, us", "us remote", "remote us",
-    # I add specific US cities missing from the original list.
+    # Add specific US cities missing from the original list.
     "palo alto", "menlo park", "mountain view", "sunnyvale", "cupertino",
     "redmond", "bellevue", "kirkland", "san diego", "irvine",
     "gurugram", "gurgaon",
@@ -119,7 +119,7 @@ def is_location_ok(location: str, is_priority: bool) -> bool:
     if not location:
         return True  # unknown = include
     loc = location.lower()
-    # I also reject locations that end with ", us" because some postings
+    # Also reject locations that end with ", us" because some postings
     # use that pattern instead of spelling out "United States".
     if loc.rstrip().endswith(", us"):
         return False

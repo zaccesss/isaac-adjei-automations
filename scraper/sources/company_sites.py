@@ -14,7 +14,7 @@ from ..stats import record_stat
 # ─── COMPANY CAREER SITES (Playwright - proprietary ATSes) ──────────────────
 # Google, Meta, ARM, Goldman Sachs and JPMorgan do not expose a public REST API.
 # ARM and JPMorgan use Workday but require session cookies the CXS API rejects.
-# I open one shared browser for all five companies to reduce startup overhead.
+# Open one shared browser for all five companies to reduce startup overhead.
 
 def scrape_company_sites_playwright(ctx) -> int:
     """Scrape Google, Meta, ARM, Goldman Sachs and JPMorgan via headless browser.

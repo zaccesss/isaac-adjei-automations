@@ -94,7 +94,7 @@ def scrape_ratemyplacement(ctx) -> int:
     for slug, job_type in TYPE_SLUGS.items():
         count = 0
         first_jobs, last_page = fetch_page(slug, 1)
-        # I cap the page walk at the reported last page so a change in the
+        # Cap the page walk at the reported last page so a change in the
         # response can never spin this into an unbounded loop.
         for page in range(1, min(last_page, 40) + 1):
             jobs = first_jobs if page == 1 else fetch_page(slug, page)[0]

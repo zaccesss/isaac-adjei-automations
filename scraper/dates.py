@@ -15,7 +15,7 @@ def is_date_relevant(closing_date_str: "str | None", cutoff: "datetime | None" =
         return True  # no deadline = include (unknown)
     try:
         d = datetime.strptime(closing_date_str, "%Y-%m-%d")
-        # I keep roles whose deadline passed within the last 14 days so a freshly
+        # Keep roles whose deadline passed within the last 14 days so a freshly
         # closed posting still shows (late applications are sometimes accepted)
         # rather than dropping it the instant the date ticks over.
         grace = datetime.now() - timedelta(days=14)

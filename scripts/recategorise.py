@@ -19,7 +19,7 @@ import time
 
 import requests
 
-# I reuse the scraper package's own category set and company lists rather than
+# Reuse the scraper package's own category set and company lists rather than
 # keeping a second copy here that could drift out of step with what the scraper
 # stamps on insert. filters and ai import nothing heavier than requests, so this
 # adds no dependency to the recategorise workflow.

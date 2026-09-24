@@ -9,7 +9,7 @@ from ..http import SESSION
 # ─── ARBEITNOW ───────────────────────────────────────────────────────────────
 
 def scrape_arbeitnow(ctx) -> int:
-    # I use Arbeitnow's free public API - no auth required.
+    # Use Arbeitnow's free public API - no auth required.
     # It aggregates European tech jobs and is particularly strong for remote
     # and EU-based engineering roles.
     count = 0
