@@ -1,9 +1,9 @@
-// Sends due medication reminders. Runs every 30 minutes: for each active reminder within its date range
+// sends due medication reminders. Runs every 30 minutes: for each active reminder within its date range
 // it fires any time that has just come due (a 30-minute window absorbs cron jitter), to any of its
 // channels - Discord, email, SMS - and it can use several at once. Each due time is logged once so a dose
 // is never sent twice and adherence can be charted. Node only, no deps.
 //
-// A workflow_dispatch with TEST_TO set sends one test SMS to that number and exits.
+// a workflow_dispatch with TEST_TO set sends one test SMS to that number and exits.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -34,7 +34,7 @@ async function db(path, opts) {
     ...opts,
   })
   if (!res.ok) throw new Error(`${res.status} ${await res.text()} (${path})`)
-  // A POST insert returns 201 with an empty body, so parse only when there is one.
+  // a POST insert returns 201 with an empty body, so parse only when there is one.
   const text = await res.text()
   return text ? JSON.parse(text) : null
 }
@@ -74,7 +74,7 @@ async function sendEmail(to, r, t) {
   return res.ok
 }
 
-// A due dose that no channel could deliver is a real problem - it is often someone else's medication -
+// a due dose that no channel could deliver is a real problem - it is often someone else's medication -
 // so I raise it to #errors rather than only logging it. The dose is deliberately NOT logged as sent, so
 // the next run retries delivery; this alert makes the failure visible in the meantime. #errors is a
 // private channel, so the name is safe to include here, unlike the public run log which stays id-only.
@@ -110,7 +110,7 @@ async function sendSms(to, text) {
   return res.ok
 }
 
-// Manual test path: a workflow_dispatch with TEST_EMAIL or TEST_TO sends one test message and exits.
+// manual test path: a workflow_dispatch with TEST_EMAIL or TEST_TO sends one test message and exits.
 if (process.env.TEST_EMAIL || process.env.TEST_TO) {
   if (process.env.TEST_EMAIL) {
     const ok = await sendEmail(process.env.TEST_EMAIL, { name: "Test reminder", dose: "1 drop - test", notes: "If you got this, email reminders are working." }, "now")
@@ -129,14 +129,14 @@ let sentDoses = 0
 for (const r of reminders) {
   if (r.start_date && today < r.start_date) continue
   if (r.end_date && today > r.end_date) continue
-  // Fall back to the old single channel/recipient for any row not yet migrated.
+  // fall back to the old single channel/recipient for any row not yet migrated.
   const channels = Array.isArray(r.channels) && r.channels.length ? r.channels : r.channel ? [r.channel] : []
   const emailTo = r.email || (r.channel === "email" ? r.recipient : null)
   const phoneTo = r.phone || (r.channel === "sms" ? r.recipient : null)
 
   for (const t of r.times || []) {
     const tMin = toMin(t)
-    // Send any dose whose time has passed today and has not been logged yet. GitHub Actions cron is
+    // send any dose whose time has passed today and has not been logged yet. GitHub Actions cron is
     // unreliable - it delays runs and drops many of them - so a fixed match window silently missed doses
     // that fell in the gaps. Catching up on every due-but-unsent dose (deduped below, once per day) means
     // the next run that does fire delivers the reminder, so a dose is never skipped, only ever a bit late.
@@ -158,7 +158,7 @@ for (const r of reminders) {
         body: JSON.stringify({ reminder_id: r.id, label: r.label, name: r.name, channel: channels.join(","), scheduled_time: t, status: "sent" }),
       })
       sentDoses++
-      // Run logs are public, so print the row id only - medication names are health data.
+      // run logs are public, so print the row id only - medication names are health data.
       console.log(`sent: reminder ${r.id} @ ${t} via ${channels.join(",")}`)
     } else {
       console.log(`not sent (no channel succeeded): reminder ${r.id} @ ${t}`)

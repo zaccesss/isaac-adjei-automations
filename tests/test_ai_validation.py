@@ -1,4 +1,4 @@
-# Cases derived from the inline comments in scraper/ai.py: _validate_ai only ever
+# cases derived from the inline comments in scraper/ai.py: _validate_ai only ever
 # emits clean scraper-owned values and _ai_label coerces to the exact text labels the
 # app stores.
 from scraper.ai import _ai_label, _validate_ai
@@ -83,7 +83,7 @@ def test_a_rate_limited_provider_is_benched_for_the_run(monkeypatch):
     second = ai_mod.ai_extract(ctx, desc)
 
     assert first == {"category": "Embedded"} and second == {"category": "Embedded"}
-    # The 429 benched the limited provider immediately: it is never tried again.
+    # the 429 benched the limited provider immediately: it is never tried again.
     assert calls["limited"] == 1
     assert calls["healthy"] == 2
     assert ctx.ai_provider_failures["Limited"] >= 3

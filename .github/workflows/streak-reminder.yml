@@ -1,4 +1,4 @@
-# Posts a Discord reminder of streaks not yet logged, twice a day: a morning check at 08:00
+# posts a Discord reminder of streaks not yet logged, twice a day: a morning check at 08:00
 # Europe/London and an evening pass at 20:00 that only posts while something is still unlogged.
 # GitHub drops many scheduled runs, so each slot fires every 30 min across its window and the gate
 # step lets only the right UK hours through; the script claims (job-slot, UK-day) so neither slot

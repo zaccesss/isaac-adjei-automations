@@ -1,4 +1,4 @@
-# Cases derived from the inline comments in scraper/filters.py: the whole-word intern
+# cases derived from the inline comments in scraper/filters.py: the whole-word intern
 # match, the Internal exclusions, the senior-title guard on the department fallback and
 # the per-category ordering of infer_type.
 from scraper.filters import detect_category, infer_type, is_relevant, is_student_role, resolve_type
@@ -12,7 +12,7 @@ def test_internal_titles_are_rejected():
 
 def test_international_never_counts_as_intern():
     assert not is_student_role("International Business Manager", None)
-    # Even alongside a real intern word, the exclusion wins for safety.
+    # even alongside a real intern word, the exclusion wins for safety.
     assert not is_student_role("International Sales Intern", None)
 
 
@@ -50,7 +50,7 @@ def test_is_relevant_requires_student_tech_and_location():
 
 
 def test_whole_word_terms_stop_the_lookalikes():
-    # Substring matching once let all of these through; each is a real case
+    # substring matching once let all of these through; each is a real case
     # caught in the July 2026 verification runs.
     assert not is_student_role("Outplacement Consultant", None)
     assert not is_student_role("Replacement Parts Engineer", None)
@@ -80,13 +80,13 @@ def test_detect_category_company_first_then_title():
 
 
 def test_resolve_type_sends_signal_free_titles_to_jobs():
-    # Professional titles with no student signal must never keep a student tab,
+    # professional titles with no student signal must never keep a student tab,
     # whatever they were stamped with before.
     assert resolve_type("Networking Architect", fallback="Event") == "Full-time Job"
     assert resolve_type("Sr Software Engineer-Networking", fallback="Event") == "Full-time Job"
     assert resolve_type("Python Developer II", fallback="Internship") == "Full-time Job"
     assert resolve_type("Solutions Architect, Networking - Hyperscale", fallback="Event") == "Full-time Job"
-    # Real student roles and real events keep their meaning.
+    # real student roles and real events keep their meaning.
     assert resolve_type("Software Engineer Industrial Placement") == "Industrial Placement"
     assert resolve_type("Engineering Open Day", fallback="Internship") == "Event"
     assert resolve_type("Aarhus Networking Event for Students", fallback="Internship") == "Event"

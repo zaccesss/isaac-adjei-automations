@@ -1,9 +1,9 @@
-# Confirms isaacadjei.me is reachable from the outside every 15 minutes and pings Healthchecks'
-# Portfolio Website Health project so a real outage actually raises an alert there. cron-ops dispatches
+# confirms isaacadjei.me is reachable from the outside every 15 minutes and pings Healthchecks'
+# portfolio Website Health project so a real outage actually raises an alert there. cron-ops dispatches
 # this (its own minimum wake granularity); the hourly schedule below is just a backup in case a
 # cron-ops dispatch is ever missed.
 #
-# No separate meta-monitoring check here (unlike every other workflow in this repo): the account is
+# no separate meta-monitoring check here (unlike every other workflow in this repo): the account is
 # already at its 20-check free-plan cap. One is not needed anyway - if this workflow itself stops
 # running, no pings reach the site-up check either, so that single check already covers both signals.
 

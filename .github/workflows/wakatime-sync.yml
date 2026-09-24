@@ -1,4 +1,4 @@
-# Keeps the coding dashboard fresh through the day. The sync is idempotent and needs no time gate,
+# keeps the coding dashboard fresh through the day. The sync is idempotent and needs no time gate,
 # so it just runs every 3 hours, paired with the same cadence as github-contributions-sync.yml. The
 # full previous day is synced separately by the 00:30 coding recap workflow before it posts.
 

@@ -26,7 +26,7 @@ _NEXT_DATA_RE = re.compile(
 )
 # E4S prefixes pre-registration listings the same way RateMyPlacement does.
 _PREREG_PREFIX_RE = re.compile(r"^\s*register\s+your\s+interest\s*[-:]\s*", re.I)
-# The survey and gig spam this board floods its categories with. "test" is a
+# the survey and gig spam this board floods its categories with. "test" is a
 # whole-word tech keyword (QA), so "paid test user" would otherwise pass.
 _NON_COMPUTING_RE = re.compile(
     r"\b(test users?|game testers?|your own opinion|survey|panelist|mystery shop|"

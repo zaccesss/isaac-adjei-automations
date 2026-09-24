@@ -1,4 +1,4 @@
-# Advanced setup, replacing the managed default setup. Same languages, same triggers, same
+# advanced setup, replacing the managed default setup. Same languages, same triggers, same
 # weekly schedule, plus a config file that excludes one query. See .github/codeql/codeql-config.yml
 # for why.
 

@@ -70,11 +70,11 @@ def main():
 
     print(f"\n{retyped} rows {'would be' if DRY_RUN else ''} retyped")
 
-    # Report-only: rows the strengthened filters would no longer accept at all
+    # report-only: rows the strengthened filters would no longer accept at all
     # (commercial titles, non-tech roles) and rows the boards have stopped listing
     # (no freshness stamp for 14 days). Nothing here is changed or deleted - these
     # counts are the evidence for a separate, explicitly approved clean-up.
-    # A Full-time Job row is not a student role, so is_relevant rightly rejects it;
+    # a Full-time Job row is not a student role, so is_relevant rightly rejects it;
     # testing those against the student filter counted every Jobs-tab row as "no
     # longer relevant" and inflated the number, so I exclude them here.
     irrelevant = [
@@ -89,7 +89,7 @@ def main():
     if len(irrelevant) > 20:
         print(f"  ... plus {len(irrelevant) - 20} more")
 
-    # My healing bug briefly inserted linked twins next to old url-less rows:
+    # my healing bug briefly inserted linked twins next to old url-less rows:
     # where a company-and-role pair has both, the url-less copy is redundant.
     by_pair = {}
     for r in rows:

@@ -1,4 +1,4 @@
-// Tops up the current year's row in github_contributions_days/_years more often than the portfolio's
+// tops up the current year's row in github_contributions_days/_years more often than the portfolio's
 // own Vercel cron does. Vercel Hobby caps a cron at once a day, so the dashboard's contribution
 // calendar only reflects a day's commits after the next 05:00 London sync; this fills that gap by
 // dispatching the same idempotent sync several times a day. Only the current year is re-fetched -
@@ -23,7 +23,7 @@ if (!PAT) {
   process.exit(0)
 }
 
-// A one-off GraphQL blip clears on the next call - retrying beats letting it page #errors for a job
+// a one-off GraphQL blip clears on the next call - retrying beats letting it page #errors for a job
 // that runs every 3 hours anyway.
 async function retry(fn, attempts = 3) {
   let lastErr
@@ -126,7 +126,7 @@ async function main() {
   console.log(`Synced ${year}: ${days.length} days, ${total} contributions.`)
 }
 
-// No local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
+// no local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
 // to #errors and then exits non-zero. A local catch would swallow it and the failure would only ever
 // reach the run log.
 await main()

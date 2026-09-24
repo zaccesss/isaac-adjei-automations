@@ -64,7 +64,7 @@ def scrape_goldman(ctx) -> int:
             if not _keep(role):
                 continue
             text = _card_text(a)
-            # Goldman lists every region, so I keep only UK cards and read the
+            # goldman lists every region, so I keep only UK cards and read the
             # "City - Country" pair out of the card.
             if not _UK_RE.search(text):
                 continue

@@ -1,4 +1,4 @@
-# Posts the habit and streak checklist to Discord twice a day: the full morning checklist around
+# posts the habit and streak checklist to Discord twice a day: the full morning checklist around
 # 07:00 Europe/London and a smart evening pass around 20:00 that only chases what is still unlogged.
 # GitHub Actions cron drops many runs, so each slot fires every 30 min across its window (covering
 # BST and GMT) and the script posts once per slot and claims (job-slot, UK-day) so it never repeats.

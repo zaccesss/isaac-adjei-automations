@@ -12,13 +12,13 @@ UK_EU_TERMS = [
     "sutton", "kingston upon thames", "richmond", "wimbledon", "stratford",
     "greenwich", "hackney", "islington", "lambeth", "southwark", "wandsworth",
     "shoreditch", "hoxton", "bank", "city of london", "westminster",
-    # More London districts that postings actually name, so a London role is
+    # more London districts that postings actually name, so a London role is
     # never dropped for using a neighbourhood instead of the city.
     "kings cross", "king's cross", "paddington", "liverpool street",
     "moorgate", "holborn", "farringdon", "soho", "covent garden", "camden",
     "hammersmith", "euston", "old street", "aldgate", "canada water",
     "white city", "brixton", "battersea", "vauxhall", "ealing", "wembley",
-    # Major UK cities
+    # major UK cities
     "birmingham", "manchester", "edinburgh", "glasgow", "bristol",
     "cambridge", "oxford", "reading", "leeds", "sheffield",
     "liverpool", "nottingham", "coventry", "leicester", "southampton",
@@ -30,16 +30,16 @@ UK_EU_TERMS = [
     "guildford", "guildford", "woking", "farnborough", "eastleigh",
     "solihull", "walsall", "west bromwich", "dudley", "sandwell",
     "salford", "stockport", "oldham", "rochdale", "bolton", "trafford",
-    # Remote / flexible
+    # remote / flexible
     "remote", "work from home", "hybrid", "flexible", "distributed",
     "anywhere in the uk", "home based", "home-based",
-    # Republic of Ireland (many UK students work in Dublin)
+    # republic of Ireland (many UK students work in Dublin)
     "ireland", "dublin",
-    # Key European tech hubs
+    # key European tech hubs
     "amsterdam", "berlin", "munich", "paris", "lisbon",
     "madrid", "barcelona", "stockholm", "zurich", "geneva",
     "brussels", "luxembourg",
-    # Generic region terms
+    # generic region terms
     "europe", "emea", "european", "worldwide", "global",
     "nationwide",
     # Asia-Pacific tech hubs - UK students commonly target these
@@ -47,7 +47,7 @@ UK_EU_TERMS = [
     "hong kong",
 ]
 
-# Explicitly US/non-EU locations - always rejected even for priority companies.
+# explicitly US/non-EU locations - always rejected even for priority companies.
 US_LOCATIONS = [
     "new york", "san francisco", "los angeles", "san jose",
     "seattle", "boston", "chicago", "austin", "denver", "atlanta",
@@ -56,23 +56,23 @@ US_LOCATIONS = [
     "california", "new jersey", "texas", "north carolina", "colorado",
     "washington, dc", "washington d.c.", "washington, d.c.",
     "united states", "usa", "u.s.a", "u.s.", "north america",
-    # Canada (separate from UK/EU)
+    # canada (separate from UK/EU)
     "toronto", "vancouver", "montreal", "canada",
     # Asia-Pacific
     "tokyo", "bangalore", "bengaluru", "hyderabad", "india", "china",
-    # Exclude honolulu, hawaii specifically
+    # exclude honolulu, hawaii specifically
     "honolulu", "hawaii",
-    # Add these normalised remote-US strings because the scraper lowercases
+    # add these normalised remote-US strings because the scraper lowercases
     # location before matching and these variants were slipping through.
     "remote - us", "remote, us", "us remote", "remote us",
-    # Add specific US cities missing from the original list.
+    # add specific US cities missing from the original list.
     "palo alto", "menlo park", "mountain view", "sunnyvale", "cupertino",
     "redmond", "bellevue", "kirkland", "san diego", "irvine",
     "gurugram", "gurgaon",
 ]
 
-# Known standalone UK city names used for location normalisation.
-# When a posting says just "London" we store it as "London, UK".
+# known standalone UK city names used for location normalisation.
+# when a posting says just "London" we store it as "London, UK".
 UK_CITIES = {
     "london", "birmingham", "manchester", "edinburgh", "glasgow",
     "bristol", "cambridge", "oxford", "reading", "leeds", "sheffield",
@@ -94,14 +94,14 @@ def normalize_location(location: str) -> str:
         return location
     stripped = location.strip()
     lower = stripped.lower()
-    # Already has a country or region indicator - leave as is
+    # already has a country or region indicator - leave as is
     if any(c in lower for c in [
         "uk", "united kingdom", "england", "scotland", "wales",
         "remote", "hybrid", "europe", "emea", "global", "worldwide",
         "ireland", "berlin", "amsterdam", "paris", "lisbon", "zurich",
     ]):
         return stripped
-    # Known bare UK city - append ", UK"
+    # known bare UK city - append ", UK"
     for city in UK_CITIES:
         if city in lower:
             return f"{stripped}, UK"
@@ -119,15 +119,15 @@ def is_location_ok(location: str, is_priority: bool) -> bool:
     if not location:
         return True  # unknown = include
     loc = location.lower()
-    # Also reject locations that end with ", us" because some postings
+    # also reject locations that end with ", us" because some postings
     # use that pattern instead of spelling out "United States".
     if loc.rstrip().endswith(", us"):
         return False
-    # Explicit US/non-EU = always reject
+    # explicit US/non-EU = always reject
     if any(us in loc for us in US_LOCATIONS):
         return False
     # UK / EU match = accept
     if any(uk in loc for uk in UK_EU_TERMS):
         return True
-    # Priority company + unrecognised foreign location = accept
+    # priority company + unrecognised foreign location = accept
     return is_priority

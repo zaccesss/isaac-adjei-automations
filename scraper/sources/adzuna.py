@@ -11,9 +11,9 @@ from ..http import SESSION
 # ─── ADZUNA ──────────────────────────────────────────────────────────────────
 
 def scrape_adzuna(ctx) -> int:
-    # Use Adzuna's aggregated UK jobs API which covers hundreds of job boards.
+    # use Adzuna's aggregated UK jobs API which covers hundreds of job boards.
     # ADZUNA_APP_ID and ADZUNA_APP_KEY must be set as GitHub Actions secrets.
-    # Register free at developer.adzuna.com - 1000 requests/month on trial.
+    # register free at developer.adzuna.com - 1000 requests/month on trial.
     app_id = config.ADZUNA_APP_ID
     app_key = config.ADZUNA_APP_KEY
     if not app_id or not app_key:
@@ -21,7 +21,7 @@ def scrape_adzuna(ctx) -> int:
         return 0
 
     BASE = "https://api.adzuna.com/v1/api/jobs/gb/search/1"
-    # Each search carries its own "where". The UK-wide set stays as it was; a
+    # each search carries its own "where". The UK-wide set stays as it was; a
     # London-targeted set rides alongside so the results lean London without
     # losing national coverage. 24 requests/day sits well inside the 1000/month
     # trial quota.
@@ -46,7 +46,7 @@ def scrape_adzuna(ctx) -> int:
         {"what": "industrial placement", "where": "London"},
         {"what": "data science internship", "where": "London"},
         {"what": "machine learning internship", "where": "London"},
-        # Embedded and hardware passes, per my placement hunt.
+        # embedded and hardware passes, per my placement hunt.
         {"what": "electronics internship", "where": "UK"},
         {"what": "embedded placement", "where": "UK"},
         {"what": "hardware internship", "where": "UK"},
@@ -54,8 +54,8 @@ def scrape_adzuna(ctx) -> int:
     ]
 
     def _resolve_url(tracking_url: str) -> str:
-        # Follow the Adzuna redirect to get the actual company/ATS URL.
-        # If it still lands on adzuna.co.uk the tracking link is kept as fallback.
+        # follow the Adzuna redirect to get the actual company/ATS URL.
+        # if it still lands on adzuna.co.uk the tracking link is kept as fallback.
         try:
             r = SESSION.head(tracking_url, allow_redirects=True, timeout=5)
             if r.url and "adzuna" not in r.url:

@@ -23,7 +23,7 @@ from ..stats import record_stat
 
 _ENDPOINT = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
 
-# One page of each: every discipline the tracker covers, phrased the way UK
+# one page of each: every discipline the tracker covers, phrased the way UK
 # student postings title themselves. f_TPR=r604800 keeps it to the last week,
 # so the volume stays a trickle of genuinely new postings.
 QUERIES = [
@@ -44,7 +44,7 @@ _LOCATION_RE = re.compile(r'job-search-card__location[^>]*>\s*([^<]+?)\s*<')
 def parse_cards(page_html: str) -> list[dict]:
     """Return the {role, company, location, url} of every card in a guest result page."""
     cards = []
-    # Each result is one <li>; splitting keeps every regex scoped to its own
+    # each result is one <li>; splitting keeps every regex scoped to its own
     # card so a missing field never shifts the remaining cards out of line.
     for chunk in page_html.split("<li")[1:]:
         link = _LINK_RE.search(chunk)

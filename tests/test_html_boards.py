@@ -1,4 +1,4 @@
-# The Cloudflare-fronted boards (Gradcracker, Bright Network, Milkround) parse
+# the Cloudflare-fronted boards (Gradcracker, Bright Network, Milkround) parse
 # server-rendered HTML through curl_cffi. Full parsing is covered by the live
 # smoke of parse_listing; here I pin the pure helpers and the classification
 # decisions that are easy to regress: deadline parsing, the non-computing reject
@@ -22,13 +22,13 @@ def test_gradcracker_drops_non_computing_engineering():
     assert gc._NON_COMPUTING_RE.search("Graduate Civil Engineer")
     assert gc._NON_COMPUTING_RE.search("Mechanical Placement 2027")
     assert gc._NON_COMPUTING_RE.search("Gradcracker Webinar - Mining")
-    # Real tech titles are untouched.
+    # real tech titles are untouched.
     assert not gc._NON_COMPUTING_RE.search("Graduate Software Engineer")
     assert not gc._NON_COMPUTING_RE.search("Firmware Engineer Placement")
 
 
 def test_gradcracker_type_from_segment_matches_infer():
-    # A graduate-job URL is always a graduate scheme; a placement URL defers to
+    # a graduate-job URL is always a graduate scheme; a placement URL defers to
     # the title, so an intern-worded one is an internship.
     assert infer_type("Summer Internship Programme", default="Internship") == "Internship"
     assert infer_type("Software Engineering Placement", default="Internship") == "Industrial Placement"
@@ -43,7 +43,7 @@ def test_brightnetwork_reject_and_deadline():
 
 
 def test_milkround_rejects_totaljobs_spam():
-    # The widest reject list, because totaljobs floods a tech search with these.
+    # the widest reject list, because totaljobs floods a tech search with these.
     for junk in [
         "Graduate Technology Recruitment Consultant",
         "Graduate Role - Animal Nutrition",
@@ -51,7 +51,7 @@ def test_milkround_rejects_totaljobs_spam():
         "Warehouse Operative",
     ]:
         assert mr._NON_COMPUTING_RE.search(junk), junk
-    # The hardware and quant gems survive.
+    # the hardware and quant gems survive.
     for keep in [
         "GPU Internship - Platform Architecture",
         "Junior RTL Power Optimisation Engineer",

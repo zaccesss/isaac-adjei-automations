@@ -1,4 +1,4 @@
-# Cases derived from the inline comments in scraper/locations.py: bare-city
+# cases derived from the inline comments in scraper/locations.py: bare-city
 # normalisation, the ", us" suffix rejection, the remote-US variants and the priority
 # company allowance for unrecognised foreign locations.
 from scraper.locations import is_location_ok, normalize_location
