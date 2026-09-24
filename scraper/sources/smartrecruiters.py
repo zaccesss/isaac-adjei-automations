@@ -36,13 +36,13 @@ def scrape_smartrecruiters(
 
         for job in resp.json().get("content", []):
             title = job.get("name", "")
-            # I try city first then country as a fallback because many UK
+            # Try city first then country as a fallback because many UK
             # employers set city not country.
             location = (
                 job.get("location", {}).get("city", "")
                 or job.get("location", {}).get("country", "")
             )
-            # I construct the URL from company_id and job_id because
+            # Construct the URL from company_id and job_id because
             # SmartRecruiters does not always include a direct link in
             # the API response.
             job_url = (

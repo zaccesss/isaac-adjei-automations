@@ -11,7 +11,7 @@ from ..http import SESSION
 # ─── JOOBLE ──────────────────────────────────────────────────────────────────
 
 def scrape_jooble(ctx) -> int:
-    # I use Jooble's POST API which aggregates from hundreds of job boards.
+    # Use Jooble's POST API which aggregates from hundreds of job boards.
     # JOOBLE_API_KEY must be set as a GitHub Actions secret.
     # Request a free key at jooble.org/api/about.
     api_key = config.JOOBLE_API_KEY
