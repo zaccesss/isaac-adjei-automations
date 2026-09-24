@@ -148,6 +148,7 @@ def build_row(day: dict, hours: list[int] | None = None, ai: dict | None = None)
         "operating_systems": operating_systems,
         "categories": top(day.get("categories", []), 10),
         "machines": top(day.get("machines", []), 5),
+        "dependencies": top(day.get("dependencies", []), 15),
     }
     if hours is not None:
         row["hours"] = hours
@@ -214,7 +215,7 @@ def main() -> None:
         supabase.table("wakatime_daily")
         .select("date")
         .gte("date", backfill_start)
-        .or_("hours.is.null,ai.is.null,categories.is.null")
+        .or_("hours.is.null,ai.is.null,categories.is.null,dependencies.is.null")
         .order("date", desc=True)
         .execute()
     )
