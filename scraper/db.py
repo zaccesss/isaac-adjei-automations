@@ -30,9 +30,10 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
         # fall back to company+role when there is no URL. I lower-case and
         # strip both fields so "Google" and "google" hash identically.
         raw = f"{company.lower().strip()}|{role.lower().strip()}"
-    # use a truncated MD5 (16 hex chars) as the key - collision probability
-    # is negligible for a few thousand rows and fits in a set comfortably.
-    return hashlib.md5(raw.encode()).hexdigest()[:16]
+    # a truncated SHA-256 (16 hex chars) is the key: collision probability is negligible for a few
+    # thousand rows. Keys only live in memory and are rebuilt from the table each run, so the
+    # algorithm can change without a migration.
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
 # boards and aggregators: their links point at their own posting page, not the
