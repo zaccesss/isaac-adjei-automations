@@ -46,7 +46,7 @@ def scrape_amazon(ctx) -> int:
                 country = job.get("country_code", "")
                 city = job.get("city", "")
                 location = f"{city}, {country}" if city else country
-                # I normalise the country code - Amazon uses ISO-3 codes.
+                # Normalise the country code - Amazon uses ISO-3 codes.
                 if country not in ("GBR", "IRL"):
                     continue
                 job_path = job.get("job_path", "")

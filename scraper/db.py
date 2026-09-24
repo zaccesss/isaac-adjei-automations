@@ -16,21 +16,21 @@ from .locations import normalize_location
 # ─── DEDUPLICATION ──────────────────────────────────────────────────────────
 
 def dedupe_key(company: str, role: str, url: str = "") -> str:
-    # I prefer URL-based deduplication so the same job posting scraped from
+    # Prefer URL-based deduplication so the same job posting scraped from
     # two different sources is never inserted twice. I strip trailing slashes
     # because the same URL can appear with and without one.
     if url and url.startswith("http"):
-        # I normalise both Greenhouse URL domains to the old format so rows
+        # Normalise both Greenhouse URL domains to the old format so rows
         # inserted before the domain change (boards.greenhouse.io) and rows
         # inserted after (job-boards.greenhouse.io) hash to the same key and
         # never trigger a 23505 unique constraint violation.
         url = url.replace("job-boards.greenhouse.io", "boards.greenhouse.io")
         raw = url.strip().rstrip("/")
     else:
-        # I fall back to company+role when there is no URL. I lower-case and
+        # Fall back to company+role when there is no URL. I lower-case and
         # strip both fields so "Google" and "google" hash identically.
         raw = f"{company.lower().strip()}|{role.lower().strip()}"
-    # I use a truncated MD5 (16 hex chars) as the key - collision probability
+    # Use a truncated MD5 (16 hex chars) as the key - collision probability
     # is negligible for a few thousand rows and fits in a set comfortably.
     return hashlib.md5(raw.encode()).hexdigest()[:16]
 
@@ -59,7 +59,7 @@ def url_rank(url: str) -> int:
 
 
 def load_existing_keys(ctx) -> None:
-    # I load all existing keys at the start of each run so every insert check
+    # Load all existing keys at the start of each run so every insert check
     # is an O(1) set lookup rather than a DB query per row. PostgREST caps a
     # single response at 1000 rows and this table passed that long ago, so the
     # read pages in batches - a bare select silently stopped at the first 1000,
@@ -89,12 +89,12 @@ def load_existing_keys(ctx) -> None:
             if len(rows) < 1000:
                 break
         if not ctx.existing_keys:
-            # I warn here because an empty result on a populated DB usually
+            # Warn here because an empty result on a populated DB usually
             # means RLS is blocking the SELECT - the upsert below will still
             # prevent duplicates at the DB level so this is non-fatal.
             print("WARNING: 0 existing rows loaded - RLS may be blocking reads. Continuing with upsert deduplication.")
     except Exception as e:
-        # I log and continue rather than crashing - the upsert strategy means
+        # Log and continue rather than crashing - the upsert strategy means
         # no duplicates are created even if this pre-load fails.
         print(f"Warning: could not load existing keys: {e}")
 
@@ -133,7 +133,7 @@ def insert_job(ctx, job: dict) -> bool:
     if not is_date_relevant(job.get("deadline"), cutoff):
         return False
 
-    # I skip dead links before touching the DB, but only for genuinely new URLs.
+    # Skip dead links before touching the DB, but only for genuinely new URLs.
     # Re-HEAD-checking the thousands of already-stored URLs every run was the main
     # thing eating the time budget and a known URL is never deleted even if it
     # 404s now, so that check was wasted work.
@@ -204,13 +204,13 @@ def insert_job(ctx, job: dict) -> bool:
         "company":  job["company"],
         "role":     job["role"],
         "type":     job.get("type", "internship"),
-        # I use "scraped" so I can filter auto-discovered roles from ones I
+        # Use "scraped" so I can filter auto-discovered roles from ones I
         # manually added in the app.
         "status":       "scraped",
         "url":          url or None,
         "location":     normalize_location(job.get("location", "")),
         "notes":        job.get("notes", ""),
-        # I leave applied_date as None because scraped roles have not been
+        # Leave applied_date as None because scraped roles have not been
         # applied to yet - they sit in "scraped" status until I pursue them.
         "applied_date": None,
         "deadline":     job.get("deadline"),
@@ -220,7 +220,7 @@ def insert_job(ctx, job: dict) -> bool:
         "salary_range": job.get("salary_range", ""),
         "work_mode":    job.get("work_mode", ""),
         "source":       job.get("source", ""),
-        # I default starred to False; I manually star interesting roles later.
+        # Default starred to False; I manually star interesting roles later.
         "starred":      False,
         "last_scraped_at": datetime.now(timezone.utc).isoformat(),
         "sponsors_visa": job.get("sponsors_visa", None),
@@ -323,7 +323,7 @@ def insert_job(ctx, job: dict) -> bool:
 
 
 def refresh_seen_timestamps(ctx) -> None:
-    # I batch-update last_scraped_at for all entries seen this run so freshness
+    # Batch-update last_scraped_at for all entries seen this run so freshness
     # is always visible per-row, even though scraped applications are kept
     # permanently and never deleted. I only touch last_scraped_at - all other
     # columns (status, notes, starred etc.) remain exactly as the user left them.

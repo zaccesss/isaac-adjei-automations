@@ -185,7 +185,7 @@ def scrape_trackr_all(ctx) -> int:
 
 
 def run(ctx) -> int:
-    # I guard the call site because an uncaught error here would abort the whole
+    # Guard the call site because an uncaught error here would abort the whole
     # run - fetch_programmes already swallows per-request failures, but a bad
     # season loop or a JSON change should degrade to zero, not crash the scraper.
     try:

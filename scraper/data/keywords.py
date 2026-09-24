@@ -1,7 +1,7 @@
 """Tech keywords and the per-category student term lists."""
 
 
-# I keep the keyword list broad enough to catch hardware, cloud, quant and
+# Keep the keyword list broad enough to catch hardware, cloud, quant and
 # traditional SWE roles because my interests span all of these areas.
 TECH_KEYWORDS = [
     "software", "engineer", "developer", "technology", "data", "ai",
@@ -22,7 +22,7 @@ TECH_KEYWORDS = [
 
 
 # ─── PER-CATEGORY STUDENT TERM SETS ────────────────────────────────────────
-# I split student terms by category so the scraper can identify the correct
+# Split student terms by category so the scraper can identify the correct
 # application type for each role rather than lumping everything into one bag.
 
 INTERNSHIP_TERMS = [

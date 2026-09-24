@@ -39,7 +39,7 @@ def fetch_greenhouse_location(slug: str, job_id: int) -> str:
 def scrape_greenhouse(
     ctx, slug: str, company_name: str
 ) -> int:
-    # I use the public Greenhouse boards API which requires no authentication.
+    # Use the public Greenhouse boards API which requires no authentication.
     # The ?content=true flag exposes the metadata array I need for location.
     url = (
         f"https://boards-api.greenhouse.io/v1/boards/{slug}"
@@ -58,13 +58,13 @@ def scrape_greenhouse(
             title = job.get("title", "")
             job_url = job.get("absolute_url", "")
 
-            # I read the metadata array first because Greenhouse's top-level
+            # Read the metadata array first because Greenhouse's top-level
             # location field often shows "Multiple Locations" which is useless
             # for UK filtering.
             location = ""
             for meta in job.get("metadata") or []:
                 if meta and meta.get("name") == "Job Posting Location":
-                    # I check isinstance because the value field can be a list
+                    # Check isinstance because the value field can be a list
                     # (e.g. ["London, UK", "Remote"]) for multi-location postings.
                     # Calling .lower() on a list crashes with AttributeError.
                     val = meta.get("value")
@@ -74,12 +74,12 @@ def scrape_greenhouse(
                         else (val or "")
                     )
                     break
-            # I fall back to the top-level location when metadata lacks a city.
+            # Fall back to the top-level location when metadata lacks a city.
             if not location:
                 location = (
                     job.get("location") or {}
                 ).get("name", "")
-            # I call the detail endpoint when location is still empty because
+            # Call the detail endpoint when location is still empty because
             # the detail response includes an 'offices' array with city names
             # that the listing endpoint sometimes omits.
             if not location and job.get("id"):
@@ -87,7 +87,7 @@ def scrape_greenhouse(
                 if location:
                     time.sleep(0.2)
 
-            # I extract department names so is_student_role can check them
+            # Extract department names so is_student_role can check them
             # alongside the title. Some companies like Bloomberg tag their
             # graduate pipeline as a department.
             dept_names = [
@@ -95,7 +95,7 @@ def scrape_greenhouse(
                 for d in (job.get("departments") or [])
             ]
 
-            # I extract dates and description from the listing response
+            # Extract dates and description from the listing response
             # (content=true already includes these - no extra API call needed).
             description_text = _strip_html(job.get("content", ""))
             opening_date = _parse_greenhouse_date(job.get("first_published"))
@@ -132,7 +132,7 @@ def scrape_greenhouse(
                 }):
                     count += 1
 
-        # I sleep 0.5 seconds between companies to be a polite scraper.
+        # Sleep 0.5 seconds between companies to be a polite scraper.
         time.sleep(0.5)
     except Exception as e:
         print(f"  Error Greenhouse {company_name}: {e}")
@@ -140,7 +140,7 @@ def scrape_greenhouse(
 
 
 def run(ctx) -> int:
-    # I run the JSON API scrapers first because they are the most reliable and
+    # Run the JSON API scrapers first because they are the most reliable and
     # fastest - no HTML parsing involved.
     print("\n--- Greenhouse ---")
     total = 0
