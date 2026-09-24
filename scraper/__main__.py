@@ -2,7 +2,7 @@
 import os
 import sys
 
-# The shared failure guard lives in scripts/lib and running as python -m scraper from
+# the shared failure guard lives in scripts/lib and running as python -m scraper from
 # the repo root does not put scripts/ on the path, so add it before the import.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
 
@@ -15,7 +15,7 @@ from .runner import main  # noqa: E402
 
 
 def entry():
-    # Quick AI self-test: SCRAPER_AI_TEST runs the extractor on a sample advert and
+    # quick AI self-test: SCRAPER_AI_TEST runs the extractor on a sample advert and
     # exits, so I can confirm the providers and JSON parsing work without a full
     # scrape and without touching the database.
     if os.environ.get("SCRAPER_AI_TEST", "").strip():

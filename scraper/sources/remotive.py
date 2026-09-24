@@ -10,8 +10,8 @@ from ..http import SESSION
 # ─── REMOTIVE (remote full-time tech jobs, worldwide) ────────────────────────
 
 def scrape_remotive(ctx) -> int:
-    # Use Remotive's free public API which returns currently open remote jobs.
-    # Filter to full_time only so internship/contract listings are excluded.
+    # use Remotive's free public API which returns currently open remote jobs.
+    # filter to full_time only so internship/contract listings are excluded.
     print("\nScraping Remotive (remote full-time jobs)...")
     count = 0
     categories = ["software-dev", "devops-sysadmin", "data", "product"]
@@ -57,7 +57,7 @@ def scrape_remotive(ctx) -> int:
 
 
 def run(ctx) -> int:
-    # The old main called Remotive without a section header; kept that way.
+    # the old main called Remotive without a section header; kept that way.
     n = scrape_remotive(ctx)
     record_stat(ctx, "Remotive", n)
     return n

@@ -1,6 +1,6 @@
-# The July 2026 source wave: the ATS families (Workable, Recruitee, Personio,
-# Jibe), the LinkedIn guest search and the three boards (StudentJob, E4S,
-# Prospects, TARGETjobs). Each parser is pinned against a compact fixture built
+# the July 2026 source wave: the ATS families (Workable, Recruitee, Personio,
+# jibe), the LinkedIn guest search and the three boards (StudentJob, E4S,
+# prospects, TARGETjobs). Each parser is pinned against a compact fixture built
 # from the live page it was written on and the cross-source URL dedupe is
 # exercised through insert_job in dry-run mode.
 import json
@@ -40,7 +40,7 @@ def test_same_job_from_a_second_source_is_not_inserted_again(monkeypatch):
     })
     assert inserted is False
     assert ("insert", "Keysight", "Software Development Placement") not in ctx.dry_run_actions
-    # The direct ATS link stays; the board link never replaces it.
+    # the direct ATS link stays; the board link never replaces it.
     key = dedupe_key("Keysight", "Software Development Placement", "")
     assert ctx.url_by_bare_key[key] == "https://careers.keysight.com/jobs/12345"
 

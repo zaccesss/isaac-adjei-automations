@@ -34,7 +34,7 @@ def fetch_lever_details(slug: str, posting_id: str) -> dict:
 def scrape_lever(
     ctx, slug: str, company_name: str
 ) -> int:
-    # Use Lever's v0 public postings endpoint which returns all jobs as a
+    # use Lever's v0 public postings endpoint which returns all jobs as a
     # flat JSON array. mode=json returns structured data not an HTML page.
     url = f"https://api.lever.co/v0/postings/{slug}?mode=json"
     count = 0
@@ -45,14 +45,14 @@ def scrape_lever(
             return 0
 
         for job in resp.json():
-            # Use "text" because Lever calls it that rather than "title".
+            # use "text" because Lever calls it that rather than "title".
             title = job.get("text", "")
             location = job.get("categories", {}).get("location", "")
             work_mode = job.get("workplaceType", "")
-            # Prefer hostedUrl over applyUrl because it shows the full JD.
+            # prefer hostedUrl over applyUrl because it shows the full JD.
             job_url = job.get("hostedUrl", "")
             posting_id = job.get("id", "")
-            # Call the detail endpoint when location is empty because
+            # call the detail endpoint when location is empty because
             # Lever's listing API sometimes omits the location field.
             if not location and posting_id:
                 extra = fetch_lever_details(slug, posting_id)

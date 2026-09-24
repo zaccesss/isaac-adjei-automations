@@ -24,7 +24,7 @@ from ..stats import record_stat
 
 BASE = "https://www.gradcracker.com"
 
-# The two computing-technology listings. The type comes from each link's own URL
+# the two computing-technology listings. The type comes from each link's own URL
 # segment, not the listing, because a page mixes its organic results with
 # promoted roles of the other kind.
 LISTINGS = [
@@ -33,7 +33,7 @@ LISTINGS = [
 ]
 
 _JOB_RE = re.compile(r"/hub/\d+/[^/]+/(work-placement-internship|graduate-job)/\d+/")
-# The computing-technology feed still surfaces the odd promoted role from an
+# the computing-technology feed still surfaces the odd promoted role from an
 # adjacent engineering discipline (civil, mechanical, a mining webinar). None of
 # these are software or hardware, so I drop a title that leads on one of them.
 _NON_COMPUTING_RE = re.compile(
@@ -106,7 +106,7 @@ def parse_listing(html: str, ctx) -> int:
         if not company:
             continue
 
-        # The discipline scope leaks the odd promoted cross-discipline listing
+        # the discipline scope leaks the odd promoted cross-discipline listing
         # (civil, mechanical, the occasional webinar), so I keep only genuine
         # tech roles: a tech keyword must be present and senior or non-tech
         # commercial titles are dropped.
@@ -146,7 +146,7 @@ def scrape_gradcracker(ctx) -> int:
                 break
             added = parse_listing(html, ctx)
             count += added
-            # A page with no new rows means I have caught up with what the DB
+            # a page with no new rows means I have caught up with what the DB
             # already holds or run off the end of the results.
             if added == 0:
                 break

@@ -1,7 +1,7 @@
 """Tech keywords and the per-category student term lists."""
 
 
-# Keep the keyword list broad enough to catch hardware, cloud, quant and
+# keep the keyword list broad enough to catch hardware, cloud, quant and
 # traditional SWE roles because my interests span all of these areas.
 TECH_KEYWORDS = [
     "software", "engineer", "developer", "technology", "data", "ai",
@@ -10,11 +10,11 @@ TECH_KEYWORDS = [
     "cloud", "backend", "frontend", "fullstack", "full stack", "swe",
     "infrastructure", "networking", "systems", "platform", "reliability",
     "quantitative", "quant", "trading", "research", "analyst",
-    # Cloud & infrastructure specific
+    # cloud & infrastructure specific
     "aws", "azure", "gcp", "kubernetes", "k8s", "docker", "terraform",
     "ansible", "serverless", "microservices", "devsecops", "site reliability",
     "solutions architect", "cloud architect", "cloud engineer",
-    # Additional tech roles
+    # additional tech roles
     "product", "robotics", "automation", "test", "qa", "quality assurance",
     "compiler", "operating system", "kernel", "low latency", "hft",
     "signal processing", "rf", "photonics", "asic", "vlsi", "soc",
@@ -22,7 +22,7 @@ TECH_KEYWORDS = [
 
 
 # ─── PER-CATEGORY STUDENT TERM SETS ────────────────────────────────────────
-# Split student terms by category so the scraper can identify the correct
+# split student terms by category so the scraper can identify the correct
 # application type for each role rather than lumping everything into one bag.
 
 INTERNSHIP_TERMS = [
@@ -57,14 +57,14 @@ GRADUATE_TERMS = [
 EVENT_TERMS = [
     "hackathon", "coding challenge", "coding competition",
     "open day", "careers fair", "conference",
-    # Bare "networking" and "workshop" are gone: they made networking-engineering
+    # bare "networking" and "workshop" are gone: they made networking-engineering
     # roles and workshop engineers look like careers events. The qualified forms
     # below still catch the real events.
     "networking event", "networking evening", "coding workshop",
     "insight workshop", "technology workshop", "virtual event", "online event",
 ]
 
-# Combined flat list for quick is_student_role checks
+# combined flat list for quick is_student_role checks
 STUDENT_TERMS = (
     INTERNSHIP_TERMS + PLACEMENT_TERMS + SPRING_WEEK_TERMS + GRADUATE_TERMS
 )

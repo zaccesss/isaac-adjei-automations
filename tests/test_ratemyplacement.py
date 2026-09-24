@@ -1,4 +1,4 @@
-# The RateMyPlacement source parses an embedded JSON blob, so the pure helpers
+# the RateMyPlacement source parses an embedded JSON blob, so the pure helpers
 # (prefix strip, first-location, ISO deadline guard) are the parts worth pinning.
 from scraper.sources.ratemyplacement import (
     TYPE_SLUGS,
@@ -16,7 +16,7 @@ def test_prereg_prefix_is_stripped_for_every_dash():
     assert _strip("Register Your Interest - Engineering Placement 2027") == "Engineering Placement 2027"
     assert _strip("Register Your Interest - Industrial Placement") == "Industrial Placement"
     assert _strip("Register Your Interest: Software Engineer Intern") == "Software Engineer Intern"
-    # Case-insensitive and only the leading prefix is removed.
+    # case-insensitive and only the leading prefix is removed.
     assert _strip("REGISTER YOUR INTEREST - Data Placement") == "Data Placement"
 
 
@@ -41,7 +41,7 @@ def test_clean_deadline_keeps_iso_dates_only():
 
 
 def test_only_server_filterable_types_are_pulled():
-    # The graduate slugs are deliberately excluded because the site ignores them
+    # the graduate slugs are deliberately excluded because the site ignores them
     # and returns the whole board; these three genuinely filter.
     assert set(TYPE_SLUGS) == {"placement", "internship", "insight-vacation-scheme"}
     assert TYPE_SLUGS["placement"] == "Industrial Placement"

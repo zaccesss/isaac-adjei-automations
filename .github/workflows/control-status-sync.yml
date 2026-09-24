@@ -1,4 +1,4 @@
-# Snapshots every dispatchable job's recent GitHub Actions runs and every Healthchecks check's
+# snapshots every dispatchable job's recent GitHub Actions runs and every Healthchecks check's
 # current status into isaac-adjei-portfolio's control_job_runs/control_check_snapshots tables, so
 # the dashboard's /dashboard/ops page can chart real history. cron-ops dispatches this every 15
 # minutes (its own minimum wake granularity) since several of the jobs it snapshots themselves run

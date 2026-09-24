@@ -1,4 +1,4 @@
-# The existing-row pre-load must page past PostgREST's 1000-row cap: a bare select
+# the existing-row pre-load must page past PostgREST's 1000-row cap: a bare select
 # stops at 1000 and every older row then looks brand new on every run.
 from scraper.context import RunContext
 from scraper.db import dedupe_key, load_existing_keys

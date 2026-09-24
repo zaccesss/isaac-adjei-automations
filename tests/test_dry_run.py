@@ -10,14 +10,14 @@ def test_dry_run_inserts_collect_instead_of_writing(monkeypatch):
     monkeypatch.setattr(config, "DRY_RUN", True)
     ctx = RunContext.bare()
 
-    # No URL, so no liveness check fires; no description, so no AI call fires.
+    # no URL, so no liveness check fires; no description, so no AI call fires.
     job = {"company": "Acme", "role": "Software Intern", "type": "Internship", "deadline": None}
     assert insert_job(ctx, job) is True
 
     assert ctx.dry_run_actions == [("insert", "Acme", "Software Intern")]
     assert ctx.new_jobs == [job]
 
-    # The second pass classifies it as already known, exactly like a real run.
+    # the second pass classifies it as already known, exactly like a real run.
     assert insert_job(ctx, dict(job)) is False
     assert len(ctx.dry_run_actions) == 1
 
@@ -38,7 +38,7 @@ def test_dry_run_update_path_and_timestamp_refresh(monkeypatch):
     assert ctx.dry_run_actions == [("update", "Acme", "Software Intern")]
     assert "https://a.example/jobs/1" in ctx.seen_urls
 
-    # The freshness stamp prints rather than writing; no client, so a write would raise.
+    # the freshness stamp prints rather than writing; no client, so a write would raise.
     refresh_seen_timestamps(ctx)
 
 
@@ -50,11 +50,11 @@ def test_a_linked_row_heals_the_urlless_original_instead_of_duplicating(monkeypa
     monkeypatch.setattr(config, "DRY_RUN", True)
     ctx = RunContext.bare()
 
-    # The url-less original was inserted in an earlier run.
+    # the url-less original was inserted in an earlier run.
     original = {"company": "Acme", "role": "Software Intern", "type": "Internship", "deadline": None}
     assert insert_job(ctx, original) is True
 
-    # The same row arrives again, now carrying a fallback link: it must fill the
+    # the same row arrives again, now carrying a fallback link: it must fill the
     # URL onto the original, not insert a linked twin (the fragment URL changes
     # the url-based dedupe key, which is exactly how the twins happened).
     linked = dict(original)

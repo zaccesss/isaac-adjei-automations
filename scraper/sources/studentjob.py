@@ -24,7 +24,7 @@ SEARCHES = ["software", "engineering", "data"]
 
 _JOB_HREF_RE = re.compile(r"/vacancies/\d+-")
 _SALARY_RE = re.compile(r"[£$€]|per hour|per week|per month|per annum|\d+k\b", re.I)
-# Survey, gig and non-tech noise this board is full of.
+# survey, gig and non-tech noise this board is full of.
 _NON_COMPUTING_RE = re.compile(
     r"\b(your own opinion|survey|paid test|game tester|mystery shop|tutor|"
     r"delivery|driver|warehouse|barista|waiter|bartend|retail|nanny|babysit|"

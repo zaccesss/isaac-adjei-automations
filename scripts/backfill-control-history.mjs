@@ -1,4 +1,4 @@
-// One-time (or re-runnable) deep backfill for control_job_runs and control_check_snapshots, going
+// one-time (or re-runnable) deep backfill for control_job_runs and control_check_snapshots, going
 // further back than the regular 15-minute sync ever sees on its own: GitHub's Actions API is paged
 // here instead of capped at the last 30. Healthchecks' pings endpoint (up to 100 events per
 // check on the free plan) is replayed into snapshot rows. Safe to re-run - everything upserts the
@@ -23,7 +23,7 @@ const HC_AUTOMATIONS_KEY = process.env.HEALTHCHECKS_API_KEY
 const HC_FLEET_KEY = process.env.HEALTHCHECKS_FLEET_API_KEY
 const HC_PORTFOLIO_KEY = process.env.HEALTHCHECKS_PORTFOLIO_API_KEY
 
-// A generous ceiling against runaway pagination on a job with an unusually long run history.
+// a generous ceiling against runaway pagination on a job with an unusually long run history.
 const MAX_PAGES = 20
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -118,7 +118,7 @@ async function fetchChecksWithHistory(key, project) {
     const slug = c.slug ?? (c.name ?? "").toLowerCase().replace(/\s+/g, "-")
     const pings = await fetchAllPings(key, c.uuid)
     for (const p of pings) {
-      // Only success/fail pings map to a real status snapshot - "start" just marks work beginning,
+      // only success/fail pings map to a real status snapshot - "start" just marks work beginning,
       // not a health state.
       const status = p.type === "success" ? "up" : p.type === "fail" ? "down" : null
       if (!status) continue

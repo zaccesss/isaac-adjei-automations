@@ -1,6 +1,6 @@
-// Shared UK-time cron helpers for the automations scripts. Node only, no deps.
+// shared UK-time cron helpers for the automations scripts. Node only, no deps.
 //
-// Neither GitHub Actions nor Vercel observes British Summer Time - crons are always UTC - so each
+// neither GitHub Actions nor Vercel observes British Summer Time - crons are always UTC - so each
 // time-pinned job fires from TWO crons (a GMT branch and a BST branch, one hour apart). A workflow
 // gate step (TZ=Europe/London date) runs the job only at the intended local hour and message-senders
 // additionally claim (job, UK-day) in the cron_runs table so a run that GitHub delayed into the target
@@ -8,18 +8,18 @@
 
 const DATE_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }) // en-CA => YYYY-MM-DD
 
-// Today's date in Europe/London as YYYY-MM-DD.
+// today's date in Europe/London as YYYY-MM-DD.
 export function londonDate(date = new Date()) {
   return DATE_FMT.format(date)
 }
 
-// Current hour (0..23) in Europe/London.
+// current hour (0..23) in Europe/London.
 export function londonHour(date = new Date()) {
   const h = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false }).format(date)
   return Number(h) % 24 // some engines emit "24" at midnight
 }
 
-// Atomically claim (job, London-day) in cron_runs (migration 043). Returns true if the job ALREADY ran
+// atomically claim (job, London-day) in cron_runs (migration 043). Returns true if the job ALREADY ran
 // today and this run should skip, false if this run is the first today and should proceed.
 // - FORCE=1 always returns false so manual workflow_dispatch test runs always send.
 // - The insert uses PostgREST "ignore-duplicates": a duplicate returns an empty array (already ran).
@@ -48,7 +48,7 @@ export async function alreadyRanToday(job) {
   return Array.isArray(rows) && rows.length === 0 // empty => duplicate ignored => already ran today
 }
 
-// Release today's (job, London-day) claim from cron_runs so a later run can retry. Used when a job
+// release today's (job, London-day) claim from cron_runs so a later run can retry. Used when a job
 // claimed the day up front (to stop a double-send) but then produced nothing - e.g. every section
 // failed - so the day must NOT count as done. Best-effort: a failure here is logged, never thrown,
 // because the caller is already on its failure path and about to exit non-zero anyway.

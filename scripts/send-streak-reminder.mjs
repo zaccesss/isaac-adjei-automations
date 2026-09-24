@@ -1,4 +1,4 @@
-// Posts a Discord reminder of which active streaks are not yet logged for today, read from the
+// posts a Discord reminder of which active streaks are not yet logged for today, read from the
 // streaks and streak_logs tables: a morning check at 08:00 Europe/London and an evening pass at
 // 20:00 that only posts while something is still unlogged (both windows gated in the workflow).
 // Node only.
@@ -21,7 +21,7 @@ if (!webhookUrl) {
 }
 
 // am is the morning check; pm is the evening chase that stays silent when everything is logged.
-// An explicit SLOT (a manual run or a dispatcher) wins; otherwise the London hour decides.
+// an explicit SLOT (a manual run or a dispatcher) wins; otherwise the London hour decides.
 const slot = process.env.SLOT === "am" || process.env.SLOT === "pm" ? process.env.SLOT : londonHour() < 12 ? "am" : "pm"
 
 async function supabaseGet(path) {
@@ -52,7 +52,7 @@ const doneIds = new Set((logs ?? []).map((l) => l.streak_id))
 const pending = streaks.filter((s) => !doneIds.has(s.id))
 const done = streaks.filter((s) => doneIds.has(s.id))
 
-// The evening pass only exists to chase what is left; when the day is complete it stays silent
+// the evening pass only exists to chase what is left; when the day is complete it stays silent
 // (the morning check still celebrates a clean slate).
 if (slot === "pm" && pending.length === 0) {
   console.log("Evening pass: every streak is logged - nothing to post.")
@@ -102,7 +102,7 @@ const embed = {
   timestamp: new Date().toISOString(),
 }
 
-// Belt-and-braces: a run that GitHub delayed into the target window cannot double-post (FORCE
+// belt-and-braces: a run that GitHub delayed into the target window cannot double-post (FORCE
 // bypasses). Each slot claims its own day, so the morning and evening checks both send.
 if (await alreadyRanToday(`streak-reminder-${slot}`)) {
   console.log(`Streak ${slot} reminder already sent today - skipping.`)

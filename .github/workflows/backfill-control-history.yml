@@ -1,4 +1,4 @@
-# One-time (or re-runnable) deep backfill for the portfolio Ops page's history tables, going
+# one-time (or re-runnable) deep backfill for the portfolio Ops page's history tables, going
 # further back than the regular control-status-sync ever sees on its own. Manual only - there is no
 # schedule here, this is not meant to run automatically.
 

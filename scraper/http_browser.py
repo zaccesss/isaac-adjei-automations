@@ -88,7 +88,7 @@ def browser_get(url: str, params: "dict | None" = None, timeout: int = 25) -> st
     html, status = _curl_cffi_get(url, params, timeout)
     if html:
         return html
-    # A 403 (or a curl_cffi that could not run) means the fingerprint trick was
+    # a 403 (or a curl_cffi that could not run) means the fingerprint trick was
     # not enough; the browser solver is the fallback that clears the challenge.
     if status in (0, 403, 429, 503):
         return _scrapling_get(url, params)

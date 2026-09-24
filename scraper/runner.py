@@ -13,7 +13,7 @@ def main():
 
     ctx = RunContext.create()
 
-    # Load the existing keys (and the URL set) up front so insert_job knows whether
+    # load the existing keys (and the URL set) up front so insert_job knows whether
     # to insert a new row or refresh an existing one. Nothing is ever deleted - the
     # scraper only inserts and updates.
     db.load_existing_keys(ctx)
@@ -23,7 +23,7 @@ def main():
     for name, mode, gated, run in SOURCES:
         if config.SCRAPER_MODE not in (mode, "all"):
             continue
-        # The old main wrapped only the later API sources in a budget check; the
+        # the old main wrapped only the later API sources in a budget check; the
         # browser pair and the first four API families manage the budget internally,
         # so only the gated sources are skipped here (skipped, not aborted, exactly
         # as before).
@@ -31,14 +31,14 @@ def main():
             continue
         total += run(ctx)
 
-    # Refresh last_scraped_at for everything seen this run, without touching any
+    # refresh last_scraped_at for everything seen this run, without touching any
     # user-set field. The scraper never deletes rows, so this is purely a freshness
     # stamp. It runs in the api and all modes only, exactly where the old main
     # left it.
     if config.SCRAPER_MODE in ("api", "all"):
         db.refresh_seen_timestamps(ctx)
 
-    # Send a Discord alert with all newly found student roles so I know what came
+    # send a Discord alert with all newly found student roles so I know what came
     # in from today's run without waiting for the Sunday digest.
     if ctx.new_jobs:
         print(f"\nSending Discord alert for {len(ctx.new_jobs)} new student roles...")

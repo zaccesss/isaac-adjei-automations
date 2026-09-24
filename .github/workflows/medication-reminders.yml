@@ -1,4 +1,4 @@
-# Sends due medication reminders every 30 minutes. The script only acts on times that have just come
+# sends due medication reminders every 30 minutes. The script only acts on times that have just come
 # due (in Europe/London) and de-duplicates against the dose log, so the frequent schedule is safe.
 
 name: Medication reminders

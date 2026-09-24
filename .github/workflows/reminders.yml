@@ -1,4 +1,4 @@
-# Sends due appointment, meeting and general reminders every 30 minutes. Each reminder fires once, a set
+# sends due appointment, meeting and general reminders every 30 minutes. Each reminder fires once, a set
 # lead time before its event, then stamps reminded_at so the frequent schedule never double-sends.
 
 name: Reminders
