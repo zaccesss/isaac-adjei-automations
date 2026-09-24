@@ -20,7 +20,7 @@ from ..stats import record_stat
 
 BASE = "https://www.prospects.ac.uk"
 
-# One render per search. The graduate-jobs results carry placements and
+# one render per search. The graduate-jobs results carry placements and
 # internships too (typed from their titles); a work-experience-results route
 # does not exist, it 404s.
 SEARCHES = ["software engineering", "computer science"]
@@ -45,7 +45,7 @@ def parse_cards(page_html: str) -> list[dict]:
         if not role:
             continue
         seen.add(href)
-        # Climb to the wrapper that carries the labelled fields.
+        # climb to the wrapper that carries the labelled fields.
         card = a
         for _ in range(8):
             if card.parent is None:

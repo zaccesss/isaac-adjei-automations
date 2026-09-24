@@ -1,10 +1,10 @@
-// Posts a habit and streak checklist to a Discord channel webhook, twice a day: the full morning
+// posts a habit and streak checklist to a Discord channel webhook, twice a day: the full morning
 // checklist at 07:00 Europe/London and a smart evening pass at 20:00 that only chases what is still
 // unlogged (and stays silent when everything is done). It reads the day's state straight from the
 // database over its REST API (service-role key), so it stays a generic "read a database, post a
 // summary" job. Node only, no dependencies (global fetch).
 //
-// The workflow fires across both windows either side of the hour to ride out British Summer Time
+// the workflow fires across both windows either side of the hour to ride out British Summer Time
 // and GitHub's cron slop; each slot posts once and claims (job-slot, UK-day). A manual run can pick
 // its slot with the SLOT input and FORCE=1 always posts, for testing.
 
@@ -25,7 +25,7 @@ if (!SUPABASE_URL || !SERVICE_KEY || !webhook) {
 }
 
 // am is the full morning checklist; pm is the evening pass that only chases what is still unlogged.
-// An explicit SLOT (a manual run or a dispatcher) wins; otherwise the London hour decides.
+// an explicit SLOT (a manual run or a dispatcher) wins; otherwise the London hour decides.
 const slot = process.env.SLOT === "am" || process.env.SLOT === "pm" ? process.env.SLOT : londonHour() < 12 ? "am" : "pm"
 
 // GitHub Actions cron is unreliable (it delays and drops runs), so the workflow fires every 30 min
@@ -67,7 +67,7 @@ const streakDone = new Set(streakLogs.map((l) => l.streak_id))
 const pendingHabits = habits.filter((h) => !habitDone.has(h.id))
 const pendingStreaks = streaks.filter((s) => !streakDone.has(s.id))
 
-// The evening pass only chases what is left; when everything is logged it stays silent.
+// the evening pass only chases what is left; when everything is logged it stays silent.
 if (slot === "pm" && pendingHabits.length === 0 && pendingStreaks.length === 0) {
   console.log("Evening pass: everything is already logged - nothing to post.")
   process.exit(0)

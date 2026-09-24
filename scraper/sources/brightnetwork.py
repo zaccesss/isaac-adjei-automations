@@ -37,7 +37,7 @@ LISTINGS = [
 
 _JOB_RE = re.compile(r"^/(?:graduate-jobs|internships|work-experience)/[^/]+/[^/?]+")
 _ORDINAL_RE = re.compile(r"(\d+)(?:st|nd|rd|th)", re.I)
-# The non-computing engineering and commercial leakage the tech feed still shows.
+# the non-computing engineering and commercial leakage the tech feed still shows.
 _NON_COMPUTING_RE = re.compile(
     r"\b(civil|structural|mechanical|chemical|mining|geotechnical|marine|"
     r"aerospace|automotive|architectur|quantity survey|hvac|audit|accounts|"
@@ -94,7 +94,7 @@ def parse_listing(html: str, default_type: str, ctx) -> int:
         if not _has_tech_keyword(role.lower()):
             continue
 
-        # The card text nodes come in the order role, employer, location,
+        # the card text nodes come in the order role, employer, location,
         # "Deadline:", date. I read the employer and location off that order and
         # find the date after the Deadline label.
         card = _card_of(a)

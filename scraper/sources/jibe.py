@@ -41,7 +41,7 @@ def scrape_jibe(ctx, host: str, company_name: str) -> int:
             job = wrapper.get("data", {})
             title = job.get("title", "")
             location = job.get("full_location") or job.get("country") or ""
-            # The apply URL lands on the login step of the application; the
+            # the apply URL lands on the login step of the application; the
             # bare job page is the same URL without that suffix.
             job_url = (job.get("apply_url") or "").removesuffix("/login")
             description = _strip_html(job.get("description", ""))

@@ -12,21 +12,21 @@ from ..http import SESSION
 
 # ─── WORKDAY API (NVIDIA, Intel and other Workday-hosted companies) ─────────
 
-# Confirmed Workday configurations: (subdomain, wdnum, tenant, site_id, display_name)
-# Validated against live API - POST to /wday/cxs/{tenant}/{site_id}/jobs.
+# confirmed Workday configurations: (subdomain, wdnum, tenant, site_id, display_name)
+# validated against live API - POST to /wday/cxs/{tenant}/{site_id}/jobs.
 # ARM, Goldman, JPMorgan, Qualcomm, BAE, Rolls-Royce use Workday but require
 # session cookies or proprietary auth - scrape via The Trackr (Playwright) instead.
 WORKDAY_COMPANIES = [
     ("nvidia", "5", "nvidia", "NVIDIAExternalCareerSite", "NVIDIA"),
     ("intel",  "1", "intel",  "External",                 "Intel"),
     ("ms",     "5", "ms",     "External",                 "Morgan Stanley"),
-    # Semiconductor majors, confirmed live July 2026 - the embedded and hardware
+    # semiconductor majors, confirmed live July 2026 - the embedded and hardware
     # placements I am hunting live on exactly these boards.
     ("analogdevices", "1", "analogdevices", "External",       "Analog Devices"),
     ("micron",        "1", "micron",        "External",       "Micron"),
     ("nxp",           "3", "nxp",           "careers",        "NXP"),
     ("marvell",       "1", "marvell",       "MarvellCareers", "Marvell"),
-    # Confirmed live July 2026. Broadcom answered 101 postings to an intern
+    # confirmed live July 2026. Broadcom answered 101 postings to an intern
     # search; HPE also covers Juniper since the acquisition. Qualcomm stays out:
     # its CXS endpoint returns 422 to every plain payload, so it wants the
     # front-end's session tokens like the other auth-gated tenants above.
@@ -78,7 +78,7 @@ def scrape_workday(
                         if bf:
                             location_text = bf
                             break
-                # Pre-filter non-UK roles to avoid HEAD-checking hundreds of
+                # pre-filter non-UK roles to avoid HEAD-checking hundreds of
                 # US job URLs. is_relevant does a second check inside.
                 is_priority = any(p in company_name.lower() for p in PRIORITY_COMPANIES)
                 if location_text and not is_location_ok(location_text, is_priority):

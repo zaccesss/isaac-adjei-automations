@@ -1,4 +1,4 @@
-# Lightweight CI: syntax-checks the Python and Node scripts on every pull request and push so a
+# lightweight CI: syntax-checks the Python and Node scripts on every pull request and push so a
 # broken change cannot land. These are standalone scripts, so there is no build step.
 
 name: CI

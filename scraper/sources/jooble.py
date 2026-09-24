@@ -11,9 +11,9 @@ from ..http import SESSION
 # ─── JOOBLE ──────────────────────────────────────────────────────────────────
 
 def scrape_jooble(ctx) -> int:
-    # Use Jooble's POST API which aggregates from hundreds of job boards.
+    # use Jooble's POST API which aggregates from hundreds of job boards.
     # JOOBLE_API_KEY must be set as a GitHub Actions secret.
-    # Request a free key at jooble.org/api/about.
+    # request a free key at jooble.org/api/about.
     api_key = config.JOOBLE_API_KEY
     if not api_key:
         print("  JOOBLE_API_KEY not set - skipping Jooble")
@@ -32,7 +32,7 @@ def scrape_jooble(ctx) -> int:
         {"keywords": "technology intern", "location": "London"},
         {"keywords": "industrial placement", "location": "London"},
         {"keywords": "engineering internship", "location": "London"},
-        # Embedded and hardware passes, per my placement hunt.
+        # embedded and hardware passes, per my placement hunt.
         {"keywords": "embedded internship", "location": "United Kingdom"},
         {"keywords": "electronics placement", "location": "United Kingdom"},
     ]

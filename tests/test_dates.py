@@ -1,4 +1,4 @@
-# Cases derived from the inline comments in scraper/dates.py: the 14 day grace window
+# cases derived from the inline comments in scraper/dates.py: the 14 day grace window
 # for freshly closed roles, the per-type cutoffs and every Trackr date format.
 from datetime import datetime, timedelta
 
@@ -32,7 +32,7 @@ def test_the_grace_window_keeps_freshly_closed_roles():
 
 
 def test_the_cutoffs_sit_at_the_2026_season_line():
-    # Both cutoffs sit at Jan 2026 this season (the owner moved the cycle cutoff up:
+    # both cutoffs sit at Jan 2026 this season (the owner moved the cycle cutoff up:
     # 2025-dated roles are stale). is_date_relevant must honour whichever it is given.
     assert CYCLE_CUTOFF == datetime(2026, 1, 1)
     assert JOB_CUTOFF == datetime(2026, 1, 1)

@@ -1,4 +1,4 @@
-# Posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness, Music)
+# posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness, Music)
 # for the day that just ended, shortly after the coding recap. GitHub Actions cron drops many runs, so this
 # fires every 30 min across the small hours; the script gates to >= 01:00 UK and claims (job, UK-day), so it
 # posts exactly once per day whenever a run lands. Each channel is optional - a page is skipped if its
@@ -34,7 +34,7 @@ jobs:
           ping-key: ${{ secrets.HEALTHCHECK_PING_KEY }}
           slug: daily-analytics
           status: start
-      # Secrets are scoped to this step so the setup actions never see them.
+      # secrets are scoped to this step so the setup actions never see them.
       - env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}

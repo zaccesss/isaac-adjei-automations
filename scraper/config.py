@@ -13,7 +13,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 # split the work without running each other's scrapers.
 SCRAPER_MODE = os.environ.get("SCRAPER_MODE", "all")
 
-# Hard wall-clock budget so the script exits cleanly before GitHub Actions kills the
+# hard wall-clock budget so the script exits cleanly before GitHub Actions kills the
 # job. The repo is public, so Actions minutes are unlimited; the default 110 min sits
 # a few minutes under the 120 min job timeout so the run still exits cleanly. A higher
 # budget matters most for the browser/Trackr job, which carries the internships.

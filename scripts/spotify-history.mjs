@@ -1,4 +1,4 @@
-// Records my Spotify plays into the listening_history table so the dashboard and lab pages can show
+// records my Spotify plays into the listening_history table so the dashboard and lab pages can show
 // real listening analytics - play counts, active hours, streaks - that the Spotify API alone cannot
 // give (it only returns top-N and the last 50 plays). I fetch the recently-played endpoint and upsert
 // each play, deduped by played_at. Node only, no deps.
@@ -81,7 +81,7 @@ async function main() {
     }
   })
 
-  // Upsert deduped by played_at - plays I already stored are ignored, so re-runs are safe.
+  // upsert deduped by played_at - plays I already stored are ignored, so re-runs are safe.
   const up = await fetch(`${SUPABASE_URL}/rest/v1/listening_history?on_conflict=played_at`, {
     method: "POST",
     headers: {
@@ -97,7 +97,7 @@ async function main() {
   console.log(`Fetched ${rows.length} recent plays, stored ${inserted.length} new.`)
 }
 
-// No local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
+// no local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
 // to #errors and then exits non-zero. A local catch would swallow it and the failure would only ever
 // reach the run log.
 await main()

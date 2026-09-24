@@ -28,9 +28,9 @@ from ..stats import record_stat
 
 API = "https://api.the-trackr.com/programmes"
 
-# The Trackr splits UK Tech into these tabs; each tab is a `type` value on the
+# the Trackr splits UK Tech into these tabs; each tab is a `type` value on the
 # API. I request every one so nothing is missed - Summer Internships, Industrial
-# Placements, Graduate Schemes, Spring Weeks, Pre-Uni and Events. A tab with no
+# placements, Graduate Schemes, Spring Weeks, Pre-Uni and Events. A tab with no
 # entries for a season simply returns an empty list, so listing the two that are
 # empty this cycle (insight-programmes, pre-uni) costs nothing and future-proofs
 # the source for when the Trackr populates them.
@@ -44,7 +44,7 @@ TYPE_TO_CATEGORY = {
     "pre-uni":               "Event",
 }
 
-# The endpoint rejects calls without the app Origin, so I always send it. The
+# the endpoint rejects calls without the app Origin, so I always send it. The
 # API scopes the whole feed to UK Tech already, so I do not re-filter by location
 # or tech keyword - the tab decides the category.
 _API_HEADERS = {
@@ -144,13 +144,13 @@ def scrape_trackr_all(ctx) -> int:
                 role = (prog.get("name") or "").strip()
                 if not company or not role:
                     continue
-                # Senior or lead titles are never a student programme even when
+                # senior or lead titles are never a student programme even when
                 # the Trackr files one under an early-careers tab, so I drop them
                 # rather than store a role the owner cannot apply to.
                 if _SENIOR_ROLE_RE.search(role):
                     continue
 
-                # The direct apply link first; the company careers site when the
+                # the direct apply link first; the company careers site when the
                 # Trackr has no per-programme link yet. Both are real external
                 # pages - this is the fix for the company-name-only links.
                 url = (
@@ -177,7 +177,7 @@ def scrape_trackr_all(ctx) -> int:
             if count:
                 print(f"  {type_slug} {season}: {count} new")
             total += count
-            # The endpoint rate-limits a rapid burst (429 after ~6 fast calls),
+            # the endpoint rate-limits a rapid burst (429 after ~6 fast calls),
             # so I space the tab requests out.
             time.sleep(2)
     print(f"  The Trackr total: {total} new")
@@ -185,7 +185,7 @@ def scrape_trackr_all(ctx) -> int:
 
 
 def run(ctx) -> int:
-    # Guard the call site because an uncaught error here would abort the whole
+    # guard the call site because an uncaught error here would abort the whole
     # run - fetch_programmes already swallows per-request failures, but a bad
     # season loop or a JSON change should degrade to zero, not crash the scraper.
     try:

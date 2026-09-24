@@ -2,10 +2,10 @@
 
 from datetime import datetime, timedelta
 
-# Internship cycle cutoff: Jan 2026. The 2025/26 season is over, so roles with a
+# internship cycle cutoff: Jan 2026. The 2025/26 season is over, so roles with a
 # 2025 closing date are stale now; this moves forward as each season ages out.
 CYCLE_CUTOFF = datetime(2026, 1, 1)
-# Full-time job cutoff: Jan 2026 - only include recently posted roles.
+# full-time job cutoff: Jan 2026 - only include recently posted roles.
 JOB_CUTOFF = datetime(2026, 1, 1)
 
 
@@ -15,7 +15,7 @@ def is_date_relevant(closing_date_str: "str | None", cutoff: "datetime | None" =
         return True  # no deadline = include (unknown)
     try:
         d = datetime.strptime(closing_date_str, "%Y-%m-%d")
-        # Keep roles whose deadline passed within the last 14 days so a freshly
+        # keep roles whose deadline passed within the last 14 days so a freshly
         # closed posting still shows (late applications are sometimes accepted)
         # rather than dropping it the instant the date ticks over.
         grace = datetime.now() - timedelta(days=14)

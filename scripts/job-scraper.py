@@ -1,4 +1,4 @@
-# Thin shim kept at the old path: the scraper lives in the scraper/ package now and
+# thin shim kept at the old path: the scraper lives in the scraper/ package now and
 # runs as python -m scraper. Anything still invoking this path gets the identical run.
 import os
 import sys

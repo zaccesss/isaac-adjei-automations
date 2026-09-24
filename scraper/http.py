@@ -2,7 +2,7 @@
 
 import requests
 
-# Impersonate a real Chrome browser so sites do not block the scraper with
+# impersonate a real Chrome browser so sites do not block the scraper with
 # a bot check. Accept-Language hints I am a UK user, biasing geo results.
 HEADERS = {
     "User-Agent": (
@@ -17,7 +17,7 @@ HEADERS = {
 }
 
 
-# One shared session for connection reuse across the thousands of small API and
+# one shared session for connection reuse across the thousands of small API and
 # detail calls; it carries the same browser headers and per-call headers merge
 # over it exactly as they did over bare requests, so semantics are unchanged.
 SESSION = requests.Session()
@@ -36,7 +36,7 @@ def is_url_alive(url: str) -> bool:
     try:
         resp = SESSION.head(url, headers=HEADERS, timeout=8,
                              allow_redirects=True)
-        # Some servers don't support HEAD and return 405 - fall back to GET.
+        # some servers don't support HEAD and return 405 - fall back to GET.
         if resp.status_code == 405:
             resp = SESSION.get(url, headers=HEADERS, timeout=10,
                                 allow_redirects=True, stream=True)

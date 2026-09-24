@@ -1,4 +1,4 @@
-# Coding recap for the day that just ended, posted just after midnight UK while yesterday is fresh.
+# coding recap for the day that just ended, posted just after midnight UK while yesterday is fresh.
 # GitHub Actions cron is unreliable (it delays and drops runs, especially at the top of the hour), so
 # instead of one fragile 00:30 slot this fires every 30 minutes across a small night window and the gate
 # acts only from 00:30 to 03:00 UK; the script claims (job, UK-day) so it posts exactly once whenever a
@@ -36,7 +36,7 @@ jobs:
           fi
           H=$((10#$(TZ=Europe/London date +%H)))
           M=$((10#$(TZ=Europe/London date +%M)))
-          # The window opens at 00:30, not 00:00, so the just-ended day's final WakaTime heartbeats
+          # the window opens at 00:30, not 00:00, so the just-ended day's final WakaTime heartbeats
           # have settled before the sync reads it.
           if { [ "$H" -eq 0 ] && [ "$M" -ge 30 ]; } || [ "$H" -eq 1 ] || [ "$H" -eq 2 ]; then
             echo "go=1" >> "$GITHUB_OUTPUT"
@@ -70,7 +70,7 @@ jobs:
 
       - name: Sync WakaTime data (the just-ended day is now complete)
         if: steps.gate.outputs.go == '1'
-        # Secrets are scoped to the two script steps so the setup actions never see them.
+        # secrets are scoped to the two script steps so the setup actions never see them.
         env:
           WAKATIME_API_KEY: ${{ secrets.WAKATIME_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

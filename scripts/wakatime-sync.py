@@ -16,10 +16,10 @@ from datetime import date, timedelta
 import requests
 from supabase import create_client
 
-# Fetch the last 14 days so a single missed run never leaves gaps.
+# fetch the last 14 days so a single missed run never leaves gaps.
 FETCH_DAYS = 14
 
-# On each run, also back-fill rows within this many days that are missing hourly or extra
+# on each run, also back-fill rows within this many days that are missing hourly or extra
 # metrics (catches rows created before those columns existed). A one-off manual run can
 # reach further back. Each run is capped so a big backlog drains over a few runs.
 BACKFILL_DAYS = int(os.environ.get("BACKFILL_DAYS", "90") or 90)
@@ -118,7 +118,7 @@ def build_row(day: dict, hours: list[int] | None = None, ai: dict | None = None)
     if not day_date:
         return None
     total_seconds = day.get("grand_total", {}).get("total_seconds", 0)
-    # Keep top-10 per category to cap JSONB size.
+    # keep top-10 per category to cap JSONB size.
     languages = sorted(
         [{"name": l["name"], "total_seconds": l["total_seconds"]} for l in day.get("languages", [])],
         key=lambda x: x["total_seconds"],
@@ -173,14 +173,14 @@ def main() -> None:
     summary_data = fetch_summaries(start_date, end_date)
     print(f"  Got {len(summary_data)} day(s) from summaries")
 
-    # Build a date->day dict so we can match durations to summary days
+    # build a date->day dict so we can match durations to summary days
     days_by_date: dict[str, dict] = {}
     for day in summary_data:
         d = day.get("range", {}).get("date")
         if d:
             days_by_date[d] = day
 
-    # Fetch durations for each day in the sync window (gives hourly breakdown)
+    # fetch durations for each day in the sync window (gives hourly breakdown)
     print(f"Fetching WakaTime durations for {FETCH_DAYS} days...")
     durations_by_date: dict[str, tuple[list[int], dict]] = {}
     cursor = start_date
@@ -190,7 +190,7 @@ def main() -> None:
         cursor += timedelta(days=1)
         time.sleep(0.2)  # be polite to the API
 
-    # Build rows for upsert
+    # build rows for upsert
     rows = []
     for day_date, day in days_by_date.items():
         hours, ai = durations_by_date.get(day_date, (None, None))
@@ -208,7 +208,7 @@ def main() -> None:
         )
         print(f"  Upserted {len(rows)} row(s) with hourly data")
 
-    # Back-fill hourly and AI data for recent rows that predate those columns
+    # back-fill hourly and AI data for recent rows that predate those columns
     backfill_start = (end_date - timedelta(days=BACKFILL_DAYS - 1)).isoformat()
     existing = (
         supabase.table("wakatime_daily")
@@ -219,7 +219,7 @@ def main() -> None:
         .execute()
     )
     backfill_dates = [r["date"] for r in (existing.data or [])]
-    # Skip dates already fetched above
+    # skip dates already fetched above
     recent_fetched = set(days_by_date.keys())
     backfill_dates = [d for d in backfill_dates if d not in recent_fetched]
     remaining = max(0, len(backfill_dates) - MAX_BACKFILL_PER_RUN)

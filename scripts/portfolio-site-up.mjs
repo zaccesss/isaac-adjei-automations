@@ -1,4 +1,4 @@
-// Pings Healthchecks' Portfolio Website Health project every 15 minutes after confirming
+// pings Healthchecks' Portfolio Website Health project every 15 minutes after confirming
 // isaacadjei.me is actually reachable from the outside (a real HTTP round trip to its own /api/health
 // route). No other check in that project watches the site itself - every other one watches a single
 // job's own last run. Node only, no deps.

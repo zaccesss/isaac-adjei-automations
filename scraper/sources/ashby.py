@@ -15,20 +15,20 @@ from ..http import SESSION
 def scrape_ashby(
     ctx, slug: str, company_name: str
 ) -> int:
-    # Use Ashby's official posting REST API which replaced the __NEXT_DATA__
+    # use Ashby's official posting REST API which replaced the __NEXT_DATA__
     # static embed. No API key is required - the endpoint is public.
     url = f"https://api.ashbyhq.com/posting-api/job-board/{slug}"
     count = 0
     try:
-        # Request the JSON endpoint directly rather than scraping the HTML.
+        # request the JSON endpoint directly rather than scraping the HTML.
         resp = SESSION.get(url, headers=HEADERS, timeout=15)
         if resp.status_code != 200:
             print(f"  Ashby {company_name}: HTTP {resp.status_code}")
             return 0
-        # Iterate the top-level jobs array; the schema is consistent across
+        # iterate the top-level jobs array; the schema is consistent across
         # all employers on this endpoint.
         for job in resp.json().get("jobs", []):
-            # Prefer jobUrl but fall back to applyUrl when it is absent.
+            # prefer jobUrl but fall back to applyUrl when it is absent.
             title = job.get("title", "")
             location = job.get("location", "")
             job_url = job.get("jobUrl") or job.get("applyUrl", "")
@@ -64,7 +64,7 @@ def scrape_ashby(
                     "description":          description_text,
                 }):
                     count += 1
-        # Sleep 0.6 s between slugs to stay well under Ashby's rate limit.
+        # sleep 0.6 s between slugs to stay well under Ashby's rate limit.
         time.sleep(0.6)
     except Exception as e:
         print(f"  Error Ashby {company_name}: {e}")

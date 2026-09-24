@@ -1,5 +1,5 @@
-// Posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness,
-// Music) for the day that just ended. Runs just after midnight UK, once the coding recap is out, so the
+// posts a daily analytics summary to each dashboard analytics channel (Applications, Posts, Fitness,
+// music) for the day that just ended. Runs just after midnight UK, once the coding recap is out, so the
 // numbers are waiting first thing. Resilient to GitHub Actions cron being delayed or
 // dropped: the workflow fires from a frequent morning schedule, this proceeds only once the London hour has
 // reached the target and alreadyRanToday claims (job, UK-day) so it sends exactly once whenever a run
@@ -26,7 +26,7 @@ async function get(path) {
   return res.json()
 }
 
-// Page past PostgREST's 1000-row cap. The caller passes a path already carrying its filters and a
+// page past PostgREST's 1000-row cap. The caller passes a path already carrying its filters and a
 // stable order; I append offset/limit and read until a short page. Needed for applications, where the
 // scraped rows (thousands of them) otherwise fill the first 1000 and evict the real ones.
 async function getAll(pathBase) {
@@ -52,7 +52,7 @@ async function send(webhook, title, lines) {
   return res.ok
 }
 
-// Gate + claim (skipped by FORCE=1 for manual test runs).
+// gate + claim (skipped by FORCE=1 for manual test runs).
 if (process.env.FORCE !== "1") {
   if (londonHour() < TARGET_HOUR) {
     console.log(`Too early (${londonHour()} < ${TARGET_HOUR} UK) - skipping.`)
@@ -69,7 +69,7 @@ const dayStart = `${yesterday}T00:00:00`
 const dayEnd = `${yesterday}T23:59:59`
 const label = new Date(`${yesterday}T12:00:00`).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/London" })
 
-// Formatting shared by the sections below.
+// formatting shared by the sections below.
 const fmtDur = (s) => {
   const m = Math.round(s / 60)
   return m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m` : `${m}m`
@@ -81,7 +81,7 @@ let sent = 0
 
 // ── Applications ──
 try {
-  // Exclude the scraped rows server-side (they are not real applications and there are thousands) and
+  // exclude the scraped rows server-side (they are not real applications and there are thousands) and
   // page the rest, so the counts reflect every genuine application rather than a truncated first 1000.
   const apps = await getAll(`applications?select=status,applied_date,company,role,category,location,work_mode,deadline&status=neq.scraped&order=id`)
   const skip = new Set(["Not Applied", "Not Interested", "scraped"])
@@ -93,7 +93,7 @@ try {
   const roleLine = (a) => [[a.company, a.role].filter(Boolean).join(" - "), a.category, a.work_mode, a.location].filter(Boolean).join(" · ")
   const appliedLines = appliedYesterday.slice(0, 5).map((a) => `• ${roleLine(a)}`)
   if (appliedYesterday.length > 5) appliedLines.push(`plus ${appliedYesterday.length - 5} more`)
-  // Deadlines due in the coming week, including openings still marked Not Applied - those are the
+  // deadlines due in the coming week, including openings still marked Not Applied - those are the
   // ones a warning can actually save.
   const today = londonDate(new Date())
   const weekOut = londonDate(new Date(Date.now() + 7 * 86400000))
@@ -192,7 +192,7 @@ try {
   console.error("music:", e.message)
 }
 
-// If every section failed, the day produced nothing. alreadyRanToday already claimed it up front to
+// if every section failed, the day produced nothing. alreadyRanToday already claimed it up front to
 // stop a double-post, so release that claim for a later run to retry and exit non-zero so Healthchecks
 // /fail fires instead of this reading as a clean, complete run.
 if (sent === 0) {

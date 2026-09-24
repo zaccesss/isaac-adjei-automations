@@ -1,11 +1,11 @@
-// Sends one-off appointment, meeting and general reminders from the reminders table. Runs every 30
+// sends one-off appointment, meeting and general reminders from the reminders table. Runs every 30
 // minutes: each reminder can have several lead times (a week before and a day before, say) and each fires
 // once when its moment arrives, to any of Discord, email and SMS. sent_leads records which lead times have
 // gone out so none repeats and reminded_at is stamped once every lead has fired or the event has passed, so
 // the row drops out of the scan. Because event_at is an absolute timestamp there is no local-hour handling to
 // do, unlike the recurring medication reminders. Node only, no deps.
 //
-// A workflow_dispatch with TEST_EMAIL or TEST_TO set sends one test message there and exits.
+// a workflow_dispatch with TEST_EMAIL or TEST_TO set sends one test message there and exits.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -50,7 +50,7 @@ function fmtWhen(iso) {
   }).format(new Date(iso))
 }
 
-// The actual time from now until the event, so the message is right even when the send runs later than the
+// the actual time from now until the event, so the message is right even when the send runs later than the
 // configured lead (a reminder added at the last minute or a delayed cron). Rounded to a friendly unit.
 function humanUntil(ms) {
   const min = Math.round(ms / 60000)
@@ -117,7 +117,7 @@ async function sendSms(to, body) {
   return res.ok
 }
 
-// Manual test path: a workflow_dispatch with TEST_EMAIL or TEST_TO sends one test message and exits.
+// manual test path: a workflow_dispatch with TEST_EMAIL or TEST_TO sends one test message and exits.
 if (process.env.TEST_EMAIL || process.env.TEST_TO) {
   if (process.env.TEST_EMAIL) {
     const ok = await sendEmail(process.env.TEST_EMAIL, {
@@ -148,11 +148,11 @@ for (const r of rows) {
   const sentLeads = new Set(Array.isArray(r.sent_leads) ? r.sent_leads : [])
   const channels = Array.isArray(r.channels) && r.channels.length ? r.channels : ["discord"]
 
-  // Lead times whose moment has arrived but which have not fired yet.
+  // lead times whose moment has arrived but which have not fired yet.
   const dueUnfired = leads.filter((l) => !sentLeads.has(l) && now >= eventMs - l * 60000).sort((a, b) => a - b)
   if (dueUnfired.length === 0) continue
 
-  // Fire only the most imminent due lead (smallest = closest to the event). Any larger leads that are also
+  // fire only the most imminent due lead (smallest = closest to the event). Any larger leads that are also
   // due at the same time are stale (their moment passed, a nearer reminder is going out now), so I mark them
   // fired without notifying rather than sending a burst of near-identical messages. This only happens when a
   // reminder is added late or the job was down; normally each lead fires alone as its moment arrives.
@@ -175,19 +175,19 @@ for (const r of rows) {
     if (firedOk) {
       sentLeads.add(toFire)
       sent++
-      // Run logs are public, so print the row id only, never the title or recipient.
+      // run logs are public, so print the row id only, never the title or recipient.
       console.log(`sent ${r.kind} ${r.id} (lead ${toFire}m) via ${channels.join(",")}`)
     } else {
       console.log(`not sent (no channel succeeded): ${r.kind} ${r.id} lead ${toFire}m`)
     }
   } else {
-    // The event is already in the past: mark this lead fired without notifying.
+    // the event is already in the past: mark this lead fired without notifying.
     sentLeads.add(toFire)
   }
   for (const l of toSkip) sentLeads.add(l)
 
   const allDone = leads.every((l) => sentLeads.has(l))
-  // Persist progress when something changed. A transient send failure before the event leaves toFire unfired
+  // persist progress when something changed. A transient send failure before the event leaves toFire unfired
   // (and reminded_at null), so the next run retries it.
   if (firedOk || toSkip.length > 0 || now > eventMs) {
     const body = { sent_leads: [...sentLeads] }

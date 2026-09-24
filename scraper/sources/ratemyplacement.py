@@ -23,23 +23,23 @@ from ..stats import record_stat
 
 BASE = "https://www.ratemyplacement.co.uk/search-jobs"
 
-# The embedded state is a single JSON object assigned before the closing script
+# the embedded state is a single JSON object assigned before the closing script
 # tag; I capture up to that tag so a later inline script cannot swallow it.
 _STATE_RE = re.compile(
     r"window\.__RMP_SEARCH_RESULTS_INITIAL_STATE__\s*=\s*(\{.*?\})\s*</script>",
     re.S,
 )
 _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}")
-# Early in the cycle the board is mostly "Register Your Interest - <role>"
+# early in the cycle the board is mostly "Register Your Interest - <role>"
 # pre-registration listings. Those are worth keeping (registering early is the
 # right move for a placement year), but the prefix clutters the stored title and
 # blunts the tech filter, so I strip it and classify on the real role underneath.
 _PREREG_PREFIX_RE = re.compile(r"^register your interest\s*[---:]\s*", re.I)
 
-# Only these job-type slugs actually filter the server-rendered feed (verified
+# only these job-type slugs actually filter the server-rendered feed (verified
 # July 2026); the graduate slugs are ignored by the site and return the whole
 # board, so I leave graduate schemes to the Trackr, which already covers them.
-# Each maps to the type the app files it under.
+# each maps to the type the app files it under.
 TYPE_SLUGS = {
     "placement":               "Industrial Placement",
     "internship":              "Internship",
@@ -94,7 +94,7 @@ def scrape_ratemyplacement(ctx) -> int:
     for slug, job_type in TYPE_SLUGS.items():
         count = 0
         first_jobs, last_page = fetch_page(slug, 1)
-        # Cap the page walk at the reported last page so a change in the
+        # cap the page walk at the reported last page so a change in the
         # response can never spin this into an unbounded loop.
         for page in range(1, min(last_page, 40) + 1):
             jobs = first_jobs if page == 1 else fetch_page(slug, page)[0]
@@ -105,7 +105,7 @@ def scrape_ratemyplacement(ctx) -> int:
                 company = (job.get("companyName") or "").strip()
                 if not role or not company:
                     continue
-                # The board carries every discipline, so I keep only genuine
+                # the board carries every discipline, so I keep only genuine
                 # tech roles: a tech keyword must be present, senior and clearly
                 # non-tech titles are dropped. The job type already establishes
                 # that these are student placements, so I do not require an

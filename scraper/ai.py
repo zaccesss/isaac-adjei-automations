@@ -8,17 +8,17 @@ from .filters import detect_category
 from . import config
 
 # ─── AI FIELD EXTRACTION (Groq -> Gemini -> OpenRouter, optional) ────────────
-# When a new role carries a description, I ask an LLM to pick the correct category tab and extract
+# when a new role carries a description, I ask an LLM to pick the correct category tab and extract
 # the fields the ATS did not provide (salary, work mode, opening and closing dates, visa
 # sponsorship, CV and cover letter requirements).
-# It only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant
+# it only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant
 # categories from the regex, never overrides an ATS value and never touches user-owned columns. Groq
 # is tried first, then Gemini, then OpenRouter, each itself trying several free models before
 # moving on, so a rate limit or outage on any single model or provider still leaves a working
 # fallback. The whole step is skipped when none of the three keys is set.
 
 
-# The exact category tabs the dashboard groups by - the model must pick one of these or null.
+# the exact category tabs the dashboard groups by - the model must pick one of these or null.
 AI_CATEGORIES = {
     "AI and Machine Learning", "Cyber Security", "Data Science", "DevOps and Infrastructure",
     "Embedded", "FAANG+", "Hardware", "IT", "Quant Developer", "Software Engineering",
@@ -100,7 +100,7 @@ def _build_ai_prompt(snippet: str, title: str, company: str) -> str:
     )
 
 
-# Free-tier model ids per provider, most-capable first, verified live against each provider's own
+# free-tier model ids per provider, most-capable first, verified live against each provider's own
 # catalog. Several per provider (not just one) so a single model being rate-limited or temporarily
 # pulled from the free tier does not bench the whole provider - GitHub Models is gone entirely
 # (retired 2026-07-30), so that provider is dropped rather than pointed at a dead endpoint.
@@ -157,7 +157,7 @@ def _call_gemini(prompt: str):
         return None
     resp = requests.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-        # The key travels in a header so an exception's URL text can never carry it.
+        # the key travels in a header so an exception's URL text can never carry it.
         headers={"x-goog-api-key": config.GOOGLE_AI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
@@ -194,7 +194,7 @@ def ai_extract(ctx, text: str, title: str = "", company: str = "") -> dict:
     ctx.ai_calls += 1
     prompt = _build_ai_prompt(snippet, title, company)
     for name, fn in _AI_PROVIDERS:
-        # A provider that hit its rate limit (or failed three calls running) is benched
+        # a provider that hit its rate limit (or failed three calls running) is benched
         # for the rest of the run, so every later extraction goes straight to the
         # providers still answering instead of queueing behind a known-dead limit.
         if ctx.ai_provider_failures.get(name, 0) >= 3:
@@ -237,12 +237,12 @@ def _ai_fill(ctx, job: dict) -> None:
        and job.get("cv_required")
        and job.get("cover_letter_required") is not None
     )
-    # Skip the call only when the company-based category is high-confidence and nothing is missing.
+    # skip the call only when the company-based category is high-confidence and nothing is missing.
     if regex_cat in ("FAANG+", "Quant Developer") and fields_complete:
         job["category"] = regex_cat
         return
     ai = ai_extract(ctx, job.get("description", ""), job.get("role", ""), job.get("company", ""))
-    # Keep the reliable company-based regex categories, otherwise take the model's tab.
+    # keep the reliable company-based regex categories, otherwise take the model's tab.
     if regex_cat in ("FAANG+", "Quant Developer"):
         job["category"] = regex_cat
     elif ai.get("category"):

@@ -1,4 +1,4 @@
-# One-off, dispatch-only: retype already-scraped rows from their titles after the
+# one-off, dispatch-only: retype already-scraped rows from their titles after the
 # Trackr category bug, listing unrecoverable ghost rows. Dry run by default.
 name: Fix Scraped Types (one-off)
 

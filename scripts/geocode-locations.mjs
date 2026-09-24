@@ -1,11 +1,11 @@
-// Geocodes every distinct applications.location string not yet cached in location_geocodes
+// geocodes every distinct applications.location string not yet cached in location_geocodes
 // (isaac-adjei-portfolio migration 049), so the Applications analytics map can plot real pins
 // without the website ever calling a geocoder itself - it only ever reads this cache. OpenCage is
 // the primary geocoder (needs OPENCAGE_API_KEY); a location it fails to resolve gets one retry via
 // Nominatim (OpenStreetMap's own geocoder, free, no key) before being cached as unresolved
 // (lat/lng null) so it is never retried forever. Node only, no deps.
 //
-// Persists in chunks as it goes (CHUNK_SIZE) rather than one upsert after the whole loop. A large
+// persists in chunks as it goes (CHUNK_SIZE) rather than one upsert after the whole loop. A large
 // backlog can take longer than the workflow's own 10-minute timeout; a killed run used to lose
 // every result it had already fetched since nothing was saved until the very end. Confirmed live:
 // this is exactly what burned OpenCage's account well past its free-tier daily limit for a week
@@ -18,11 +18,11 @@
 // pending for the next run rather than cached as unresolved, since a quota exhaustion says nothing
 // about whether any individual address is actually resolvable.
 //
-// Also backfills city/country_code (isaac-adjei-portfolio migration 054) for rows that already
+// also backfills city/country_code (isaac-adjei-portfolio migration 054) for rows that already
 // have a cached lat/lng but predate those two columns, since the raw scraped location string is
 // sometimes genuinely uninformative (a fab/site code, a job board's own "N Locations" placeholder
 // for a multi-site listing) rather than just inconsistently formatted - the Applications map and
-// Top 10 cities charts need a real "City, Country code" label, not the original text. Deliberately
+// top 10 cities charts need a real "City, Country code" label, not the original text. Deliberately
 // reverse-geocodes the ALREADY-STORED coordinate rather than re-running the original text through a
 // forward geocode again - some raw strings already resolved to a genuinely wrong place, so a
 // second independent forward geocode could return components for a DIFFERENT match than the pin
@@ -74,19 +74,19 @@ async function sbUpsert(table, rows, onConflict) {
   if (!res.ok) throw new Error(`${table} upsert ${res.status} ${await res.text()}`)
 }
 
-// A dedicated error class rather than a boolean return, so the 402 case can propagate up through
+// a dedicated error class rather than a boolean return, so the 402 case can propagate up through
 // the same try/catch every other OpenCage failure already goes through without a second code path.
 class OpenCageQuotaExceeded extends Error {}
 
-// Confirmed live: job-listing metadata like "2 Locations" (a board's own placeholder for a
+// confirmed live: job-listing metadata like "2 Locations" (a board's own placeholder for a
 // multi-site posting) and "Remote"/"Remote (US)"/"US-Remote" carry no real place name at all, yet
 // both geocoders happily returned SOME coordinate for them anyway - "2 Locations" through "35
 // Locations" all landed on the exact same random Kenyan ward. Every bare "Remote" variant landed
 // on an actual unincorporated place literally named Remote, Oregon, since that real place name
 // happens to match the word. Once city/country_code merges same-label points together (the
-// Applications map and Top 10 cities chart both do), these coincidental matches compound into one
+// applications map and Top 10 cities chart both do), these coincidental matches compound into one
 // wildly inflated fake "city" standing in for hundreds of applications with no real location.
-// Stripped of digits, "locations"/"location" and remote-work filler words, anything with no
+// stripped of digits, "locations"/"location" and remote-work filler words, anything with no
 // remaining run of 3+ letters carries no real place name and is treated as unresolvable - a bare
 // 2-letter code like "US" or "OR" does not count as a place on its own either, since the map can
 // only plot a specific pin, not a country- or state-level area.
@@ -128,7 +128,7 @@ async function reverseGeocodeOpenCage(lat, lng) {
   return componentsToCityCountry(hit.components)
 }
 
-// Fallback only - Nominatim's usage policy caps requests at 1/sec, which this respects since it
+// fallback only - Nominatim's usage policy caps requests at 1/sec, which this respects since it
 // is only ever reached for the small remainder OpenCage could not resolve, one location at a time.
 async function geocodeNominatim(location) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1&addressdetails=1`
@@ -146,7 +146,7 @@ async function geocodeNominatim(location) {
   return { lat: Number(hit.lat), lng: Number(hit.lon), city, countryCode }
 }
 
-// Reverse-geocode fallback for the backfill loop only. The backfill's own backlog is fixed and
+// reverse-geocode fallback for the backfill loop only. The backfill's own backlog is fixed and
 // finite (every already-cached location, a one-time historical debt) rather than an
 // open-ended stream, unlike the main forward-geocoding loop above - so falling through to
 // Nominatim's slower 1/sec pace here for the remainder of a quota-exceeded run is a bounded,
@@ -194,7 +194,7 @@ async function main() {
   const applications = await fetchAllPages("applications?select=location&location=not.is.null")
   const distinctLocations = [...new Set(applications.map((a) => a.location).filter((l) => l && l.trim()))]
 
-  // Fetches every cached location unfiltered rather than building a PostgREST in.() filter with
+  // fetches every cached location unfiltered rather than building a PostgREST in.() filter with
   // hundreds of arbitrary strings - location text can contain commas, semicolons and parentheses
   // (e.g. "Berlin; London; Munich"), which breaks a hand-built in.() list at this scale.
   const cached = await fetchAllPages("location_geocodes?select=location,lat,lng,city,country_code")
@@ -239,7 +239,7 @@ async function main() {
         } catch {
           hit = null
         }
-        // Only reached when a Nominatim fallback attempt actually happened - stays under its 1/sec policy.
+        // only reached when a Nominatim fallback attempt actually happened - stays under its 1/sec policy.
         await new Promise((r) => setTimeout(r, 1000))
       }
       buffer.push({
@@ -260,17 +260,17 @@ async function main() {
         `OpenCage quota exceeded, stopped early. Geocoded ${totalResolved}/${totalProcessed} before stopping, ` +
         `${remaining} location${remaining === 1 ? "" : "s"} left pending for a future run once quota resets.`,
       )
-      // No return here - the corrections pass below makes no API calls at all, so a quota
+      // no return here - the corrections pass below makes no API calls at all, so a quota
       // exhaustion on brand new locations should never block it from still running.
     } else {
       console.log(`Geocoded ${totalResolved}/${totalProcessed} new locations (${totalProcessed - totalResolved} unresolved, cached to avoid retrying).`)
     }
   }
 
-  // Corrections: rows already cached with a coordinate before isPlaceholderLocation existed, which
+  // corrections: rows already cached with a coordinate before isPlaceholderLocation existed, which
   // resolved to exactly the coincidental-place-name bug this fix targets. Found live: 8 raw
   // "N Locations" strings all sharing one random Kenyan ward, 28 "Remote" variants all sharing one
-  // Oregon county. Cleared back to unresolved rather than left showing a fake specific place.
+  // oregon county. Cleared back to unresolved rather than left showing a fake specific place.
   const needsCorrection = cached.filter((c) => c.lat != null && isPlaceholderLocation(c.location))
   if (needsCorrection.length) {
     const correctionRows = needsCorrection.map((c) => ({
@@ -278,7 +278,7 @@ async function main() {
     }))
     await sbUpsert("location_geocodes", correctionRows, "location")
     console.log(`Corrected ${correctionRows.length} placeholder location(s) that had wrongly resolved to a real coordinate.`)
-    // Mutates the same object references `cached` and `needsBackfill` below both read from, so the
+    // mutates the same object references `cached` and `needsBackfill` below both read from, so the
     // just-cleared rows are excluded from backfill instead of immediately being re-reverse-geocoded
     // back to the same wrong coordinate.
     for (const c of needsCorrection) {
@@ -289,7 +289,7 @@ async function main() {
     }
   }
 
-  // Backfill: rows that already resolved to a real coordinate before city/country_code existed.
+  // backfill: rows that already resolved to a real coordinate before city/country_code existed.
   // country_code (not city) is the completion marker - almost every resolvable coordinate has a
   // country even when it has no specific city (a remote site, an ocean platform), so using city
   // instead would keep re-querying those forever with no new information ever coming back.
@@ -300,7 +300,7 @@ async function main() {
   let backfillProcessed = 0
   let backfillFound = 0
   let usedNominatimFallback = false
-  // Once OpenCage reports its quota exhausted, every subsequent call this run would fail the
+  // once OpenCage reports its quota exhausted, every subsequent call this run would fail the
   // same way - skip straight to Nominatim for the rest rather than wasting a request confirming
   // the same 402 over and over.
   let openCageExhausted = false

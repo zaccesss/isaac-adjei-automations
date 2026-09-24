@@ -1,4 +1,4 @@
-# Make the scraper package importable when pytest is run from anywhere in the repo.
+# make the scraper package importable when pytest is run from anywhere in the repo.
 import os
 import sys
 

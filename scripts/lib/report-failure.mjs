@@ -1,4 +1,4 @@
-// Shared failure reporter for the Node jobs. When a job crashes, I post the full error - stack trace
+// shared failure reporter for the Node jobs. When a job crashes, I post the full error - stack trace
 // plus a link to the exact Actions run - to the #errors channel, then exit non-zero so the workflow
 // still fails and the Healthchecks /fail ping fires. Best-effort: a webhook problem never hides the
 // original error, which always goes to the run log too. Wire it in with two lines at the top of a
@@ -31,7 +31,7 @@ export async function postFailure(job, err) {
   }
 }
 
-// Install crash handlers so any thrown or rejected error anywhere in the job is reported in full then
+// install crash handlers so any thrown or rejected error anywhere in the job is reported in full then
 // re-exits non-zero. Covers both top-level-await scripts and scripts wrapped in a main().
 export function guard(job) {
   const handle = async (err) => {

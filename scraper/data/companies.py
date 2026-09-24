@@ -1,7 +1,7 @@
 """The ATS company lists, the priority companies and the student department names."""
 
 
-# Apply a looser filter for priority companies because a Software Engineer
+# apply a looser filter for priority companies because a Software Engineer
 # role at Google is still worth knowing about even if "intern" is absent.
 PRIORITY_COMPANIES = {
     "google", "amazon", "apple", "microsoft", "meta", "netflix", "nvidia",
@@ -29,7 +29,7 @@ PRIORITY_COMPANIES = {
     "worldquant", "man group", "marshall wace", "winton",
     "barclays", "hsbc", "natwest", "lloyds", "standard chartered",
     "accenture", "capgemini", "thoughtworks",
-    # Cloud & security companies I specifically want to track
+    # cloud & security companies I specifically want to track
     "crowdstrike", "palo alto networks", "paloaltonetworks", "zscaler",
     "okta", "auth0", "snyk", "wiz", "lacework", "orca security",
     "gitlab", "jfrog", "harness", "circleci", "buildkite",
@@ -37,21 +37,21 @@ PRIORITY_COMPANIES = {
     "sendgrid", "vonage", "bandwidth",
     "digitalocean", "linode", "vultr", "hetzner",
     "nginx", "kong", "istio", "envoy",
-    # More quant/finance shops
+    # more quant/finance shops
     "jane street", "hudson river trading", "hrt", "xtw markets", "xtx",
     "tower research", "virtu", "drw", "squarepoint",
     "renaissance technologies", "two sigma", "d.e. shaw",
-    # Hardware and deep tech
+    # hardware and deep tech
     "graphcore", "cerebras", "groq", "tenstorrent", "mythic",
     "riverlane", "quantinuum", "phasecraft", "pasqal",
     "oxford nanopore", "illumina", "10x genomics",
     "wayve", "five ai", "oxbotica", "oxa",
     "axelera", "psiquantum", "lightmatter",
-    # More UK tech companies
+    # more UK tech companies
     "revolut", "checkout.com", "weaveworks", "thought machine",
     "onfido", "improbable", "babylon health", "benevolentai",
     "darktrace", "sophos", "micro focus", "aveva",
-    # Embedded and semiconductor companies - I am hunting embedded and hardware
+    # embedded and semiconductor companies - I am hunting embedded and hardware
     # placements, so these get the same looser filter as the software giants.
     "imagination technologies", "nxp", "stmicroelectronics", "st microelectronics",
     "infineon", "renesas", "texas instruments", "analog devices", "micron",
@@ -61,24 +61,24 @@ PRIORITY_COMPANIES = {
     "edwards vacuum", "mbda", "babcock", "ocado", "helsing", "nothing technology",
 }
 
-# Also check Greenhouse department names because some companies tag their
+# also check Greenhouse department names because some companies tag their
 # student pipeline departments rather than including "intern" in every title.
 STUDENT_DEPTS = {
     "early talent", "university", "intern", "internship", "student",
     "campus", "early career", "new grad", "university recruiting",
-    # Placement-year pipelines get their own department names at UK employers.
+    # placement-year pipelines get their own department names at UK employers.
     "placement", "industrial placement", "year in industry",
 }
 
 
 # ─── COMPANY LISTS ──────────────────────────────────────────────────────────
 
-# Group companies by ATS vendor so it is easy to add new ones in the right
+# group companies by ATS vendor so it is easy to add new ones in the right
 # section. Each tuple is (ats_slug, display_name).
 
 # (greenhouse_slug, display_name)
-# Keep only slugs confirmed to return HTTP 200 in recent runs.
-# Companies that migrated away from Greenhouse return 404 for every request
+# keep only slugs confirmed to return HTTP 200 in recent runs.
+# companies that migrated away from Greenhouse return 404 for every request
 # and are not guessed - wrong slugs never match their new ATS.
 GREENHOUSE_COMPANIES = [
     # API companies
@@ -109,7 +109,7 @@ GREENHOUSE_COMPANIES = [
     ("collibra",      "Collibra"),
     ("cockroachlabs", "CockroachDB"),
     # atlassian removed July 2026: migrated off Greenhouse, the slug 404s.
-    # Confirmed working slugs added after live API validation
+    # confirmed working slugs added after live API validation
     ("mongodb",       "MongoDB"),
     ("elastic",       "Elastic"),
     ("canonical",     "Canonical"),
@@ -131,7 +131,7 @@ GREENHOUSE_COMPANIES = [
     ("skyscanner",    "Skyscanner"),
     ("winton",        "Winton"),
     ("spacex",        "SpaceX"),
-    # Embedded, hardware and UK deep tech - confirmed live July 2026. These matter to
+    # embedded, hardware and UK deep tech - confirmed live July 2026. These matter to
     # me as much as the software names: I am hunting embedded and hardware placements.
     ("tenstorrent",        "Tenstorrent"),
     ("riverlane",          "Riverlane"),
@@ -139,7 +139,7 @@ GREENHOUSE_COMPANIES = [
     ("helsing",            "Helsing"),
     ("ocadogroup",         "Ocado Group"),
     ("andurilindustries",  "Anduril"),
-    # Silicon photonics, quantum and robotics - each verified live July 2026
+    # silicon photonics, quantum and robotics - each verified live July 2026
     # (job counts probed before adding). Their software roles come through too,
     # not only the hardware ones.
     ("lightmatter",        "Lightmatter"),
@@ -154,7 +154,7 @@ LEVER_COMPANIES = [
     ("wealthsimple", "Wealthsimple"),
     ("cloudinary",   "Cloudinary"),
     ("spotify",      "Spotify"),
-    # Robotic manipulation - verified live July 2026.
+    # robotic manipulation - verified live July 2026.
     ("dexterity",    "Dexterity"),
 ]
 
@@ -170,12 +170,12 @@ ASHBY_COMPANIES = [
     ("neon",            "Neon"),
     ("openai",          "OpenAI"),
     ("anyscale",        "Anyscale"),
-    # Removed July 2026 after a full live sweep: iter, mistralai, huggingface,
+    # removed July 2026 after a full live sweep: iter, mistralai, huggingface,
     # turso, planetscale, deepmind and waymo all 404 on the Ashby board API now
     # (migrated or renamed). DeepMind arrives via the Google Careers scraper and
     # Mistral, Hugging Face and Waymo stay on the priority list so the boards
     # still catch them.
-    # Expanded - all confirmed against live API (June 2026)
+    # expanded - all confirmed against live API (June 2026)
     ("notion",          "Notion"),
     ("replit",          "Replit"),
     ("benchling",       "Benchling"),
@@ -190,15 +190,15 @@ ASHBY_COMPANIES = [
     ("thought-machine", "Thought Machine"),
     ("cohere",          "Cohere"),
     ("ultra",           "Ultra"),
-    # Wayve is also on Greenhouse (118 jobs) but Ashby has description/dates.
+    # wayve is also on Greenhouse (118 jobs) but Ashby has description/dates.
     ("wayve",           "Wayve"),
-    # Confirmed live July 2026 - Cerebras is the AI hardware one I care most about.
+    # confirmed live July 2026 - Cerebras is the AI hardware one I care most about.
     ("cerebras",        "Cerebras"),
     ("cognition",       "Cognition"),
     ("ramp",            "Ramp"),
     # AI-accelerator and robotics silicon, each verified live July 2026. Axelera
     # is an Eindhoven edge-AI chip firm; Etched builds transformer ASICs; Physical
-    # Intelligence builds robot foundation models. Their software roles come too.
+    # intelligence builds robot foundation models. Their software roles come too.
     ("axelera",             "Axelera AI"),
     ("etched",              "Etched"),
     ("physicalintelligence", "Physical Intelligence"),
@@ -221,7 +221,7 @@ EIGHTFOLD_COMPANIES = [
 # (slug, display_name) for the Workable widget API - the UK deep-tech startups
 # that never post on the big boards: defence AI (Arondite), satcom terminals
 # (ALL.SPACE), power electronics (IONATE), education hardware (Micro:bit).
-# Every slug probed live July 2026; a tenant with zero openings today
+# every slug probed live July 2026; a tenant with zero openings today
 # (Marshmallow, Oxa) stays because the probe costs one request and their
 # student roles appear seasonally.
 WORKABLE_COMPANIES = [
@@ -235,7 +235,7 @@ WORKABLE_COMPANIES = [
 ]
 
 # (slug, display_name) for the Recruitee offers API, probed live July 2026:
-# Lucid Games (Liverpool studio), DeepHealth and BCN Group answered with live
+# lucid Games (Liverpool studio), DeepHealth and BCN Group answered with live
 # postings; the rest are valid UK tenants currently between openings.
 RECRUITEE_COMPANIES = [
     ("lucidgames",      "Lucid Games"),

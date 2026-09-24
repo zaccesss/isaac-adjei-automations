@@ -1,10 +1,10 @@
-# Scrapes graduate and internship sources and upserts them into the applications table.
-# Runs daily at midnight UTC. API sources and the Playwright browser source run as two
+# scrapes graduate and internship sources and upserts them into the applications table.
+# runs daily at midnight UTC. API sources and the Playwright browser source run as two
 # parallel jobs so the browser install never holds up the faster API job.
 
 name: Job Scraper
 
-# No native schedule: trigger - cron-ops dispatches this at a precise UK 03:00 daily instead. It
+# no native schedule: trigger - cron-ops dispatches this at a precise UK 03:00 daily instead. It
 # used to carry its own "two off-peak tries" schedule as a GitHub-drops-runs safety net, from
 # before cron-ops covered this job. That native schedule (nominally 01:23 UTC) runs 30-45 minutes
 # late in practice and was landing mid-run on top of cron-ops' own precise dispatch every single
@@ -20,7 +20,7 @@ on:
         required: false
         default: ""
 
-# Cancel any in-progress run when a new one starts so two runs never write the DB at once.
+# cancel any in-progress run when a new one starts so two runs never write the DB at once.
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -32,7 +32,7 @@ jobs:
   # API-only sources. SCRAPER_MODE=api makes main() skip the browser source.
   api-sources:
     runs-on: ubuntu-latest
-    # Public repo = free Actions minutes, so give the run room to finish. The script's own
+    # public repo = free Actions minutes, so give the run room to finish. The script's own
     # SCRAPER_BUDGET_MIN (default 110) exits cleanly first.
     timeout-minutes: 120
     steps:
@@ -53,7 +53,7 @@ jobs:
           status: start
 
       - name: Run API scrapers
-        # Secrets are scoped to this step so the setup and cache actions never see them.
+        # secrets are scoped to this step so the setup and cache actions never see them.
         env:
           SCRAPER_MODE: api
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -76,7 +76,7 @@ jobs:
             cat source-stats.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  # Browser source (Playwright) in its own job so the browser install does not delay the API job.
+  # browser source (Playwright) in its own job so the browser install does not delay the API job.
   browser-sources:
     # ubuntu-22.04 avoids the libasound2 removal in 24.04 that breaks playwright install-deps.
     runs-on: ubuntu-22.04
@@ -91,7 +91,7 @@ jobs:
 
       - run: pip install -r scripts/requirements.txt
 
-      # Cache the Playwright browser binary so repeated runs skip the ~80 MB download.
+      # cache the Playwright browser binary so repeated runs skip the ~80 MB download.
       - name: Cache Playwright browsers
         id: pw-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
@@ -107,7 +107,7 @@ jobs:
             python -m playwright install --with-deps chromium
           fi
 
-      # Scrapling's Camoufox browser is the Cloudflare-challenge fallback for the
+      # scrapling's Camoufox browser is the Cloudflare-challenge fallback for the
       # student boards (Gradcracker, Bright Network, Milkround). I cache the
       # ~150 MB browser download so repeat runs skip it.
       - name: Cache Camoufox browser
@@ -138,7 +138,7 @@ jobs:
             cat source-stats.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  # If either scraper job fails, I post an alert to the #errors Discord channel so I know at once.
+  # if either scraper job fails, I post an alert to the #errors Discord channel so I know at once.
   notify-failure:
     needs: [api-sources, browser-sources]
     if: failure()
@@ -152,7 +152,7 @@ jobs:
           [ -z "$WEBHOOK" ] && exit 0
           curl -s -H "Content-Type: application/json" -d "{\"content\": \"🚨 Job scraper failed. $RUN_URL\"}" "$WEBHOOK" >/dev/null
 
-  # Ping Healthchecks once both scraper jobs settle: success only if both succeeded, otherwise fail. A
+  # ping Healthchecks once both scraper jobs settle: success only if both succeeded, otherwise fail. A
   # dropped or failing scrape then shows up on the status page and in the #monitoring alerts.
   healthcheck:
     needs: [api-sources, browser-sources]

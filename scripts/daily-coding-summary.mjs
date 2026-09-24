@@ -1,4 +1,4 @@
-// Posts the daily Discord coding recap for the day that just ended (runs 00:30 Europe/London),
+// posts the daily Discord coding recap for the day that just ended (runs 00:30 Europe/London),
 // comparing that day's coding time to the 30-day average, read from the wakatime_daily table. The
 // upstream WakaTime sync runs first in the same workflow, so the day is fully settled. Node only.
 import { londonDate, alreadyRanToday } from "./lib/uk-cron.mjs"
@@ -35,7 +35,7 @@ async function supabaseGet(path) {
   return res.json()
 }
 
-// The day that just ended, in UK local time (this runs at 00:30 Europe/London).
+// the day that just ended, in UK local time (this runs at 00:30 Europe/London).
 const targetDay = londonDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
 const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
 
@@ -82,7 +82,7 @@ const payload = {
   ],
 }
 
-// Belt-and-braces: a run that GitHub delayed into the target hour cannot double-post (FORCE bypasses).
+// belt-and-braces: a run that GitHub delayed into the target hour cannot double-post (FORCE bypasses).
 if (await alreadyRanToday("coding-summary")) {
   console.log("Coding summary already sent today - skipping.")
   process.exit(0)

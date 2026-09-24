@@ -19,7 +19,7 @@ import time
 
 import requests
 
-# Reuse the scraper package's own category set and company lists rather than
+# reuse the scraper package's own category set and company lists rather than
 # keeping a second copy here that could drift out of step with what the scraper
 # stamps on insert. filters and ai import nothing heavier than requests, so this
 # adds no dependency to the recategorise workflow.
@@ -88,7 +88,7 @@ def update_category(row_id, category: str) -> None:
     resp.raise_for_status()
 
 
-# Free-tier model ids per provider, most-capable first, verified live against each provider's own
+# free-tier model ids per provider, most-capable first, verified live against each provider's own
 # catalog. Several per provider (not just one) so a single model being rate-limited or temporarily
 # pulled from the free tier does not fail the whole provider - GitHub Models is gone entirely
 # (retired 2026-07-30), so that provider is dropped rather than pointed at a dead endpoint.
@@ -143,7 +143,7 @@ def _call_gemini(prompt: str):
         return None
     resp = requests.post(
         "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
-        # The key travels in a header so an exception's URL text can never carry it.
+        # the key travels in a header so an exception's URL text can never carry it.
         headers={"x-goog-api-key": GOOGLE_AI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
@@ -212,14 +212,14 @@ def main() -> None:
         sys.exit("Set at least one AI key (Groq / Google / OpenRouter).")
 
     rows = fetch_scraped()
-    # Only touch the "Software Engineering" catch-all - rows already sorted into a specific tab are
+    # only touch the "Software Engineering" catch-all - rows already sorted into a specific tab are
     # left exactly as they are, so a category that is already correct can never be changed.
     rows = [r for r in rows if (r.get("category") or "") == "Software Engineering"]
     print(f"Loaded {len(rows)} 'Software Engineering' rows to re-categorise. DRY_RUN={DRY_RUN}")
 
     changed = 0
     pending = []
-    # First lock in the reliable company-based categories.
+    # first lock in the reliable company-based categories.
     for r in rows:
         cc = company_category(r.get("company"))
         if cc:
@@ -231,7 +231,7 @@ def main() -> None:
         else:
             pending.append(r)
 
-    # Categorise the rest in batches through the AI.
+    # categorise the rest in batches through the AI.
     for start in range(0, len(pending), BATCH):
         chunk = pending[start:start + BATCH]
         result = ai_categorise([(i, c.get("role", ""), c.get("company", "")) for i, c in enumerate(chunk)])

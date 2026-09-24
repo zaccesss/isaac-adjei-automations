@@ -1,4 +1,4 @@
-// Populates control_job_runs and control_check_snapshots (isaac-adjei-portfolio migration 048), so
+// populates control_job_runs and control_check_snapshots (isaac-adjei-portfolio migration 048), so
 // the dashboard's /dashboard/ops page can chart real historical trends. Neither GitHub's Actions API
 // (last 30 runs per workflow here, no stored history) nor Healthchecks (current status only) can
 // answer a "how healthy was this over the last year" query on their own - this snapshots both
@@ -106,7 +106,7 @@ async function upsert(table, rows, onConflict) {
       apikey: SERVICE_KEY,
       Authorization: `Bearer ${SERVICE_KEY}`,
       "Content-Type": "application/json",
-      // A run's status/conclusion changes as it completes, so an in-progress run seen on an earlier
+      // a run's status/conclusion changes as it completes, so an in-progress run seen on an earlier
       // sync must be updated here, not just ignored the way Spotify's insert-only history is.
       Prefer: "resolution=merge-duplicates",
     },
@@ -137,7 +137,7 @@ async function main() {
   console.log(`Synced ${runRows.length} runs across ${jobs.length} jobs, ${allChecks.length} check snapshots.`)
 }
 
-// No local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
+// no local .catch: a throw here becomes an unhandled rejection, which the guard above reports in full
 // to #errors and then exits non-zero. A local catch would swallow it and the failure would only ever
 // reach the run log.
 await main()

@@ -1,11 +1,11 @@
-# One-off backfill that re-categorises existing scraped applications with the AI. Manual trigger only.
-# Defaults to a dry run (preview, no DB writes) - untick dry_run to actually apply the changes.
+# one-off backfill that re-categorises existing scraped applications with the AI. Manual trigger only.
+# defaults to a dry run (preview, no DB writes) - untick dry_run to actually apply the changes.
 
 name: Re-categorise jobs
 
 on:
   schedule:
-    # Nightly mop-up on fresh Groq quota at 06:00 Europe/London: re-categorises any "Software
+    # nightly mop-up on fresh Groq quota at 06:00 Europe/London: re-categorises any "Software
     # Engineering" catch-all rows. Two UTC crons (05:00 and 06:00) cover BST and GMT; a gate step runs
     # it only at 06:xx UK. Idempotent, so it changes nothing once everything is already sorted. A
     # scheduled run applies for real (dry-run only defaults on for the manual trigger).
@@ -58,7 +58,7 @@ jobs:
         run: pip install requests
 
       - if: steps.gate.outputs.go == '1'
-        # Secrets are scoped to this step so the setup actions never see them.
+        # secrets are scoped to this step so the setup actions never see them.
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
