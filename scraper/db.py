@@ -1,6 +1,5 @@
 """Supabase access: dedupe keys, existing-row loading, the insert-or-refresh upsert and the freshness stamp."""
 
-import hashlib
 import re
 
 from . import config
@@ -30,10 +29,9 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
         # fall back to company+role when there is no URL. I lower-case and
         # strip both fields so "Google" and "google" hash identically.
         raw = f"{company.lower().strip()}|{role.lower().strip()}"
-    # a truncated SHA-256 (16 hex chars) is the key: collision probability is negligible for a few
-    # thousand rows. Keys only live in memory and are rebuilt from the table each run, so the
-    # algorithm can change without a migration.
-    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+    # the normalised text is the key itself. Keys only live in memory and are rebuilt from the table each run, so there is
+    # nothing to hash: a plain string compares exactly, cannot collide and is not sensitive data being run through a hash.
+    return raw
 
 
 # boards and aggregators: their links point at their own posting page, not the

@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## 2026-09-25
 
+### Fixed
+
+- The scraper's duplicate check no longer runs job links through a hash. The key is the normalised link or company and role text itself, which is only ever held in memory, so behaviour is unchanged and the code scanning alert about hashing sensitive data is closed.
+
 ### Removed
 
 - The `portfolio-site-up` job, its script and its Healthchecks check. Better Stack now watches the site's health route from outside and alerts to Slack and email, so this 15 minute job only duplicated it. The freed Healthchecks slot goes to the PS5 presence Worker's own heartbeat check.
