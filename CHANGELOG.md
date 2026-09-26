@@ -5,6 +5,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## 2026-09-26
+
+### Added
+
+- A Daily Alerts job that posts a daily Bible verse, university deadlines closing in 7, 3 and 1 days and library books due back within 3 days or overdue. Each goes to its own channel and is skipped until that channel's webhook is set
+
 ## 2026-09-25
 
 ### Fixed
