@@ -1,5 +1,5 @@
-// morning alerts that were missing from the reminder set: a daily Bible verse, university deadlines closing in 7, 3 and
-// 1 days (and today). The third is library books due back in 3, 1 or 0 days or already overdue. Each section posts to its own
+// morning alerts that were missing from the reminder set: university deadlines closing in 7, 3 and 1 days (and today) and
+// library books due back in 3, 1 or 0 days or already overdue. Each section posts to its own
 // webhook and is skipped when that webhook is not set, so a channel can be added without touching the others. Node only.
 import { alreadyRanToday, londonDate } from "./lib/uk-cron.mjs"
 import { guard } from "./lib/report-failure.mjs"
@@ -9,7 +9,6 @@ guard("daily-alerts")
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const HOOKS = {
-  verse: process.env.DISCORD_WEBHOOK_BIBLE,
   deadlines: process.env.DISCORD_WEBHOOK_DEADLINES,
   library: process.env.DISCORD_WEBHOOK_LIBRARY,
 }
@@ -33,17 +32,6 @@ async function post(url, embed) {
 // whole days from today to a YYYY-MM-DD date, both taken as London calendar days so the maths ignores the clock
 function daysUntil(dateStr, today) {
   return Math.round((Date.parse(dateStr.slice(0, 10)) - Date.parse(today)) / 86_400_000)
-}
-
-async function verse() {
-  if (!HOOKS.verse) return console.log("verse: no webhook set, skipping")
-  if (await alreadyRanToday("daily-verse")) return console.log("verse: already sent today")
-  const res = await fetch("https://bible-api.com/data/web/random", { signal: AbortSignal.timeout(10_000) })
-  if (!res.ok) throw new Error(`bible-api ${res.status}`)
-  const v = (await res.json()).random_verse
-  if (!v?.text) throw new Error("bible-api returned no verse")
-  await post(HOOKS.verse, { title: `${v.book} ${v.chapter}:${v.verse}`, description: String(v.text).trim(), color: 0x5865f2, footer: { text: "World English Bible" } })
-  console.log("verse: sent")
 }
 
 async function deadlines(today) {
@@ -78,7 +66,7 @@ async function library(today) {
 const today = londonDate()
 // one section failing must not stop the others, so each runs on its own and the first error is rethrown at the end
 const errors = []
-for (const step of [verse, () => deadlines(today), () => library(today)]) {
+for (const step of [() => deadlines(today), () => library(today)]) {
   try {
     await step()
   } catch (e) {

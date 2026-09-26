@@ -1,5 +1,5 @@
-# posts three morning alerts: a daily Bible verse, university deadlines closing in and library books due back. Each
-# goes to its own Discord channel and is skipped when that webhook secret is not set. Two UTC crons cover BST and GMT
+# posts two morning alerts: university deadlines closing in and library books due back. Each goes to its own
+# Discord channel and is skipped when that webhook secret is not set. The Bible verse is left to the BibleBot already in its channel. Two UTC crons cover BST and GMT
 # and a gate step keeps the run inside 07:00-10:00 UK. The script claims each section once per day, so the several
 # tries GitHub needs to land one run never double-post. It has no Healthchecks check of its own because the account is
 # at its free limit, so a crash is reported to #errors by the script's own guard.
@@ -51,7 +51,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
-          DISCORD_WEBHOOK_BIBLE: ${{ secrets.DISCORD_WEBHOOK_BIBLE }}
           DISCORD_WEBHOOK_DEADLINES: ${{ secrets.DISCORD_WEBHOOK_DEADLINES }}
           DISCORD_WEBHOOK_LIBRARY: ${{ secrets.DISCORD_WEBHOOK_LIBRARY }}
           FORCE: ${{ inputs.force && '1' || '' }}
