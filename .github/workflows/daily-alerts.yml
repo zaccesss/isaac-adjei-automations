@@ -1,0 +1,58 @@
+# posts three morning alerts: a daily Bible verse, university deadlines closing in and library books due back. Each
+# goes to its own Discord channel and is skipped when that webhook secret is not set. Two UTC crons cover BST and GMT
+# and a gate step keeps the run inside 07:00-10:00 UK. The script claims each section once per day, so the several
+# tries GitHub needs to land one run never double-post. It has no Healthchecks check of its own because the account is
+# at its free limit, so a crash is reported to #errors by the script's own guard.
+
+name: Daily Alerts
+
+on:
+  schedule:
+    - cron: "17,47 6,7 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a re-send: bypass the once-per-day claim"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Gate to the 07:00-10:00 UK window
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "manual run - proceeding"; echo "go=1" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          H=$((10#$(TZ=Europe/London date +%H)))
+          if [ "$H" -ge 7 ] && [ "$H" -le 10 ]; then
+            echo "go=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "outside 07-10 UK (is ${H}) - skipping"; echo "go=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - if: steps.gate.outputs.go == '1'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Send the alerts
+        if: steps.gate.outputs.go == '1'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          DISCORD_WEBHOOK_BIBLE: ${{ secrets.DISCORD_WEBHOOK_BIBLE }}
+          DISCORD_WEBHOOK_DEADLINES: ${{ secrets.DISCORD_WEBHOOK_DEADLINES }}
+          DISCORD_WEBHOOK_LIBRARY: ${{ secrets.DISCORD_WEBHOOK_LIBRARY }}
+          FORCE: ${{ inputs.force && '1' || '' }}
+        run: node scripts/daily-alerts.mjs
