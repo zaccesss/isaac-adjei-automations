@@ -46,7 +46,7 @@ def scrape_adzuna(ctx) -> int:
         {"what": "industrial placement", "where": "London"},
         {"what": "data science internship", "where": "London"},
         {"what": "machine learning internship", "where": "London"},
-        # embedded and hardware passes, per my placement hunt.
+        # embedded and hardware passes, matching the placement search.
         {"what": "electronics internship", "where": "UK"},
         {"what": "embedded placement", "where": "UK"},
         {"what": "hardware internship", "where": "UK"},

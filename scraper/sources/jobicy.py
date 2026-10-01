@@ -11,7 +11,7 @@ from ..http import SESSION
 
 def scrape_jobicy(ctx) -> int:
     # use Jobicy's free open API - no auth required.
-    # it covers remote-only tech roles so I skip the location check and accept
+    # it covers remote-only tech roles, so the location check is skipped to accept
     # any matching student role since "Remote" is UK-acceptable.
     QUERIES = [
         {"industry": "engineering", "tag": "intern"},

@@ -2,7 +2,7 @@
 
 
 # keep the keyword list broad enough to catch hardware, cloud, quant and
-# traditional SWE roles because my interests span all of these areas.
+# traditional SWE roles because the search spans all of these areas.
 TECH_KEYWORDS = [
     "software", "engineer", "developer", "technology", "data", "ai",
     "machine learning", "embedded", "electronic", "hardware", "firmware",

@@ -16,7 +16,7 @@ from .locations import normalize_location
 
 def dedupe_key(company: str, role: str, url: str = "") -> str:
     # prefer URL-based deduplication so the same job posting scraped from
-    # two different sources is never inserted twice. I strip trailing slashes
+    # two different sources is never inserted twice. Trailing slashes are stripped
     # because the same URL can appear with and without one.
     if url and url.startswith("http"):
         # normalise both Greenhouse URL domains to the old format so rows
@@ -26,8 +26,8 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
         url = url.replace("job-boards.greenhouse.io", "boards.greenhouse.io")
         raw = url.strip().rstrip("/")
     else:
-        # fall back to company+role when there is no URL. I lower-case and
-        # strip both fields so "Google" and "google" hash identically.
+        # fall back to company+role when there is no URL. Both fields are lower-cased and
+        # stripped so "Google" and "google" hash identically.
         raw = f"{company.lower().strip()}|{role.lower().strip()}"
     # the normalised text is the key itself. Keys only live in memory and are rebuilt from the table each run, so there is
     # nothing to hash: a plain string compares exactly, cannot collide and is not sensitive data being run through a hash.
@@ -105,7 +105,7 @@ def load_existing_keys(ctx) -> None:
 # columns the scraper owns and may overwrite on an existing row. Everything else (status, notes,
 # starred, applied_date) is user-owned and is NEVER touched on an update, so a re-scrape refreshes
 # stale data - including the CV / cover letter / written-answers facts now read from The Trackr -
-# without clobbering my app edits.
+# without clobbering edits made in the app.
 SCRAPER_FIELDS = {
     "company", "role", "type", "location", "deadline", "opening_date",
     "salary_range", "work_mode", "source", "sponsors_visa", "category", "last_scraped_at",
@@ -172,9 +172,9 @@ def insert_job(ctx, job: dict) -> bool:
 
     # the same company+role stored under a different link is the same posting
     # seen through another source - a board, LinkedIn and the employer's ATS
-    # each carry their own URL for one job. I never insert a second row for it.
-    # when the new link is more direct than the stored one I upgrade the
-    # scraped row's URL in place; progressed rows and user-owned fields are
+    # each carry their own URL for one job. A second row is never inserted for it.
+    # when the new link is more direct than the stored one, the
+    # scraped row's URL is upgraded in place; progressed rows and user-owned fields are
     # never touched and an equal or worse link just marks the row as seen.
     if url and key not in ctx.existing_keys:
         bare_key = dedupe_key(job["company"], job["role"], "")
@@ -203,14 +203,14 @@ def insert_job(ctx, job: dict) -> bool:
         "company":  job["company"],
         "role":     job["role"],
         "type":     job.get("type", "internship"),
-        # use "scraped" so I can filter auto-discovered roles from ones I
-        # manually added in the app.
+        # use "scraped" so auto-discovered roles can be filtered from ones
+        # added by hand in the app.
         "status":       "scraped",
         "url":          url or None,
         "location":     normalize_location(job.get("location", "")),
         "notes":        job.get("notes", ""),
         # leave applied_date as None because scraped roles have not been
-        # applied to yet - they sit in "scraped" status until I pursue them.
+        # applied to yet - they sit in "scraped" status until someone pursues them.
         "applied_date": None,
         "deadline":     job.get("deadline"),
         "opening_date": job.get("opening_date"),
@@ -219,18 +219,18 @@ def insert_job(ctx, job: dict) -> bool:
         "salary_range": job.get("salary_range", ""),
         "work_mode":    job.get("work_mode", ""),
         "source":       job.get("source", ""),
-        # default starred to False; I manually star interesting roles later.
+        # default starred to False; interesting roles are starred by hand later.
         "starred":      False,
         "last_scraped_at": datetime.now(timezone.utc).isoformat(),
         "sponsors_visa": job.get("sponsors_visa", None),
         "category":     job.get("category") or detect_category(job["company"], job["role"]),
-        # the app stores these as the text labels "Yes"/"No"/"Optional", so I write matching
+        # the app stores these as the text labels "Yes"/"No"/"Optional", so the scraper writes matching
         # strings rather than a Python bool that PostgREST would coerce to "true".
         "cv_required":            job.get("cv_required") or "Yes",
         "cover_letter_required":  _cover_letter_label(job.get("cover_letter_required")),
         "written_answers":        job.get("written_answers"),
     }
-    # only the scraper-owned columns are written to an existing row and on a refresh I never overwrite
+    # only the scraper-owned columns are written to an existing row. A refresh never overwrites
     # an AI-enriched field with an empty or regex value. category is left untouched (it is set on insert
     # or by the re-categorise backfill) and an empty value never clobbers one already there. This stops
     # the daily re-scrape from quietly reverting the AI categorisation and salary/work mode.
@@ -239,8 +239,8 @@ def insert_job(ctx, job: dict) -> bool:
         if k in SCRAPER_FIELDS and k != "category" and v not in (None, "", [])
     }
 
-    # known URL -> refresh the scraper-owned fields in place. I never delete and never duplicate, and
-    # status/notes/starred/applied_date stay exactly as I left them in the app.
+    # known URL -> refresh the scraper-owned fields in place. Nothing is deleted or duplicated.
+    # status/notes/starred/applied_date stay exactly as they were left in the app.
     if url and url in ctx.existing_urls:
         if config.DRY_RUN:
             ctx.dry_run_actions.append(("update", job["company"], job["role"]))
@@ -324,7 +324,7 @@ def insert_job(ctx, job: dict) -> bool:
 def refresh_seen_timestamps(ctx) -> None:
     # batch-update last_scraped_at for all entries seen this run so freshness
     # is always visible per-row, even though scraped applications are kept
-    # permanently and never deleted. I only touch last_scraped_at - all other
+    # permanently and never deleted. Only last_scraped_at is touched - all other
     # columns (status, notes, starred etc.) remain exactly as the user left them.
     if not ctx.seen_urls:
         return

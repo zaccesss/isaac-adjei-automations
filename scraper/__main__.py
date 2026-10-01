@@ -16,7 +16,7 @@ from .runner import main  # noqa: E402
 
 def entry():
     # quick AI self-test: SCRAPER_AI_TEST runs the extractor on a sample advert and
-    # exits, so I can confirm the providers and JSON parsing work without a full
+    # exits, confirming the providers and JSON parsing work without a full
     # scrape and without touching the database.
     if os.environ.get("SCRAPER_AI_TEST", "").strip():
         sample = (

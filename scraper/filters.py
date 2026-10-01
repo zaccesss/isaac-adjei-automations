@@ -61,7 +61,7 @@ def _has_tech_keyword(title_lower: str) -> bool:
     return False
 
 
-# titles that are commercial, people or back-office roles are never what I track,
+# titles that are commercial, people or back-office roles are never tracked,
 # whatever else the title contains - this kills the sales and recruiting noise
 # that priority companies otherwise wash in through the looser location filter.
 _NON_TECH_ROLE_RE = re.compile(
@@ -105,7 +105,7 @@ def is_student_role(
     if _any_word(NON_INTERN_TERMS, t):
         return True
 
-    # for intern-family terms I require a whole-word match AND no explicit
+    # intern-family terms need a whole-word match AND no explicit
     # exclusion word ("internal", "international", "internally").
     has_intern_word = _INTERN_WHOLE_WORD_RE.search(t)
     has_exclude_word = _EXCLUDE_INTERN_RE.search(t)
@@ -193,7 +193,7 @@ def infer_type(title: str, default: str = "Internship") -> str:
     # events
     if _any_word(EVENT_TERMS, t):
         return "Event"
-    # general Internship - I use whole-word regex here so "international" and
+    # general Internship - whole-word regex here means "international" and
     # "internationally" do not trigger a false intern classification.
     if _INTERN_WHOLE_WORD_RE.search(t) and not _EXCLUDE_INTERN_RE.search(t):
         return "Internship"

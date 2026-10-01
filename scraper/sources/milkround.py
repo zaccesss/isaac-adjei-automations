@@ -85,8 +85,8 @@ def parse_listing(html: str, ctx) -> int:
         if not _has_tech_keyword(role.lower()):
             continue
 
-        # card text nodes: role, employer, location, salary. I take the employer
-        # and location by order and skip the salary line if it lands in the
+        # card text nodes: role, employer, location, salary. The employer and
+        # location come by order, skipping the salary line if it lands in the
         # location slot.
         card = _card_of(a)
         nodes = [t for t in card.stripped_strings] if card else []

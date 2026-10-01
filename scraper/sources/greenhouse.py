@@ -40,7 +40,7 @@ def scrape_greenhouse(
     ctx, slug: str, company_name: str
 ) -> int:
     # use the public Greenhouse boards API which requires no authentication.
-    # the ?content=true flag exposes the metadata array I need for location.
+    # the ?content=true flag exposes the metadata array needed for location.
     url = (
         f"https://boards-api.greenhouse.io/v1/boards/{slug}"
         f"/jobs?content=true"

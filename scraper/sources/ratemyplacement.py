@@ -24,7 +24,7 @@ from ..stats import record_stat
 BASE = "https://www.ratemyplacement.co.uk/search-jobs"
 
 # the embedded state is a single JSON object assigned before the closing script
-# tag; I capture up to that tag so a later inline script cannot swallow it.
+# tag; capturing up to that tag stops a later inline script swallowing it.
 _STATE_RE = re.compile(
     r"window\.__RMP_SEARCH_RESULTS_INITIAL_STATE__\s*=\s*(\{.*?\})\s*</script>",
     re.S,
@@ -33,12 +33,12 @@ _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}")
 # early in the cycle the board is mostly "Register Your Interest - <role>"
 # pre-registration listings. Those are worth keeping (registering early is the
 # right move for a placement year), but the prefix clutters the stored title and
-# blunts the tech filter, so I strip it and classify on the real role underneath.
+# blunts the tech filter, so it is stripped and the real role underneath is classified.
 _PREREG_PREFIX_RE = re.compile(r"^register your interest\s*[---:]\s*", re.I)
 
 # only these job-type slugs actually filter the server-rendered feed (verified
 # July 2026); the graduate slugs are ignored by the site and return the whole
-# board, so I leave graduate schemes to the Trackr, which already covers them.
+# board, so graduate schemes are left to the Trackr, which already covers them.
 # each maps to the type the app files it under.
 TYPE_SLUGS = {
     "placement":               "Industrial Placement",
@@ -105,11 +105,11 @@ def scrape_ratemyplacement(ctx) -> int:
                 company = (job.get("companyName") or "").strip()
                 if not role or not company:
                     continue
-                # the board carries every discipline, so I keep only genuine
-                # tech roles: a tech keyword must be present, senior and clearly
+                # the board carries every discipline, so only genuine
+                # tech roles are kept: a tech keyword must be present, senior and clearly
                 # non-tech titles are dropped. The job type already establishes
-                # that these are student placements, so I do not require an
-                # intern word in the title the way the ATS sources do.
+                # that these are student placements, so an intern word is not
+                # required in the title the way the ATS sources require it.
                 if _SENIOR_ROLE_RE.search(role):
                     continue
                 if not _has_tech_keyword(role.lower()):

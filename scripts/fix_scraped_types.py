@@ -76,7 +76,7 @@ def main():
     # counts are the evidence for a separate, explicitly approved clean-up.
     # a Full-time Job row is not a student role, so is_relevant rightly rejects it;
     # testing those against the student filter counted every Jobs-tab row as "no
-    # longer relevant" and inflated the number, so I exclude them here.
+    # longer relevant" and inflated the number, so they are excluded here.
     irrelevant = [
         r for r in rows
         if (r.get("role") or "") and (r.get("company") or "")
@@ -89,7 +89,7 @@ def main():
     if len(irrelevant) > 20:
         print(f"  ... plus {len(irrelevant) - 20} more")
 
-    # my healing bug briefly inserted linked twins next to old url-less rows:
+    # an earlier healing bug briefly inserted linked twins next to old url-less rows:
     # where a company-and-role pair has both, the url-less copy is redundant.
     by_pair = {}
     for r in rows:

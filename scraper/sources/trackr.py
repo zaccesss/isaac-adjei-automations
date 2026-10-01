@@ -29,7 +29,7 @@ from ..stats import record_stat
 API = "https://api.the-trackr.com/programmes"
 
 # the Trackr splits UK Tech into these tabs; each tab is a `type` value on the
-# API. I request every one so nothing is missed - Summer Internships, Industrial
+# API. Every one is requested so nothing is missed - Summer Internships, Industrial
 # placements, Graduate Schemes, Spring Weeks, Pre-Uni and Events. A tab with no
 # entries for a season simply returns an empty list, so listing the two that are
 # empty this cycle (insight-programmes, pre-uni) costs nothing and future-proofs
@@ -44,8 +44,8 @@ TYPE_TO_CATEGORY = {
     "pre-uni":               "Event",
 }
 
-# the endpoint rejects calls without the app Origin, so I always send it. The
-# API scopes the whole feed to UK Tech already, so I do not re-filter by location
+# the endpoint rejects calls without the app Origin, so it is always sent. The
+# API scopes the whole feed to UK Tech already, so there is no re-filter by location
 # or tech keyword - the tab decides the category.
 _API_HEADERS = {
     **HEADERS,
@@ -145,7 +145,7 @@ def scrape_trackr_all(ctx) -> int:
                 if not company or not role:
                     continue
                 # senior or lead titles are never a student programme even when
-                # the Trackr files one under an early-careers tab, so I drop them
+                # the Trackr files one under an early-careers tab, so they are dropped
                 # rather than store a role the owner cannot apply to.
                 if _SENIOR_ROLE_RE.search(role):
                     continue
@@ -178,7 +178,7 @@ def scrape_trackr_all(ctx) -> int:
                 print(f"  {type_slug} {season}: {count} new")
             total += count
             # the endpoint rate-limits a rapid burst (429 after ~6 fast calls),
-            # so I space the tab requests out.
+            # so the tab requests are spaced out.
             time.sleep(2)
     print(f"  The Trackr total: {total} new")
     return total

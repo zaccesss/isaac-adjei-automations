@@ -1,6 +1,6 @@
-# records my Spotify plays into listening_history every 30 minutes so the analytics build up real
+# records Spotify plays into listening_history every 30 minutes so the analytics build up real
 # history. recently-played only returns the last 50 plays, so a frequent poll makes sure none roll
-# off before I capture them. Skips cleanly until the Spotify secrets are set.
+# off before they are captured. Skips cleanly until the Spotify secrets are set.
 
 name: Spotify history
 

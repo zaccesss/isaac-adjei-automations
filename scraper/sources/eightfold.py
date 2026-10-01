@@ -25,9 +25,9 @@ def scrape_eightfold(ctx, tenant: str, domain: str, company_name: str) -> int:
     total = None
     while total is None or start < total:
         try:
-            # the API scopes to the UK for me: these are global employers whose
+            # the API scopes to the UK: these are global employers whose
             # worldwide fabs would otherwise flood the Jobs tab and the UK design
-            # centres are the only ones I can take a placement at.
+            # centres are the only ones offering a placement here.
             resp = SESSION.get(
                 base,
                 params={
@@ -54,7 +54,7 @@ def scrape_eightfold(ctx, tenant: str, domain: str, company_name: str) -> int:
                 location = pos.get("location", "")
                 url = pos.get("canonicalPositionUrl", "")
                 description = _strip_html(pos.get("job_description", ""))
-                # eightfold tags a department; I pass it alongside the title so a
+                # eightfold tags a department; it is passed alongside the title so a
                 # graduate-pipeline department still reads as a student role.
                 depts = [pos.get("department", "")] if pos.get("department") else None
                 if is_relevant(title, company_name, location, depts):

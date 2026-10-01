@@ -1,4 +1,4 @@
-// shared failure reporter for the Node jobs. When a job crashes, I post the full error - stack trace
+// shared failure reporter for the Node jobs. When a job crashes, it posts the full error - stack trace
 // plus a link to the exact Actions run - to the #errors channel, then exit non-zero so the workflow
 // still fails and the Healthchecks /fail ping fires. Best-effort: a webhook problem never hides the
 // original error, which always goes to the run log too. Wire it in with two lines at the top of a
