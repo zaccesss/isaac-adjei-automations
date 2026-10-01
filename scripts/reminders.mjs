@@ -153,7 +153,7 @@ for (const r of rows) {
   if (dueUnfired.length === 0) continue
 
   // fire only the most imminent due lead (smallest = closest to the event). Any larger leads that are also
-  // due at the same time are stale (their moment passed, a nearer reminder is going out now), so I mark them
+  // due at the same time are stale (their moment passed, a nearer reminder is going out now), so they are marked
   // fired without notifying rather than sending a burst of near-identical messages. This only happens when a
   // reminder is added late or the job was down; normally each lead fires alone as its moment arrives.
   const toFire = dueUnfired[0]

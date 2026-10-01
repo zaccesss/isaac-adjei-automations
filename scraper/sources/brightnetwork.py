@@ -28,8 +28,8 @@ from ..stats import record_stat
 BASE = "https://www.brightnetwork.co.uk"
 
 # (listing path, default type). The path is Bright Network's routing, not a
-# reliable type - its internships route links to /graduate-jobs/ URLs too - so I
-# take the type from the listing I am reading and let the title refine it.
+# reliable type - its internships route links to /graduate-jobs/ URLs too - so the
+# type comes from the listing being read and the title refines it.
 LISTINGS = [
     ("/internships/", "Internship"),
     ("/graduate-jobs/", "Graduate"),
@@ -95,8 +95,8 @@ def parse_listing(html: str, default_type: str, ctx) -> int:
             continue
 
         # the card text nodes come in the order role, employer, location,
-        # "Deadline:", date. I read the employer and location off that order and
-        # find the date after the Deadline label.
+        # "Deadline:", date. The employer and location are read off that order and
+        # the date is found after the Deadline label.
         card = _card_of(a)
         nodes = [t for t in card.stripped_strings] if card else []
         company = ""

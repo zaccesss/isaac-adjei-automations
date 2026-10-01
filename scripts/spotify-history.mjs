@@ -1,6 +1,6 @@
-// records my Spotify plays into the listening_history table so the dashboard and lab pages can show
+// records Spotify plays into the listening_history table so the dashboard and lab pages can show
 // real listening analytics - play counts, active hours, streaks - that the Spotify API alone cannot
-// give (it only returns top-N and the last 50 plays). I fetch the recently-played endpoint and upsert
+// give (it only returns top-N and the last 50 plays). It fetches the recently-played endpoint and upserts
 // each play, deduped by played_at. Node only, no deps.
 
 import { guard } from "./lib/report-failure.mjs"
@@ -81,7 +81,7 @@ async function main() {
     }
   })
 
-  // upsert deduped by played_at - plays I already stored are ignored, so re-runs are safe.
+  // upsert deduped by played_at - plays already stored are ignored, so re-runs are safe.
   const up = await fetch(`${SUPABASE_URL}/rest/v1/listening_history?on_conflict=played_at`, {
     method: "POST",
     headers: {

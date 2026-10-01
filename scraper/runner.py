@@ -38,7 +38,7 @@ def main():
     if config.SCRAPER_MODE in ("api", "all"):
         db.refresh_seen_timestamps(ctx)
 
-    # send a Discord alert with all newly found student roles so I know what came
+    # send a Discord alert with all newly found student roles so it is clear what came
     # in from today's run without waiting for the Sunday digest.
     if ctx.new_jobs:
         print(f"\nSending Discord alert for {len(ctx.new_jobs)} new student roles...")

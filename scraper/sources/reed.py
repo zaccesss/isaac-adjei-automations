@@ -18,7 +18,7 @@ def scrape_reed(ctx) -> int:
         print("  REED_API_KEY not set - skipping Reed.co.uk")
         return 0
 
-    # run separate searches for each role type so I can use the graduate flag
+    # run separate searches for each role type so the graduate flag can be used
     # and get broader keyword coverage than a single broad query.
     SEARCHES = [
         {"keywords": "software intern",
@@ -51,8 +51,8 @@ def scrape_reed(ctx) -> int:
          "locationName": "London", "distanceFromLocation": 20},
         {"keywords": "year in industry",
          "locationName": "London", "distanceFromLocation": 20},
-        # embedded and hardware passes: I am hunting embedded and hardware
-        # placements as much as software ones, so these get their own queries.
+        # embedded and hardware passes: embedded and hardware placements matter
+        # as much as software ones, so these get their own queries.
         {"keywords": "embedded software placement",
          "locationName": "United Kingdom"},
         {"keywords": "electronics placement",

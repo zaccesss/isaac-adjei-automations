@@ -8,7 +8,7 @@ from .filters import detect_category
 from . import config
 
 # ─── AI FIELD EXTRACTION (Groq -> Gemini -> OpenRouter, optional) ────────────
-# when a new role carries a description, I ask an LLM to pick the correct category tab and extract
+# when a new role carries a description, an LLM is asked to pick the correct category tab and extract
 # the fields the ATS did not provide (salary, work mode, opening and closing dates, visa
 # sponsorship, CV and cover letter requirements).
 # it only ever fills genuinely empty scraper-owned fields, keeps the company-based FAANG+/Quant

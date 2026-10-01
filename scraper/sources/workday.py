@@ -21,7 +21,7 @@ WORKDAY_COMPANIES = [
     ("intel",  "1", "intel",  "External",                 "Intel"),
     ("ms",     "5", "ms",     "External",                 "Morgan Stanley"),
     # semiconductor majors, confirmed live July 2026 - the embedded and hardware
-    # placements I am hunting live on exactly these boards.
+    # placements in scope live on exactly these boards.
     ("analogdevices", "1", "analogdevices", "External",       "Analog Devices"),
     ("micron",        "1", "micron",        "External",       "Micron"),
     ("nxp",           "3", "nxp",           "careers",        "NXP"),

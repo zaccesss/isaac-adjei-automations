@@ -29,7 +29,7 @@ PRIORITY_COMPANIES = {
     "worldquant", "man group", "marshall wace", "winton",
     "barclays", "hsbc", "natwest", "lloyds", "standard chartered",
     "accenture", "capgemini", "thoughtworks",
-    # cloud & security companies I specifically want to track
+    # cloud & security companies tracked specifically
     "crowdstrike", "palo alto networks", "paloaltonetworks", "zscaler",
     "okta", "auth0", "snyk", "wiz", "lacework", "orca security",
     "gitlab", "jfrog", "harness", "circleci", "buildkite",
@@ -51,7 +51,7 @@ PRIORITY_COMPANIES = {
     "revolut", "checkout.com", "weaveworks", "thought machine",
     "onfido", "improbable", "babylon health", "benevolentai",
     "darktrace", "sophos", "micro focus", "aveva",
-    # embedded and semiconductor companies - I am hunting embedded and hardware
+    # embedded and semiconductor companies - the search covers embedded and hardware
     # placements, so these get the same looser filter as the software giants.
     "imagination technologies", "nxp", "stmicroelectronics", "st microelectronics",
     "infineon", "renesas", "texas instruments", "analog devices", "micron",
@@ -131,8 +131,8 @@ GREENHOUSE_COMPANIES = [
     ("skyscanner",    "Skyscanner"),
     ("winton",        "Winton"),
     ("spacex",        "SpaceX"),
-    # embedded, hardware and UK deep tech - confirmed live July 2026. These matter to
-    # me as much as the software names: I am hunting embedded and hardware placements.
+    # embedded, hardware and UK deep tech - confirmed live July 2026. These matter
+    # as much as the software names: the search covers embedded and hardware placements.
     ("tenstorrent",        "Tenstorrent"),
     ("riverlane",          "Riverlane"),
     ("nothing",            "Nothing"),
@@ -192,7 +192,7 @@ ASHBY_COMPANIES = [
     ("ultra",           "Ultra"),
     # wayve is also on Greenhouse (118 jobs) but Ashby has description/dates.
     ("wayve",           "Wayve"),
-    # confirmed live July 2026 - Cerebras is the AI hardware one I care most about.
+    # confirmed live July 2026 - Cerebras is the most relevant AI hardware company.
     ("cerebras",        "Cerebras"),
     ("cognition",       "Cognition"),
     ("ramp",            "Ramp"),
@@ -212,9 +212,9 @@ ASHBY_COMPANIES = [
 EIGHTFOLD_COMPANIES = [
     # (tenant, domain, display_name) for the Eightfold public jobs API. STMicro
     # is a major semiconductor maker with a UK design centre in Edinburgh, exactly
-    # the embedded and hardware placements I am hunting; verified live July 2026
+    # the embedded and hardware placements in scope; verified live July 2026
     # (514 positions). Eightfold is a whole ATS platform, so more tenants can join
-    # this list as I verify their exact slug.
+    # this list once their exact slug is verified.
     ("stmicroelectronics", "stmicroelectronics.com", "STMicroelectronics"),
 ]
 
@@ -249,7 +249,7 @@ RECRUITEE_COMPANIES = [
 
 # (feed_host, display_name) for the Personio XML feed. Quantum Motion is a
 # London quantum-computing company designing cryogenic silicon qubit chips -
-# exactly the UK deep-tech hardware employer I want on the list.
+# exactly the kind of UK deep-tech hardware employer the list is for.
 PERSONIO_COMPANIES = [
     ("quantummotion.jobs.personio.com", "Quantum Motion"),
 ]

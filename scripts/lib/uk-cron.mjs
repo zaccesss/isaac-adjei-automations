@@ -23,7 +23,7 @@ export function londonHour(date = new Date()) {
 // today and this run should skip, false if this run is the first today and should proceed.
 // - FORCE=1 always returns false so manual workflow_dispatch test runs always send.
 // - The insert uses PostgREST "ignore-duplicates": a duplicate returns an empty array (already ran).
-// - On a DB error it THROWS. On error I cannot tell whether today's run already happened, so the old
+// - On a DB error it THROWS. On error there is no way to tell whether today's run already happened, so the old
 //   code skipped silently (exit 0) and the miss looked like a clean success. Throwing instead lets the
 //   caller's guard report it to #errors and exit non-zero, so Healthchecks /fail fires. The claim did
 //   not land, so a later run (or a FORCE=1 rerun) still sends exactly once - no double-send, because

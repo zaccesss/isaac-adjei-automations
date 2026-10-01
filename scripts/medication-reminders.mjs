@@ -75,7 +75,7 @@ async function sendEmail(to, r, t) {
 }
 
 // a due dose that no channel could deliver is a real problem - it is often someone else's medication -
-// so I raise it to #errors rather than only logging it. The dose is deliberately NOT logged as sent, so
+// so it goes to #errors rather than only the log. The dose is deliberately NOT logged as sent, so
 // the next run retries delivery; this alert makes the failure visible in the meantime. #errors is a
 // private channel, so the name is safe to include here, unlike the public run log which stays id-only.
 async function alertDeliveryFailure(r, t, channels) {

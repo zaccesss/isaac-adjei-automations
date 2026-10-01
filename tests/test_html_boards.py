@@ -1,6 +1,6 @@
 # the Cloudflare-fronted boards (Gradcracker, Bright Network, Milkround) parse
 # server-rendered HTML through curl_cffi. Full parsing is covered by the live
-# smoke of parse_listing; here I pin the pure helpers and the classification
+# smoke of parse_listing; these tests pin the pure helpers and the classification
 # decisions that are easy to regress: deadline parsing, the non-computing reject
 # and the type each board assigns.
 import pytest

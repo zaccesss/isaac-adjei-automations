@@ -3,7 +3,7 @@
 import requests
 
 # impersonate a real Chrome browser so sites do not block the scraper with
-# a bot check. Accept-Language hints I am a UK user, biasing geo results.
+# a bot check. Accept-Language hints at a UK user, biasing geo results.
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "

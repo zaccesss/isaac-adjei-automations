@@ -27,7 +27,7 @@ async function get(path) {
 }
 
 // page past PostgREST's 1000-row cap. The caller passes a path already carrying its filters and a
-// stable order; I append offset/limit and read until a short page. Needed for applications, where the
+// stable order; offset/limit is appended and pages are read until a short one. Needed for applications, where the
 // scraped rows (thousands of them) otherwise fill the first 1000 and evict the real ones.
 async function getAll(pathBase) {
   const rows = []
