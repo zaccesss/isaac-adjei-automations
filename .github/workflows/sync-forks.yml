@@ -1,0 +1,62 @@
+# keeps the forks on this account level with the projects they were forked from, so a new
+# contribution always starts from the upstream's current main. Only main is touched: the branches
+# behind open pull requests are left alone. A fork whose main has commits of its own is skipped
+# with a warning rather than merged, so nothing on it is ever rewritten. GH_PAT carries the
+# workflow scope, which an upstream change touching its own workflow files needs.
+
+name: Sync forks
+
+on:
+  schedule:
+    - cron: "47 4 * * *" # once a day; a skipped run is caught up by the next one
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Bring every fork level with its upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sync the forks
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -euo pipefail
+          synced=0; current=0; skipped=0; failed=0
+          # listed up front, so a failing token stops the job instead of syncing nothing quietly
+          forks=$(gh api --paginate "users/zaccesss/repos?type=owner&per_page=100" --jq '.[] | select(.fork and (.archived | not)) | .name')
+          if [ -z "$forks" ]; then
+            echo "::notice::no forks to sync"
+            exit 0
+          fi
+          for fork in $forks; do
+            if ! info=$(gh api "repos/zaccesss/$fork"); then
+              echo "::warning::$fork: lookup failed"; failed=$((failed + 1)); continue
+            fi
+            parent=$(echo "$info" | jq -r '.parent.full_name // empty')
+            branch=$(echo "$info" | jq -r '.default_branch')
+            upstream_branch=$(echo "$info" | jq -r '.parent.default_branch // empty')
+            if [ -z "$parent" ]; then
+              echo "::warning::$fork: upstream not readable, skipped"; failed=$((failed + 1)); continue
+            fi
+            if ! cmp=$(gh api "repos/$parent/compare/$upstream_branch...zaccesss:$fork:$branch"); then
+              echo "::warning::$fork: compare with $parent failed"; failed=$((failed + 1)); continue
+            fi
+            ahead=$(echo "$cmp" | jq -r .ahead_by); behind=$(echo "$cmp" | jq -r .behind_by)
+            if [ "$ahead" != "0" ]; then
+              echo "::warning::$fork: main has $ahead commit(s) of its own, left alone"; skipped=$((skipped + 1)); continue
+            fi
+            if [ "$behind" = "0" ]; then
+              current=$((current + 1)); continue
+            fi
+            if gh api -X POST "repos/zaccesss/$fork/merge-upstream" -f branch="$branch" --silent; then
+              echo "$fork: fast-forwarded $behind commit(s) from $parent"; synced=$((synced + 1))
+            else
+              echo "::warning::$fork: fast-forward failed"; failed=$((failed + 1))
+            fi
+          done
+          echo "Forks synced: $synced. Already current: $current. Left alone: $skipped. Failed: $failed." >> "$GITHUB_STEP_SUMMARY"
+          [ "$failed" -eq 0 ]
