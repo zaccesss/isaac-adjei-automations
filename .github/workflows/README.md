@@ -35,6 +35,8 @@ is what the workflow file holds).
 | [geocode-locations](geocode-locations.yml) | hourly | hourly (:17) | [`geocode-locations.mjs`](../../scripts/geocode-locations.mjs) | Geocodes new application locations into the portfolio's `location_geocodes` cache for the Applications map |
 | [job-scraper](job-scraper.yml) | 03:00 | 01:23 + 04:41 (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
 
+[sync-forks](sync-forks.yml) runs on GitHub's own cron only, once a day at 04:47 UTC, since nothing depends on its exact time. It fast-forwards the main branch of every fork on my account to its upstream and leaves any fork whose main has commits of its own alone.
+
 [backfill-control-history](backfill-control-history.yml) is not scheduled - `workflow_dispatch` only, run by hand to deepen `control_job_runs`/`control_check_snapshots` past what the regular 15-minute sync ever sees on its own.
 
 ## Repo automation
