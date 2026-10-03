@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- A daily `sync-forks` job fast-forwards the main branch of every fork on my account to its upstream, so a new contribution starts from the current code. Branches behind open pull requests are never touched. A fork whose main has commits of its own is left alone with a warning
+- A `sync-forks` job, every six hours, fast-forwards the main branch of every fork on my account to its upstream, so a new contribution starts from the current code. Branches behind open pull requests are never touched. A fork whose main has commits of its own is left alone with a warning
 
 ### Changed
 
