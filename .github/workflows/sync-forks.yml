@@ -8,7 +8,7 @@ name: Sync forks
 
 on:
   schedule:
-    - cron: "47 4 * * *" # once a day; a skipped run is caught up by the next one
+    - cron: "47 */6 * * *" # every six hours, like the bot's forks; a skipped run is caught up by the next one
   workflow_dispatch:
 
 permissions:
