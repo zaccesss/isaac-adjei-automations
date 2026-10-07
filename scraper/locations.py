@@ -1,4 +1,5 @@
 """Location vocabulary and the UK-and-Europe location filter."""
+import re
 
 
 # UK and major European tech hubs - broad enough to catch all UK roles and
@@ -108,26 +109,60 @@ def normalize_location(location: str) -> str:
     return stripped
 
 
-def is_location_ok(location: str, is_priority: bool) -> bool:
-    """True if the location is UK/Europe or unknown.
+# the dashboard and Vitafolio list UK roles only. A place counts when it names the UK or a UK town;
+# a same-named town abroad (Sydney's New South Wales, Durham NC, Chester VA) is caught by _NOT_UK.
+_UK_RE = re.compile(
+    r"\b(uk|u\.k\.|united kingdom|great britain|gb|england|scotland|wales|northern ireland|"
+    r"london|birmingham|manchester|edinburgh|glasgow|bristol|cambridge|oxford|reading|leeds|"
+    r"sheffield|liverpool|nottingham|coventry|leicester|southampton|portsmouth|exeter|bath|"
+    r"brighton|norwich|york|cardiff|belfast|newcastle|milton keynes|guildford|basingstoke|"
+    r"watford|wolverhampton|derby|worcester|ipswich|aberdeen|dundee|swansea|bournemouth|"
+    r"cheltenham|bracknell|slough|stevenage|crawley|warrington|chester|lincoln|plymouth|"
+    r"sunderland|durham|loughborough|harwell|didcot|filton|farnborough|bedford|luton|knutsford|"
+    r"preston|chelmsford|newport|colchester|swindon|gloucester|hull|solihull|telford|stockport|"
+    r"salford|stafford|stoke|northampton|peterborough|woking|maidenhead|uxbridge|livingston|"
+    r"stirling|inverness|lisburn|derry|londonderry|newry|yeovil|lancaster|havant|sandhurst|fleet|camberley|"
+    r"aldershot|winchester|salisbury|taunton|truro|canterbury|maidstone|tunbridge wells|high wycombe|"
+    r"aylesbury|st albans|hatfield|harlow|basildon|southend|cambourne|warwick|leamington|kenilworth|rugby|"
+    r"nuneaton|tamworth|lichfield|chesterfield|mansfield|doncaster|rotherham|barnsley|wakefield|"
+    r"huddersfield|bradford|halifax|harrogate|middlesbrough|darlington|gateshead|carlisle|kendal|"
+    r"blackburn|bolton|wigan|oldham|rochdale|macclesfield|altrincham|runcorn|widnes|deeside|wrexham|"
+    r"bangor|bridgend|llanelli|pontypridd|falkirk|kilmarnock|paisley|east kilbride|cumbernauld|rosyth|"
+    r"dunfermline|kirkcaldy|craigavon|ballymena|newtownabbey|gosport|fareham|eastleigh|romsey|poole|"
+    r"weymouth|barnstaple|torquay|hereford|shrewsbury|worthing|horsham|chichester|eastbourne|hastings|"
+    r"ashford|dover|folkestone|sevenoaks|dartford|hitchin|letchworth|welwyn|hemel hempstead|cirencester|"
+    r"tewkesbury|stroud|abingdon|bicester|banbury|witney|marlow|wokingham|newbury|thatcham|chippenham|"
+    r"trowbridge|corsham|bridgwater|kettering|corby|wellingborough|daventry|grantham|scunthorpe|grimsby|"
+    r"thetford|bury st edmunds|lowestoft|felixstowe|braintree|harwich)\b",
+    re.IGNORECASE,
+)
+_NOT_UK = re.compile(
+    r"new south wales|australia|ontario|canada|new york|new jersey|new hampshire|new england|massachusetts|"
+    r"pennsylvania|virginia|carolina|\busa\b|united states|^us\b|\bus,|"
+    r", (al|ak|az|ar|ca|co|ct|de|fl|ga|hi|id|il|in|ia|ks|ky|la|me|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|"
+    r"ny|nc|nd|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|vt|va|wa|wv|wi|wy)\b",
+    re.IGNORECASE,
+)
+# a board's placeholder for a listing posted in several places, with no place named
+MULTI_LOCATION_RE = re.compile(r"^\s*\d+\s+locations?\s*$", re.IGNORECASE)
 
-    I accept all of UK (any city), Remote/Hybrid and major European tech
-    hubs. I reject explicit US locations for all companies regardless of
-    tier. For priority companies I also accept unknown/unrecognised foreign
-    locations because they likely have UK offices not labelled in every post.
+
+def is_uk(location: str) -> bool:
+    """True only when the location names somewhere in the UK; unknown places are not assumed."""
+    if not location:
+        return False
+    if _UK_RE.search(location) and not _NOT_UK.search(location):
+        return True
+    # a listing that names London among other cities is still a London role
+    return bool(re.search(r"\blondon\b", location, re.IGNORECASE)) and not re.search(r"ontario|canada", location, re.IGNORECASE)
+
+
+def is_location_ok(location: str, is_priority: bool = False) -> bool:
+    """True for a UK location or an unknown one; the final check in insert_job settles unknowns.
+
+    UK only since October 2026: Europe and priority companies' foreign offices are no longer
+    accepted. is_priority is kept so existing callers need no change.
     """
     if not location:
-        return True  # unknown = include
-    loc = location.lower()
-    # also reject locations that end with ", us" because some postings
-    # use that pattern instead of spelling out "United States".
-    if loc.rstrip().endswith(", us"):
-        return False
-    # explicit US/non-EU = always reject
-    if any(us in loc for us in US_LOCATIONS):
-        return False
-    # UK / EU match = accept
-    if any(uk in loc for uk in UK_EU_TERMS):
         return True
-    # priority company + unrecognised foreign location = accept
-    return is_priority
+    return is_uk(location)

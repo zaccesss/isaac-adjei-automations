@@ -12,8 +12,9 @@ def test_internal_titles_are_rejected():
 
 def test_international_never_counts_as_intern():
     assert not is_student_role("International Business Manager", None)
-    # even alongside a real intern word, the exclusion wins for safety.
-    assert not is_student_role("International Sales Intern", None)
+    # a real intern word still counts; sales roles stay off the dashboard through the non-tech filter
+    assert is_student_role("International Trade Intern", None)
+    assert not is_relevant("International Sales Intern", "Acme", "London")
 
 
 def test_whole_word_intern_matches():

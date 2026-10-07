@@ -31,6 +31,8 @@ class RunContext:
     ai_provider_failures: dict = field(default_factory=dict)
     # the (action, company, role) tuples a SCRAPER_DRY_RUN=1 run would have written.
     dry_run_actions: list = field(default_factory=list)
+    gate_rejects: dict = field(default_factory=dict)
+    uk_places: set = field(default_factory=set)
     run_start: float = field(default_factory=time.time)
     budget_seconds: int = field(default_factory=lambda: config.BUDGET_SECONDS)
 

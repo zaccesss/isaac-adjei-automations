@@ -3,9 +3,9 @@
 import time
 from ..data.companies import PRIORITY_COMPANIES
 from ..db import insert_job
-from ..filters import resolve_type, is_relevant, is_relevant_job
+from ..filters import _has_tech_keyword, is_relevant, is_relevant_job, is_student_role, resolve_type
 from ..http import HEADERS
-from ..locations import is_location_ok
+from ..locations import MULTI_LOCATION_RE, is_location_ok
 from ..budget import over_budget
 from ..stats import record_stat
 from ..http import SESSION
@@ -33,6 +33,21 @@ WORKDAY_COMPANIES = [
     ("broadcom", "1", "broadcom", "External_Career", "Broadcom"),
     ("hpe",      "5", "hpe",      "ACJobSite",       "HPE"),
 ]
+
+
+def _posting_locations(base: str, external_path: str) -> str:
+    """Every place a Workday posting names, joined with semicolons; empty when unknown."""
+    if not external_path:
+        return ""
+    try:
+        resp = SESSION.get(f"{base}{external_path}", headers=HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return ""
+        info = resp.json().get("jobPostingInfo", {})
+        places = [info.get("location") or ""] + list(info.get("additionalLocations") or [])
+        return "; ".join(p for p in places if p)
+    except Exception:
+        return ""
 
 
 def scrape_workday(
@@ -78,6 +93,12 @@ def scrape_workday(
                         if bf:
                             location_text = bf
                             break
+                # a multi-site posting only says "2 Locations"; its own detail record names them,
+                # fetched only for titles that would be kept so a run stays within its budget
+                if MULTI_LOCATION_RE.match(location_text) and (
+                    is_student_role(title) or _has_tech_keyword(title.lower())
+                ):
+                    location_text = _posting_locations(url[:-len("/jobs")], job.get("externalPath", "")) or location_text
                 # pre-filter non-UK roles to avoid HEAD-checking hundreds of
                 # US job URLs. is_relevant does a second check inside.
                 is_priority = any(p in company_name.lower() for p in PRIORITY_COMPANIES)

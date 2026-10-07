@@ -16,10 +16,11 @@ applied date) on an existing row.
 | `budget.py` | The wall-clock budget check |
 | `http.py` | Browser headers, the shared session and the URL liveness check |
 | `models.py` | The `Job` shape the database layer consumes |
-| `filters.py` | Student-role detection, type inference and category detection |
-| `locations.py` | Location vocabulary and the UK and Europe filter (London leaning) |
+| `roles.py` | The shared role rules: the kind of student role a title names and whether it is in the 2026 to 2027 cycle. Vitafolio's `RoleType` mirrors it term for term |
+| `filters.py` | Student-role detection and type inference built on `roles.py`, plus category detection |
+| `locations.py` | Location vocabulary and the UK-only filter, with US and Australian places that share UK town names ruled out |
 | `dates.py` | Season cutoffs, the 14 day grace window and the source date parsers |
-| `db.py` | Dedupe keys, existing-row loading, the insert-or-refresh upsert, the freshness stamp |
+| `db.py` | Dedupe keys, existing-row loading, the final gate every role passes, the insert-or-refresh upsert, the freshness stamp and the archiving of stale and closed roles |
 | `ai.py` | Optional field extraction: Groq, Gemini, OpenRouter, each trying several free models, with rate-limited providers benched per run |
 | `detect.py` | Plain-text detectors: visa sponsorship and cover letter mentions |
 | `notify.py` | The end-of-run Discord alert for new student roles |

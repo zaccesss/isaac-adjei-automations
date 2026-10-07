@@ -3,12 +3,13 @@
 import re
 
 from . import config
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
 from .filters import detect_category
 from .http import is_url_alive
-from .locations import normalize_location
+from .locations import is_uk, normalize_location
+from .roles import classify, in_cycle
 
 
 
@@ -87,6 +88,16 @@ def load_existing_keys(ctx) -> None:
                     ctx.url_by_bare_key[bare] = u
             if len(rows) < 1000:
                 break
+        # every place the map has already pinned in Great Britain counts as UK, which covers the
+        # towns no fixed list can (Fleet, Bracknell's villages, a business park's own name)
+        for start in range(0, 50_000, 1000):
+            res = ctx.supabase.table("location_geocodes").select("location").eq(
+                "country_code", "GB"
+            ).range(start, start + 999).execute()
+            places = res.data or []
+            ctx.uk_places.update((r.get("location") or "").strip().lower() for r in places)
+            if len(places) < 1000:
+                break
         if not ctx.existing_keys:
             # warn here because an empty result on a populated DB usually
             # means RLS is blocking the SELECT - the upsert below will still
@@ -126,7 +137,34 @@ def _cover_letter_label(v):
     return None
 
 
+# boards that list UK roles only, so a listing with no location from them is still a UK role
+UK_ONLY_BOARDS = {
+    "Gradcracker", "TARGETjobs", "Milkround", "RateMyPlacement", "Prospects", "Bright Network",
+    "The Trackr", "StudentJob", "E4S", "Reed", "Adzuna", "Jooble",
+}
+def gate(job: dict, uk_places=frozenset()):
+    """The reason a role is kept off the dashboard; None when it may be stored.
+
+    The same rules Vitafolio applies: no apprenticeships, nothing outside the recruitment cycle
+    and UK roles only. A blank location is trusted only from a UK-only board.
+    """
+    role = job.get("role", "")
+    if classify(role) == "apprenticeship":
+        return "apprenticeship"
+    if not in_cycle(role):
+        return "outside the cycle"
+    location = job.get("location") or ""
+    known_uk = location.strip().lower() in uk_places
+    if not (is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS)):
+        return "outside the UK"
+    return None
+
+
 def insert_job(ctx, job: dict) -> bool:
+    reason = gate(job, ctx.uk_places)
+    if reason:
+        ctx.gate_rejects[reason] = ctx.gate_rejects.get(reason, 0) + 1
+        return False
     # the date cutoff differs by type (both sit at Jan 2026 this season)
     cutoff = JOB_CUTOFF if job.get("type") == "Full-time Job" else CYCLE_CUTOFF
     if not is_date_relevant(job.get("deadline"), cutoff):
@@ -319,6 +357,27 @@ def insert_job(ctx, job: dict) -> bool:
             return False
         print(f"  ! Failed to insert {job['company']}: {type(e).__name__}")
         return False
+
+
+def archive_stale(ctx) -> None:
+    """Archive scraped roles that have closed or that no scrape has seen for 14 days.
+
+    Archiving hides a row without deleting it. Rows that have been worked on (any status other
+    than scraped) are never touched.
+    """
+    if config.DRY_RUN:
+        print("[dry run] would archive stale and closed scraped roles.")
+        return
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
+    try:
+        stale = ctx.supabase.table("applications").update({"archived": True}).eq("status", "scraped") \
+            .eq("archived", False).lt("last_scraped_at", cutoff).execute()
+        closed = ctx.supabase.table("applications").update({"archived": True}).eq("status", "scraped") \
+            .eq("archived", False).lt("deadline", today).execute()
+        print(f"Archived {len(stale.data or [])} stale and {len(closed.data or [])} closed roles.")
+    except Exception as e:
+        print(f"Warning: archiving stale roles failed: {type(e).__name__}")
 
 
 def refresh_seen_timestamps(ctx) -> None:
