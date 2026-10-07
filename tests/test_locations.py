@@ -33,6 +33,13 @@ def test_us_locations_are_rejected():
     assert not is_location_ok("San Francisco, California", True)
 
 
-def test_priority_companies_keep_unrecognised_foreign_locations():
-    assert not is_location_ok("Lagos", False)
-    assert is_location_ok("Lagos", True)
+def test_uk_only_even_for_priority_companies():
+    # UK only since October 2026: Europe and foreign offices are no longer kept
+    assert not is_location_ok("Lagos", True)
+    assert not is_location_ok("Fab 10A, Singapore", True)
+    assert not is_location_ok("Paris, France", False)
+    assert not is_location_ok("2 Locations", True)
+    assert not is_location_ok("Sydney, New South Wales, Australia", False)
+    assert not is_location_ok("US, MA, Chelmsford", False)
+    assert is_location_ok("Berlin; London; Munich", False)
+    assert is_location_ok("Belfast, Northern Ireland", False)

@@ -11,7 +11,7 @@ def test_dry_run_inserts_collect_instead_of_writing(monkeypatch):
     ctx = RunContext.bare()
 
     # no URL, so no liveness check fires; no description, so no AI call fires.
-    job = {"company": "Acme", "role": "Software Intern", "type": "Internship", "deadline": None}
+    job = {"company": "Acme", "role": "Software Intern", "type": "Internship", "location": "London", "deadline": None}
     assert insert_job(ctx, job) is True
 
     assert ctx.dry_run_actions == [("insert", "Acme", "Software Intern")]
@@ -30,7 +30,7 @@ def test_dry_run_update_path_and_timestamp_refresh(monkeypatch):
     job = {
         "company": "Acme",
         "role": "Software Intern",
-        "type": "Internship",
+        "type": "Internship", "location": "London",
         "url": "https://a.example/jobs/1",
         "deadline": None,
     }
@@ -51,7 +51,7 @@ def test_a_linked_row_heals_the_urlless_original_instead_of_duplicating(monkeypa
     ctx = RunContext.bare()
 
     # the url-less original was inserted in an earlier run.
-    original = {"company": "Acme", "role": "Software Intern", "type": "Internship", "deadline": None}
+    original = {"company": "Acme", "role": "Software Intern", "type": "Internship", "location": "London", "deadline": None}
     assert insert_job(ctx, original) is True
 
     # the same row arrives again, now carrying a fallback link: it must fill the

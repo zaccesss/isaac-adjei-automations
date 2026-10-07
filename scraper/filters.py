@@ -2,8 +2,9 @@
 
 import re
 from .data.companies import PRIORITY_COMPANIES, STUDENT_DEPTS
-from .data.keywords import EVENT_TERMS, GRADUATE_TERMS, PLACEMENT_TERMS, SPRING_WEEK_TERMS, TECH_KEYWORDS
+from .data.keywords import EVENT_TERMS, TECH_KEYWORDS
 from .locations import is_location_ok
+from .roles import classify
 
 # use whole-word matching for "intern" so words like "internal" and
 # "international" do not trigger a false positive intern classification.
@@ -78,38 +79,16 @@ def is_student_role(
 ) -> bool:
     """Return True if this role is student/intern/placement facing.
 
-    I use whole-word regex for intern-related terms to avoid false positives
-    from words like "internal", "international" and "internally". If those
-    words appear without a stronger signal (placement, spring week, etc.) the
-    role is treated as full-time.
+    The title is read by the shared rules in roles.py, the same ones Vitafolio uses: whole words
+    only, staff and senior titles left out and apprenticeships kept off the dashboard. Careers events
+    still count through the event terms.
     """
-    # reject titles that begin with "Internal" because those describe
-    # internal team-facing roles (e.g. "Internal Engineering"), not student
-    # positions. This is separate from the intern-word exclusion below.
-    if re.match(r'^internal\b', title.strip(), re.IGNORECASE):
+    kind = classify(title)
+    if kind == "apprenticeship" or _INTERNAL_FUNCTION_RE.search(title or ""):
         return False
-
-    # also reject "Internal <function>" anywhere in the title (e.g. "Lead
-    # engineer, Internal Engineering" or "PM - Internal AI"). These are always
-    # full-time internal-team roles regardless of which company posted them.
-    if _INTERNAL_FUNCTION_RE.search(title):
-        return False
-
-    # check the title first because it is always present.
-    t = title.lower()
-
-    # non-intern student terms (placement, graduate, spring, event) are safe
-    # to match with a simple substring check - none share a root with common
-    # english words that would produce false positives.
-    NON_INTERN_TERMS = PLACEMENT_TERMS + SPRING_WEEK_TERMS + GRADUATE_TERMS + EVENT_TERMS
-    if _any_word(NON_INTERN_TERMS, t):
+    if kind is not None:
         return True
-
-    # intern-family terms need a whole-word match AND no explicit
-    # exclusion word ("internal", "international", "internally").
-    has_intern_word = _INTERN_WHOLE_WORD_RE.search(t)
-    has_exclude_word = _EXCLUDE_INTERN_RE.search(t)
-    if has_intern_word and not has_exclude_word:
+    if not _SENIOR_ROLE_RE.search(title or "") and _any_word(EVENT_TERMS, (title or "").lower()):
         return True
 
     # fall back to department names as a secondary signal for companies that
@@ -168,38 +147,29 @@ def is_relevant(
     return is_location_ok(location, is_priority)
 
 
-def infer_type(title: str, default: str = "Internship") -> str:
-    """Determine application type from the role title using per-category term sets.
+# the dashboard's type names for the shared kinds of role
+_TYPE_FOR_KIND = {
+    "internship": "Internship",
+    "placement": "Industrial Placement",
+    "insight": "Spring Week",
+    "graduate": "Graduate",
+}
 
-    I check placement and spring week terms first because they are more
-    specific than the general 'intern' / 'summer' terms. Graduate schemes
-    and events are checked last.
+
+def infer_type(title: str, default: str = "Internship") -> str:
+    """Determine the application type from the role title using the shared rules in roles.py.
+
+    A careers event keeps the Event type, a senior or signal-free title falls back as before.
     """
-    t = title.lower()
-    # a senior title with no intern word is a full-time role whatever else the
-    # title mentions - "Senior Engineer, Placement Supervision" is a job, not a
-    # placement. Intern-worded senior titles (rare) keep their student typing.
-    if _SENIOR_ROLE_RE.search(title) and not _INTERN_WHOLE_WORD_RE.search(t):
+    kind = classify(title)
+    if kind in _TYPE_FOR_KIND:
+        return _TYPE_FOR_KIND[kind]
+    t = (title or "").lower()
+    if _SENIOR_ROLE_RE.search(title or "") and not _INTERN_WHOLE_WORD_RE.search(t):
         return "Full-time Job"
-    # industrial Placement - 12-month / year in industry
-    if _any_word(PLACEMENT_TERMS, t):
-        return "Industrial Placement"
-    # spring Week / Insight
-    if _any_word(SPRING_WEEK_TERMS, t):
-        return "Spring Week"
-    # graduate Scheme
-    if _any_word(GRADUATE_TERMS, t):
-        return "Graduate"
-    # events
     if _any_word(EVENT_TERMS, t):
         return "Event"
-    # general Internship - whole-word regex here means "international" and
-    # "internationally" do not trigger a false intern classification.
-    if _INTERN_WHOLE_WORD_RE.search(t) and not _EXCLUDE_INTERN_RE.search(t):
-        return "Internship"
-    # check seniority terms before falling through to the default so that
-    # senior roles without any student-term do not get classified as Internship.
-    if _SENIOR_ROLE_RE.search(title):
+    if kind == "apprenticeship" or _SENIOR_ROLE_RE.search(title or ""):
         return "Full-time Job"
     return default
 

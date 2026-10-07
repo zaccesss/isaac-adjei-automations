@@ -37,6 +37,10 @@ def main():
     # left it.
     if config.SCRAPER_MODE in ("api", "all"):
         db.refresh_seen_timestamps(ctx)
+        db.archive_stale(ctx)
+
+    if ctx.gate_rejects:
+        print("Kept off the dashboard: " + ", ".join(f"{n} {why}" for why, n in sorted(ctx.gate_rejects.items())))
 
     # send a Discord alert with all newly found student roles so it is clear what came
     # in from today's run without waiting for the Sunday digest.
