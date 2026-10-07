@@ -82,7 +82,7 @@ def fetch_description(session, url: str):
 
 
 def select_rows(rows, now=None):
-    """The rows worth sending: employer sources, fresh, UK, with a link and a role."""
+    """The rows worth sending: student roles from employer sources, fresh, UK, with a link."""
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=FRESH_DAYS)
     picked, seen = [], set()
@@ -134,7 +134,7 @@ def main():
     for start in range(0, 200_000, 1000):
         page = db.table("applications").select(
             "company,role,type,source,location,deadline,opening_date,url,last_scraped_at,category"
-        ).eq("status", "scraped").eq("archived", False).in_("source", sorted(EMPLOYER_SOURCES)).range(start, start + 999).execute().data or []
+        ).eq("status", "scraped").eq("archived", False).neq("type", "Full-time Job").in_("source", sorted(EMPLOYER_SOURCES)).range(start, start + 999).execute().data or []
         rows.extend(page)
         if len(page) < 1000:
             break
