@@ -13,7 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - A final gate in `insert_job`: apprenticeships, roles outside the cycle and anything outside the UK never reach the dashboard. A blank location is trusted only from a UK-only board and any place already pinned in Great Britain counts as UK.
 - Workday postings that only say "2 Locations" are looked up for their real cities.
 - Each API run archives scraped roles that have closed or that no scrape has seen for 14 days. Worked rows are never touched and nothing is deleted.
-- The Vitafolio Jobs workflow, which sends fresh UK roles from Greenhouse, Lever, Ashby, Recruitee and Personio to Vitafolio after each scrape, with each advert for its CV check. Ashby roles marked unlisted are never sent.
+- The Vitafolio Jobs workflow, which sends fresh UK roles from Greenhouse, Lever, Ashby, Recruitee and Personio to Vitafolio after each scrape, with each advert for its CV check. Ashby roles marked unlisted are never sent. Only student roles are sent; full-time jobs stay on the dashboard.
 - A `sync-forks` job, every six hours, fast-forwards the main branch of every fork on my account to its upstream, so a new contribution starts from the current code. Branches behind open pull requests are never touched. A fork whose main has commits of its own is left alone with a warning
 
 ### Changed
