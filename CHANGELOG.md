@@ -19,7 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Civil, structural, bridge, traffic, highways, water, drainage, planning, surveying and architectural roles are no longer tech roles for the dashboard. "Quant" matches whole words, so quantum research is not filed as Quant Developer.
+- Civil and structural engineering, bridge, traffic, highways, water, drainage, town and transport planning, surveying and architectural roles are no longer tech roles for the dashboard. Capacity or production planning and aerospace structural analysis stay in. "Quant" matches whole words, so quantum research is not filed as Quant Developer.
 - The dashboard is UK only. Europe and priority companies' foreign offices are no longer accepted.
 - Tidied code comments and the repository docs.
 

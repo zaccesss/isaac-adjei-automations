@@ -69,9 +69,10 @@ _NON_TECH_ROLE_RE = re.compile(
     r"\b(sales|account (executive|manager)|business development|recruiter|"
     r"recruiting|talent acquisition|marketing|paralegal|legal counsel|"
     r"accountant|payroll|procurement|customer success|copywriter|"
-    r"community manager|hr\b|people operations|office manager|civil engineer|civil engineering|structural|"
-    r"bridge|bridges|traffic|highways|geotechnical|drainage|water industry|wastewater|planner|planning|"
-    r"quantity surveyor|building surveyor|surveyor|architectural|landscape|town planning)\b",
+    r"community manager|hr\b|people operations|office manager|civil engineer|civil engineering|"
+    r"civil and structural|structural engineer|structures engineer|bridge|bridges|traffic engineer|highways|"
+    r"geotechnical|drainage|water industry|wastewater|town planning|transport planning|urban planning|"
+    r"infrastructure planner|quantity surveyor|building surveyor|architectural|landscape architect)\b",
     re.IGNORECASE,
 )
 

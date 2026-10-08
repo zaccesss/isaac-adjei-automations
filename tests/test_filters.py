@@ -51,6 +51,9 @@ def test_is_relevant_requires_student_tech_and_location():
     assert is_relevant("Software Intern", "Acme", "New York")
     assert not is_relevant("Graduate Civil Engineer", "Acme", "London")
     assert not is_relevant("Graduate Bridge Structures Engineer", "Acme", "London")
+    # planning and structural analysis outside civil engineering stay in
+    assert is_relevant("Capacity Planning Data Intern", "Acme", "London")
+    assert is_relevant("Graduate Structural Analysis Software Engineer", "Acme", "London")
 
 
 def test_whole_word_terms_stop_the_lookalikes():
