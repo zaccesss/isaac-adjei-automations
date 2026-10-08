@@ -47,7 +47,10 @@ def test_infer_type_prefers_the_specific_terms():
 def test_is_relevant_requires_student_tech_and_location():
     assert is_relevant("Software Intern", "Acme", "London")
     assert not is_relevant("Marketing Intern", "Acme", "London")
-    assert not is_relevant("Software Intern", "Acme", "New York")
+    # location no longer decides relevance; the gate files a student role abroad instead
+    assert is_relevant("Software Intern", "Acme", "New York")
+    assert not is_relevant("Graduate Civil Engineer", "Acme", "London")
+    assert not is_relevant("Graduate Bridge Structures Engineer", "Acme", "London")
 
 
 def test_whole_word_terms_stop_the_lookalikes():

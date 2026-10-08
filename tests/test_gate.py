@@ -23,12 +23,14 @@ def test_apprenticeships_and_past_cycles_are_kept_off():
     assert gate(job(role="Graduate Scheme 2025")) == "outside the cycle"
 
 
-def test_only_uk_places_pass():
-    assert gate(job(location="Fab 10A, Singapore")) == "outside the UK"
-    assert gate(job(location="Sydney, New South Wales, Australia")) == "outside the UK"
-    assert gate(job(location="US, MA, Chelmsford")) == "outside the UK"
+def test_student_roles_abroad_are_flagged_and_other_roles_kept_out():
+    assert gate(job(location="Fab 10A, Singapore")) == "abroad"
+    assert gate(job(location="Sydney, New South Wales, Australia")) == "abroad"
+    assert gate(job(location="US, MA, Chelmsford")) == "abroad"
+    # an unknown place and full-time roles abroad never reach the dashboard
     assert gate(job(location="2 Locations")) == "outside the UK"
     assert gate(job(location="Remote")) == "outside the UK"
+    assert gate(job(role="Senior Software Engineer", location="Fab 10A, Singapore")) == "outside the UK"
 
 
 def test_a_blank_location_is_trusted_only_from_a_uk_board():

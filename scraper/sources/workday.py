@@ -102,7 +102,7 @@ def scrape_workday(
                 # pre-filter non-UK roles to avoid HEAD-checking hundreds of
                 # US job URLs. is_relevant does a second check inside.
                 is_priority = any(p in company_name.lower() for p in PRIORITY_COMPANIES)
-                if location_text and not is_location_ok(location_text, is_priority):
+                if location_text and not is_location_ok(location_text, is_priority) and not is_student_role(title):
                     continue
                 ext_url = job.get("externalPath", "")
                 job_url = (

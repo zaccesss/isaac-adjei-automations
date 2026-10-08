@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Student roles outside the UK (internships, placements, spring weeks and graduate schemes) are kept with `abroad` set for the dashboard's Abroad tab. Full-time jobs abroad, multi-location placeholders and a bare "Remote" are still kept out.
 - `scraper/roles.py`, the shared role rules also used by Vitafolio: whole-word terms, staff and senior titles left out, year-long internships counted as placements, spring weeks and insight events, bank programmes and the 2026 to 2027 cycle with year ranges counted by their first year.
 - A final gate in `insert_job`: apprenticeships, roles outside the cycle and anything outside the UK never reach the dashboard. A blank location is trusted only from a UK-only board and any place already pinned in Great Britain counts as UK.
 - Workday postings that only say "2 Locations" are looked up for their real cities.
@@ -18,6 +19,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Civil, structural, bridge, traffic, highways, water, drainage, planning, surveying and architectural roles are no longer tech roles for the dashboard. "Quant" matches whole words, so quantum research is not filed as Quant Developer.
 - The dashboard is UK only. Europe and priority companies' foreign offices are no longer accepted.
 - Tidied code comments and the repository docs.
 
