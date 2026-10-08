@@ -66,9 +66,14 @@ def test_employer_name_variants_share_one_key():
     assert dedupe_key("Snap Inc.", "Machine Learning Engineering Intern") == dedupe_key("Snap", "Machine Learning Engineering Intern")
 
 
-def test_an_unrecognised_place_is_uk_unless_something_says_abroad():
-    for place in ["Brixworth (Northamptonshire)", "Thursley (Surrey) (Hybrid)", "Barrow-in-Furness (Cumbria)", "Bromley", "Cramlington"]:
+def test_uk_needs_evidence_and_so_does_abroad():
+    for place in ["Brixworth (Northamptonshire)", "Thursley (Surrey) (Hybrid)", "Barrow-in-Furness (Cumbria)", "Bromley",
+                  "Wheatcroft, Matlock (DE4), DE4 5AG", "Cramlington (Northumberland)"]:
         assert gate(job(location=place)) is None, place
+    # no evidence either way stays off; a place the map pinned decides it
+    for place in ["Home based - Worldwide", "Europe", "Remote, Global", "Home based - EMEA", "Belgrade", "Montevideo"]:
+        assert gate(job(location=place)) == "outside the UK", place
+    assert gate(job(location="Montevideo"), abroad_places={"montevideo"}) == "abroad"
     assert gate(job(location="Hsinchu")) == "abroad"
     assert gate(job(location="Santa Clara, CA")) == "abroad"
     assert gate(job(role="Senior Software Engineer", location="Taipei")) == "outside the UK"

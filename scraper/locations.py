@@ -147,11 +147,30 @@ _NOT_UK = re.compile(
 MULTI_LOCATION_RE = re.compile(r"^\s*\d+\s+locations?\s*$", re.IGNORECASE)
 
 
+# UK counties, London boroughs and postcodes are UK evidence a town list alone misses
+_UK_AREA_RE = re.compile(
+    r"\b(bedfordshire|berkshire|bristol|buckinghamshire|cambridgeshire|cheshire|cornwall|cumbria|derbyshire|devon|"
+    r"dorset|durham|east sussex|essex|gloucestershire|greater london|greater manchester|hampshire|herefordshire|"
+    r"hertfordshire|isle of wight|kent|lancashire|leicestershire|lincolnshire|merseyside|norfolk|"
+    r"north yorkshire|northamptonshire|northumberland|nottinghamshire|oxfordshire|rutland|shropshire|somerset|"
+    r"south yorkshire|staffordshire|suffolk|surrey|sussex|tyne and wear|warwickshire|west midlands|west sussex|"
+    r"west yorkshire|wiltshire|worcestershire|yorkshire|highlands|fife|lothian|lanarkshire|aberdeenshire|"
+    r"county antrim|county down|county armagh|county tyrone|county londonderry|county fermanagh|"
+    r"croydon|bromley|camden|hackney|islington|lambeth|southwark|westminster|wandsworth|hammersmith|"
+    r"kensington|greenwich|lewisham|tower hamlets|canary wharf|stratford|ealing|harrow|hounslow|richmond|"
+    r"kingston upon thames|wimbledon|barnet|enfield|haringey|newham|redbridge|hillingdon|brent|sutton|merton|"
+    r"bexley|havering|waltham forest|barking|dagenham|city of london)\b",
+    re.IGNORECASE,
+)
+# a full postcode or an outward code in brackets such as "(DE4)". Capitals only, so ordinary words never match
+_UK_POSTCODE_RE = re.compile(r"\b[A-Z]{1,2}\d{1,2}[A-Z]?\s+\d[A-Z]{2}\b|\(([A-Z]{1,2}\d{1,2}[A-Z]?)\)")
+
+
 def is_uk(location: str) -> bool:
     """True only when the location names somewhere in the UK; unknown places are not assumed."""
     if not location:
         return False
-    if _UK_RE.search(location) and not _NOT_UK.search(location):
+    if (_UK_RE.search(location) or _UK_AREA_RE.search(location) or _UK_POSTCODE_RE.search(location)) and not _NOT_UK.search(location):
         return True
     # a listing that names London among other cities is still a London role
     return bool(re.search(r"\blondon\b", location, re.IGNORECASE)) and not re.search(r"ontario|canada", location, re.IGNORECASE)
@@ -180,6 +199,20 @@ _ABROAD_RE = re.compile(
     r"ny|nc|nd|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|vt|va|wa|wv|wi|wy|on|bc|qc|nsw|vic|qld)\b|^us\b|\bus,",
     re.IGNORECASE,
 )
+
+
+# a region or worldwide label names no country; it is neither UK nor a country abroad
+_VAGUE_RE = re.compile(
+    r"\b(remote|hybrid|anywhere|worldwide|global|emea|apac|americas|amer|latam|europe|multiple locations|"
+    r"home based|home-based|n/a)\b",
+    re.IGNORECASE,
+)
+
+
+def is_vague(location: str) -> bool:
+    """True for a location that is only a region, a remote label or a placeholder."""
+    rest = _VAGUE_RE.sub(" ", location or "")
+    return not re.sub(r"[\s,;:()/|-]+", "", rest)
 
 
 def is_abroad(location: str) -> bool:
