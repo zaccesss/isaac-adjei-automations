@@ -157,6 +157,40 @@ def is_uk(location: str) -> bool:
     return bool(re.search(r"\blondon\b", location, re.IGNORECASE)) and not re.search(r"ontario|canada", location, re.IGNORECASE)
 
 
+# positive evidence that a place is outside the UK: a country, a US, Canadian or Australian state code
+# or a well-known foreign city. A place name that is neither this nor a known UK place is most often a
+# small UK town no list can hold, so it is never treated as abroad on its own.
+_ABROAD_RE = re.compile(
+    r"\b(united states|usa|u\.s\.a?|america|canada|mexico|brazil|argentina|chile|colombia|australia|"
+    r"new zealand|ireland|republic of ireland|france|germany|netherlands|belgium|luxembourg|switzerland|"
+    r"austria|italy|spain|portugal|denmark|sweden|norway|finland|iceland|poland|czech|czechia|slovakia|"
+    r"hungary|romania|bulgaria|greece|croatia|serbia|cyprus|malta|estonia|latvia|lithuania|ukraine|"
+    r"turkey|israel|egypt|uae|united arab emirates|saudi arabia|qatar|kuwait|bahrain|oman|india|"
+    r"pakistan|bangladesh|sri lanka|china|hong kong|taiwan|japan|korea|singapore|malaysia|thailand|"
+    r"vietnam|indonesia|philippines|south africa|nigeria|kenya|ghana|morocco|"
+    r"dublin|paris|berlin|munich|frankfurt|hamburg|amsterdam|rotterdam|brussels|zurich|geneva|vienna|"
+    r"milan|rome|madrid|barcelona|lisbon|copenhagen|stockholm|oslo|helsinki|warsaw|krakow|prague|"
+    r"budapest|bucharest|athens|tel aviv|dubai|abu dhabi|riyadh|doha|bangalore|bengaluru|hyderabad|"
+    r"mumbai|pune|chennai|delhi|shanghai|beijing|shenzhen|tokyo|osaka|seoul|taipei|hsinchu|kuala lumpur|"
+    r"penang|bangkok|jakarta|manila|sydney|melbourne|brisbane|perth, (wa|western australia)|auckland|"
+    r"toronto|vancouver|montreal|ottawa|new york|san francisco|seattle|boston|chicago|austin|dallas|"
+    r"houston|atlanta|denver|los angeles|san jose|santa clara|palo alto|mountain view|sunnyvale|"
+    r"boise|hillsboro|raleigh|pittsburgh|philadelphia|washington dc|sao paulo|mexico city)\b"
+    r"|, (al|ak|az|ar|ca|co|ct|de|fl|ga|hi|id|il|in|ia|ks|ky|la|me|md|ma|mi|mn|ms|mo|mt|ne|nv|nh|nj|nm|"
+    r"ny|nc|nd|oh|ok|or|pa|ri|sc|sd|tn|tx|ut|vt|va|wa|wv|wi|wy|on|bc|qc|nsw|vic|qld)\b|^us\b|\bus,",
+    re.IGNORECASE,
+)
+
+
+def is_abroad(location: str) -> bool:
+    """True only on positive evidence that the place is outside the UK."""
+    if not location:
+        return False
+    # Northern Ireland is in the UK, whatever "Ireland" alone would suggest
+    text = re.sub(r"northern ireland", " ", location, flags=re.IGNORECASE)
+    return bool(_ABROAD_RE.search(text)) and not (is_uk(location) and not _NOT_UK.search(location))
+
+
 def is_location_ok(location: str, is_priority: bool = False) -> bool:
     """True for a UK location or an unknown one; the final check in insert_job settles unknowns.
 

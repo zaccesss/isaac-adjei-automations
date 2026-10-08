@@ -106,6 +106,9 @@ def scrape_adzuna(ctx) -> int:
                     "source":   "Adzuna",
                     "deadline": expiry[:10] if expiry else None,
                     "description": job.get("description", ""),
+                    "opening_date": (job.get("created") or "")[:10] or None,
+                    "salary_min": job.get("salary_min"),
+                    "salary_max": job.get("salary_max"),
                 }):
                     count += 1
 

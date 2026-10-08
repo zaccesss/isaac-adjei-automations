@@ -32,6 +32,52 @@ WORKDAY_COMPANIES = [
     # front-end's session tokens like the other auth-gated tenants above.
     ("broadcom", "1", "broadcom", "External_Career", "Broadcom"),
     ("hpe",      "5", "hpe",      "ACJobSite",       "HPE"),
+    # added October 2026, each checked live against its job board
+    ("barclays", "3", "barclays", "External_Career_Site_Barclays", "Barclays"),
+    ("rbs", "3", "rbs", "rbs", "NatWest Group"),
+    ("citi", "5", "citi", "2", "Citi"),
+    ("lseg", "3", "lseg", "Careers", "LSEG"),
+    ("boeing", "1", "boeing", "External_Careers", "Boeing"),
+    ("hp", "5", "hp", "ExternalCareerSite", "HP"),
+    ("gevernova", "5", "gevernova", "Vernova_ExternalSite", "GE Vernova"),
+    ("matthey", "3", "matthey", "Ext_Career_Site", "Johnson Matthey"),
+    ("gsk", "5", "gsk", "gskcareers", "GSK"),
+    ("shell", "3", "shell", "shellcareers", "Shell"),
+    ("cisco", "5", "cisco", "Cisco_Careers", "Cisco"),
+    ("visa", "5", "visa", "Visa_Early_Careers", "Visa"),
+    ("spgi", "5", "spgi", "Spgi_Careers", "S&P Global"),
+    ("mmc", "1", "mmc", "mmc", "Marsh McLennan"),
+    ("wellington", "5", "wellington", "External", "Wellington Management"),
+    ("pimco", "1", "pimco", "Pimco-Careers", "PIMCO"),
+    ("hl", "1", "hl", "Campus", "Houlihan Lokey"),
+    ("ag", "3", "ag", "Airbus", "Airbus"),
+    ("halma", "3", "halma", "halma", "Halma"),
+    ("relx", "3", "relx", "Relx", "RELX"),
+    ("leonardocompany", "3", "leonardocompany", "LeonardoCareerSite", "Leonardo"),
+    ("lbg", "3", "lbg", "LBG_Careers", "Lloyds Banking Group"),
+    ("darktrace", "3", "darktrace", "DarktaceExternal", "Darktrace"),
+    ("dyson", "3", "dyson", "Dyson_Careers", "Dyson"),
+    ("cadence", "1", "cadence", "External_Careers", "Cadence"),
+    ("latticesemi", "5", "latticesemi", "latticesemiconductorscareers", "Lattice Semiconductor"),
+    ("renishaw", "3", "renishaw", "Renishaw", "Renishaw"),
+    ("crowdstrike", "5", "crowdstrike", "crowdstrikecareers", "CrowdStrike"),
+    ("paloaltonetworks", "5", "paloaltonetworks", "panwexternalcareers", "Palo Alto Networks"),
+    ("arcticwolf", "1", "arcticwolf", "External", "Arctic Wolf"),
+    ("kainos", "3", "kainos", "kainos", "Kainos"),
+    ("kyndryl", "5", "kyndryl", "KyndrylEarlyCareers", "Kyndryl"),
+    ("accenture", "103", "accenture", "AccentureCareers", "Accenture"),
+    ("statestreet", "1", "statestreet", "Global", "State Street"),
+    ("santander", "3", "santander", "santandercareers", "Santander"),
+    ("ig", "103", "ig", "EXT_IG", "IG Group"),
+    ("cmcmarkets", "3", "cmcmarkets", "CMC_Markets_Careers", "CMC Markets"),
+    ("nasdaq", "1", "nasdaq", "Global_External_Site", "Nasdaq"),
+    ("fis", "5", "fis", "SearchJobs", "FIS"),
+    ("mastercard", "1", "mastercard", "CorporateCareers", "Mastercard"),
+    ("thomsonreuters", "5", "thomsonreuters", "External_Career_Site", "Thomson Reuters"),
+    ("aveva", "3", "aveva", "AVEVA_careers", "AVEVA"),
+    ("sonyglobal", "1", "sonyglobal", "sonyglobalcareers", "Sony"),
+    ("moog", "5", "moog", "Moog_External_Career_Site", "Moog"),
+    ("aviva", "1", "aviva", "External", "Aviva"),
 ]
 
 
@@ -67,7 +113,10 @@ def scrape_workday(
     count = 0
     offset = 0
     total = None
-    while total is None or offset < total:
+    # a few large employers answer a search for "intern" with thousands of loose matches, so one
+    # employer may read at most this many results before the run moves on
+    max_results = 200
+    while (total is None or offset < total) and offset < max_results:
         try:
             resp = SESSION.post(
                 url,

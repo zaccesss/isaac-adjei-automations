@@ -9,6 +9,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- About 160 more employers, each checked live against its job board: quant and trading firms, UK banks and fintechs, semiconductors and electronics, defence and aerospace, energy and cyber security. Lever falls back to its EU server for European employers.
+- Salary, posted date and the full advert are stored for every role whose source gives them (Greenhouse, Lever, Ashby, Recruitee, Adzuna and Reed), so the dashboard can show and chart them.
 - Student roles outside the UK (internships, placements, spring weeks and graduate schemes) are kept with `abroad` set for the dashboard's Abroad tab. Full-time jobs abroad, multi-location placeholders and a bare "Remote" are still kept out.
 - `scraper/roles.py`, the shared role rules also used by Vitafolio: whole-word terms, staff and senior titles left out, year-long internships counted as placements, spring weeks and insight events, bank programmes and the 2026 to 2027 cycle with year ranges counted by their first year.
 - A final gate in `insert_job`: apprenticeships, roles outside the cycle and anything outside the UK never reach the dashboard. A blank location is trusted only from a UK-only board and any place already pinned in Great Britain counts as UK.
@@ -19,6 +21,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- A role counts as abroad only on positive evidence: a country, a US, Canadian or Australian state code or a known foreign city. Any other named place is treated as a UK town, so Brixworth, Thursley and Bromley stay on the dashboard. Northern Ireland is the UK.
+- Every workflow job has a time limit and Workday reads at most 200 results per employer.
 - One rule set decides every role, whatever the source. A role must name computing, electronics, data, quant or engineering work. Commercial, people and back-office roles (HR, compliance, investment banking, sales, editing, supply chain and similar) are kept out. Civil, mechanical, aerospace and energy student roles are kept under a new Other Engineering category, while full-time jobs stay computing and electronics only.
 - The tab comes from the title: only a UK student board may call an untitled role an internship. "Campus - Full Time" listings are graduate roles. Categories are recomputed on every scrape so a refresh corrects older ones, with whole-word matching and the most specific category first.
 - Workday links no longer double their `/job` path, which sent every Workday role to an error page.

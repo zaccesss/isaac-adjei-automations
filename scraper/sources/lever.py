@@ -9,6 +9,15 @@ from ..data.companies import LEVER_COMPANIES
 from ..stats import record_stat
 from ..http import SESSION
 
+
+def _lever_date(ms):
+    """Lever's createdAt is milliseconds since the epoch; the table wants a plain date."""
+    from datetime import datetime, timezone
+    try:
+        return datetime.fromtimestamp(int(ms) / 1000, tz=timezone.utc).date().isoformat()
+    except (TypeError, ValueError):
+        return None
+
 def fetch_lever_details(slug: str, posting_id: str) -> dict:
     """Call the Lever individual posting endpoint for extra fields.
 
@@ -19,6 +28,8 @@ def fetch_lever_details(slug: str, posting_id: str) -> dict:
     url = f"https://api.lever.co/v0/postings/{slug}/{posting_id}"
     try:
         resp = SESSION.get(url, headers=HEADERS, timeout=10)
+        if resp.status_code == 404:
+            resp = SESSION.get(url.replace("api.lever.co", "api.eu.lever.co"), headers=HEADERS, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             loc = data.get("categories", {}).get("location", "")
@@ -37,6 +48,11 @@ def scrape_lever(
     # use Lever's v0 public postings endpoint which returns all jobs as a
     # flat JSON array. mode=json returns structured data not an HTML page.
     url = f"https://api.lever.co/v0/postings/{slug}?mode=json"
+    # European employers (Cirrus Logic, Quantinuum) live on Lever's EU host, which the US host
+    # answers with 404
+    probe = SESSION.get(url, headers=HEADERS, timeout=15)
+    if probe.status_code == 404:
+        url = f"https://api.eu.lever.co/v0/postings/{slug}?mode=json"
     count = 0
     try:
         resp = SESSION.get(url, headers=HEADERS, timeout=15)
@@ -70,6 +86,10 @@ def scrape_lever(
                     "location":  location,
                     "work_mode": work_mode,
                     "source":    "Lever",
+                    "description": job.get("descriptionPlain", ""),
+                    "opening_date": _lever_date(job.get("createdAt")),
+                    "salary_min": (job.get("salaryRange") or {}).get("min"),
+                    "salary_max": (job.get("salaryRange") or {}).get("max"),
                 }):
                     count += 1
             elif is_relevant_job(title, company_name, location):
