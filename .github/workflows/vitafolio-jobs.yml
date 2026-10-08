@@ -22,7 +22,9 @@ permissions:
 
 jobs:
   push:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # runs after any finished scrape: a run cut off at its time limit still saved what it found, and
+    # the push only sends roles stamped in the last two days, so nothing half-finished goes out
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

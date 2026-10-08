@@ -21,6 +21,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- The Vitafolio push runs after any finished scrape, not only a fully successful one, since a run cut off at its time limit has already saved what it found.
 - Both UK and abroad need evidence. UK means a UK town, county, London borough, postcode or a place the map has pinned in Great Britain. Abroad means a country, a US, Canadian or Australian state code, a known foreign city or a place the map has pinned outside the UK. A remote label, a region label and a place with no evidence either way all stay off. Northern Ireland is the UK.
 - Every workflow job has a time limit and Workday reads at most 200 results per employer.
 - One rule set decides every role, whatever the source. A role must name computing, electronics, data, quant or engineering work. Commercial, people and back-office roles (HR, compliance, investment banking, sales, editing, supply chain and similar) are kept out. Civil, mechanical, aerospace and energy student roles are kept under a new Other Engineering category, while full-time jobs stay computing and electronics only.
