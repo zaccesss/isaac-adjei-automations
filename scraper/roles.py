@@ -75,7 +75,8 @@ def classify(title: str):
         return "placement"
     if _has(INSIGHT, t):
         return "insight"
-    if _has(GRADUATE, t):
+    # employers' "Campus - Full Time" listings are their graduate intake
+    if _has(GRADUATE, t) or (re.search(r"\bcampus\b", t) and re.search(r"\bfull[- ]time\b", t)):
         return "graduate"
     if intern:
         return "internship"

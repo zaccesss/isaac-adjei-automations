@@ -107,7 +107,7 @@ def scrape_workday(
                 ext_url = job.get("externalPath", "")
                 job_url = (
                     f"https://{subdomain}.wd{wdnum}.myworkdayjobs.com"
-                    f"/en-US/{site_id}/job{ext_url}"
+                    f"/en-US/{site_id}{ext_url}"  # externalPath already starts with /job/
                 ) if ext_url else ""
                 if is_relevant(title, company_name, location_text):
                     if insert_job(ctx, {

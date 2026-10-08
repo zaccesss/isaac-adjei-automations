@@ -3,7 +3,7 @@
 # the final check every role passes before it reaches the dashboard: the shared role rules, the
 # recruitment cycle and UK only, with a blank location trusted only from a UK-only board.
 
-from scraper.db import gate
+from scraper.db import company_key, dedupe_key, gate
 from scraper.locations import MULTI_LOCATION_RE
 
 
@@ -19,8 +19,8 @@ def test_a_uk_student_role_in_the_cycle_passes():
 
 def test_apprenticeships_and_past_cycles_are_kept_off():
     assert gate(job(role="Level 3 Software Apprenticeship")) == "apprenticeship"
-    assert gate(job(role="Summer Internship 2026")) == "outside the cycle"
-    assert gate(job(role="Graduate Scheme 2025")) == "outside the cycle"
+    assert gate(job(role="Software Summer Internship 2026")) == "outside the cycle"
+    assert gate(job(role="Graduate Software Scheme 2025")) == "outside the cycle"
 
 
 def test_student_roles_abroad_are_flagged_and_other_roles_kept_out():
@@ -46,3 +46,21 @@ def test_multi_location_placeholders_are_recognised():
     assert MULTI_LOCATION_RE.match("2 Locations")
     assert MULTI_LOCATION_RE.match("12 locations")
     assert not MULTI_LOCATION_RE.match("London")
+
+
+def test_non_technical_roles_are_kept_out():
+    assert gate(job(role="2027 Human Resources Analyst Summer Internship")) == "not a tech or engineering role"
+    assert gate(job(role="Summer Internship")) == "not a tech or engineering role"
+
+
+def test_a_title_naming_another_country_outranks_the_location():
+    assert gate(job(role="Software Engineer Intern, Summer 2027 - United States", location="London, UK")) == "abroad"
+    assert gate(job(role="2027 Software Engineer Program - Glasgow, London", location="London, UK")) is None
+
+
+def test_employer_name_variants_share_one_key():
+    assert company_key("Barclays Bank Plc") == company_key("Barclays") == "barclays"
+    assert company_key("NXP Semiconductors") == company_key("NXP")
+    assert company_key("Man Group plc") == company_key("Man Group")
+    assert company_key("Tesco Group") == company_key("Tesco Ireland") == "tesco"
+    assert dedupe_key("Snap Inc.", "Machine Learning Engineering Intern") == dedupe_key("Snap", "Machine Learning Engineering Intern")

@@ -43,6 +43,7 @@ NOW = datetime(2026, 10, 8, tzinfo=timezone.utc)
     ("Quant Research Associate Programme", "graduate"),
     ("Post-graduate Teaching Assistant", None),
     ("Junior Software Engineer", None),
+    ("Campus - Full Time - Software Engineer - 2027 (UK - Burgess Hill)", "graduate"),
 ])
 def test_titles_are_classified_by_whole_words(title, kind):
     assert classify(title) == kind

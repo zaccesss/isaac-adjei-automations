@@ -19,6 +19,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- One rule set decides every role, whatever the source. A role must name computing, electronics, data, quant or engineering work. Commercial, people and back-office roles (HR, compliance, investment banking, sales, editing, supply chain and similar) are kept out. Civil, mechanical, aerospace and energy student roles are kept under a new Other Engineering category, while full-time jobs stay computing and electronics only.
+- The tab comes from the title: only a UK student board may call an untitled role an internship. "Campus - Full Time" listings are graduate roles. Categories are recomputed on every scrape so a refresh corrects older ones, with whole-word matching and the most specific category first.
+- Workday links no longer double their `/job` path, which sent every Workday role to an error page.
+- Employer names are matched without case or endings (plc, Ltd, Group, Bank, UK, Ireland), so the same role from "Barclays" and "Barclays Bank Plc" is one row. "New York" no longer gains a UK suffix and a title naming another country files the role as abroad.
 - Civil, structural, bridge, traffic, highways, water, drainage, planning, surveying and architectural roles are no longer tech roles for the dashboard. "Quant" matches whole words, so quantum research is not filed as Quant Developer.
 - The dashboard is UK only. Europe and priority companies' foreign offices are no longer accepted.
 - Tidied code comments and the repository docs.

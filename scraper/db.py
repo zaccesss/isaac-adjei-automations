@@ -6,7 +6,7 @@ from . import config
 from datetime import datetime, timedelta, timezone
 from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
-from .filters import detect_category
+from .filters import _NON_TECH_ROLE_RE, _has_tech_keyword, detect_category, infer_type
 from .http import is_url_alive
 from .locations import MULTI_LOCATION_RE, is_uk, normalize_location
 from .roles import classify, in_cycle
@@ -29,7 +29,8 @@ def dedupe_key(company: str, role: str, url: str = "") -> str:
     else:
         # fall back to company+role when there is no URL. Both fields are lower-cased and
         # stripped so "Google" and "google" hash identically.
-        raw = f"{company.lower().strip()}|{role.lower().strip()}"
+        # the employer's cleaned name, so "Barclays" and "Barclays Bank Plc" are one company
+        raw = f"{company_key(company)}|{re.sub(r'[^a-z0-9]+', ' ', role.lower()).strip()}"
     # the normalised text is the key itself. Keys only live in memory and are rebuilt from the table each run, so there is
     # nothing to hash: a plain string compares exactly, cannot collide and is not sensitive data being run through a hash.
     return raw
@@ -145,6 +146,25 @@ UK_ONLY_BOARDS = {
     "Gradcracker", "TARGETjobs", "Milkround", "RateMyPlacement", "Prospects", "Bright Network",
     "The Trackr", "StudentJob", "E4S", "Reed", "Adzuna", "Jooble",
 }
+# a title that names a country or city abroad outranks a London location field
+_TITLE_ABROAD = re.compile(
+    r"\b(united states|usa|u\.s\.|new york|san francisco|seattle|boston|chicago|texas|california|canada|"
+    r"toronto|vancouver|australia|sydney|melbourne|ireland|dublin|india|bangalore|singapore|hong kong|"
+    r"germany|berlin|munich|france|paris|netherlands|amsterdam|spain|madrid|switzerland|zurich|poland|"
+    r"warsaw|japan|tokyo|china|shanghai|brazil|sao paulo|mexico|dubai)\b",
+    re.IGNORECASE,
+)
+_TITLE_UK = re.compile(r"\b(uk|united kingdom|london|england|scotland|wales|glasgow|edinburgh|manchester|belfast)\b", re.IGNORECASE)
+
+
+def company_key(company: str) -> str:
+    """An employer's name without case, punctuation or endings: "Barclays Bank Plc" is "barclays"."""
+    name = re.sub(r"[^a-z0-9 ]+", " ", (company or "").lower())
+    name = re.sub(r"\b(plc|ltd|limited|llp|llc|inc|corp|corporation|group|holdings|company|co|the|uk|ireland|"
+                  r"bank|international|technologies|technology|semiconductors|industries|lp|l p)\b", " ", name)
+    return re.sub(r"\s+", " ", name).strip()
+
+
 def gate(job: dict, uk_places=frozenset()):
     """The reason a role is kept off the dashboard; None when it may be stored.
 
@@ -152,11 +172,15 @@ def gate(job: dict, uk_places=frozenset()):
     and UK roles only. A blank location is trusted only from a UK-only board.
     """
     role = job.get("role", "")
+    if _NON_TECH_ROLE_RE.search(role) or not _has_tech_keyword(role.lower()):
+        return "not a tech or engineering role"
     if classify(role) == "apprenticeship":
         return "apprenticeship"
     if not in_cycle(role):
         return "outside the cycle"
     location = job.get("location") or ""
+    if _TITLE_ABROAD.search(role) and not _TITLE_UK.search(role):
+        location = _TITLE_ABROAD.search(role).group(0)
     known_uk = location.strip().lower() in uk_places
     if is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS):
         return None
@@ -171,6 +195,12 @@ def gate(job: dict, uk_places=frozenset()):
 def insert_job(ctx, job: dict) -> bool:
     reason = gate(job, ctx.uk_places)
     job["abroad"] = reason == "abroad"
+    # the tab comes from the title; only a UK student board may call an untitled role an internship
+    titled = infer_type(job["role"], default="")
+    if titled:
+        job["type"] = titled
+    elif job.get("source") not in UK_ONLY_BOARDS:
+        job["type"] = "Full-time Job"
     if reason == "abroad":
         reason = None
     if reason:
@@ -272,7 +302,7 @@ def insert_job(ctx, job: dict) -> bool:
         "starred":      False,
         "last_scraped_at": datetime.now(timezone.utc).isoformat(),
         "sponsors_visa": job.get("sponsors_visa", None),
-        "category":     job.get("category") or detect_category(job["company"], job["role"]),
+        "category":     detect_category(job["company"], job["role"]),
         # the app stores these as the text labels "Yes"/"No"/"Optional", so the scraper writes matching
         # strings rather than a Python bool that PostgREST would coerce to "true".
         "cv_required":            job.get("cv_required") or "Yes",
@@ -286,7 +316,8 @@ def insert_job(ctx, job: dict) -> bool:
     # the daily re-scrape from quietly reverting the AI categorisation and salary/work mode.
     patch = {
         k: v for k, v in record.items()
-        if k in SCRAPER_FIELDS and k != "category" and v not in (None, "", [])
+        # category is deterministic now, so a refresh corrects one filed under older rules
+        if k in SCRAPER_FIELDS and v not in (None, "", [])
     }
 
     # known URL -> refresh the scraper-owned fields in place. Nothing is deleted or duplicated.

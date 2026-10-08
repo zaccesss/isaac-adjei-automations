@@ -102,10 +102,10 @@ def normalize_location(location: str) -> str:
         "ireland", "berlin", "amsterdam", "paris", "lisbon", "zurich",
     ]):
         return stripped
-    # known bare UK city - append ", UK"
-    for city in UK_CITIES:
-        if city in lower:
-            return f"{stripped}, UK"
+    # a bare UK city gains ", UK"; whole words and the foreign-namesake check stop
+    # "New York" becoming "New York, UK"
+    if is_uk(stripped):
+        return f"{stripped}, UK"
     return stripped
 
 
