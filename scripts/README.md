@@ -26,6 +26,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`geocode-locations.mjs`](geocode-locations.mjs) | Node | none (see STATUS.md) | Geocodes new `applications.location` strings through OpenCage (Nominatim fallback) into the portfolio's `location_geocodes` cache, feeding the Applications map |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
 | [`job-scraper.py`](job-scraper.py) | Python | job-scraper | Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
+| [`push-vitafolio-jobs.py`](push-vitafolio-jobs.py) | Python | vitafolio-jobs | Sends the fresh UK roles from employers' own hiring systems (Greenhouse, Lever, Ashby, Recruitee and Personio) to Vitafolio's Jobs page after each scrape. Job-board rows are never sent, since their terms do not allow republishing. Each link is checked before it goes |
 
 ## Shared helper
 
@@ -59,11 +60,12 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `geocode-locations.mjs` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENCAGE_API_KEY` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` |
 | `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
+| `push-vitafolio-jobs.py` | `VITAFOLIO_JOBS_URL`, `VITAFOLIO_JOBS_TOKEN` (without both the script does nothing) |
 
 Some scripts also read **optional behaviour flags** that are not secrets and that you do not provision:
 the workflows set them and the code has sensible defaults. These are `SCRAPER_MODE` /
 `SCRAPER_BUDGET_MIN` / `SCRAPER_AI_BUDGET` / `SCRAPER_AI_TEST` (job-scraper), `RECATEGORISE_DRY_RUN`
-(recategorise), `FORCE` (bypasses the UK-hour gate and idempotency on a manual run) and `TEST_EMAIL` /
+(recategorise), `VITAFOLIO_DRY_RUN` (push-vitafolio-jobs prints what it would send), `FORCE` (bypasses the UK-hour gate and idempotency on a manual run) and `TEST_EMAIL` /
 `TEST_TO` (a one-off test send from the reminder jobs). They are listed, commented, at the bottom of
 [`.env.example`](../.env.example). The authoritative environment for each job is the `env:` block in its
 [workflow](../.github/workflows/README.md).

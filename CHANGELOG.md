@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- The scripts README and `.env.example` cover `push-vitafolio-jobs.py`: what it sends, the `VITAFOLIO_JOBS_URL` and `VITAFOLIO_JOBS_TOKEN` it needs and the `VITAFOLIO_DRY_RUN` flag.
 - About 160 more employers, each checked live against its job board: quant and trading firms, UK banks and fintechs, semiconductors and electronics, defence and aerospace, energy and cyber security. Lever falls back to its EU server for European employers.
 - Salary, posted date and the full advert are stored for every role whose source gives them (Greenhouse, Lever, Ashby, Recruitee, Adzuna and Reed), so the dashboard can show and chart them.
 - Student roles outside the UK (internships, placements, spring weeks and graduate schemes) are kept with `abroad` set for the dashboard's Abroad tab. Full-time jobs abroad, multi-location placeholders and a bare "Remote" are still kept out.
