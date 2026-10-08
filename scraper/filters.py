@@ -69,7 +69,9 @@ _NON_TECH_ROLE_RE = re.compile(
     r"\b(sales|account (executive|manager)|business development|recruiter|"
     r"recruiting|talent acquisition|marketing|paralegal|legal counsel|"
     r"accountant|payroll|procurement|customer success|copywriter|"
-    r"community manager|hr\b|people operations|office manager)\b",
+    r"community manager|hr\b|people operations|office manager|civil engineer|civil engineering|structural|"
+    r"bridge|bridges|traffic|highways|geotechnical|drainage|water industry|wastewater|planner|planning|"
+    r"quantity surveyor|building surveyor|surveyor|architectural|landscape|town planning)\b",
     re.IGNORECASE,
 )
 
@@ -132,19 +134,14 @@ def is_relevant(
 ) -> bool:
     """True if this internship/placement/graduate role should be saved.
 
-    Requires student term + tech keyword + UK/Europe location. The location
-    check accepts any UK city, Remote/Hybrid and major European tech hubs.
-    For priority companies an empty or unknown location is also accepted
-    because they often have UK offices not labelled in every posting.
+    Requires a student term and a tech keyword with no non-tech role word. Where it is decides
+    only which tab it lands in, UK or Abroad, so the final gate in insert_job settles location.
     """
     if not is_student_role(title, dept_names):
         return False
     if not _has_tech_keyword(title.lower()):
         return False
-    if _NON_TECH_ROLE_RE.search(title):
-        return False
-    is_priority = any(p in company.lower() for p in PRIORITY_COMPANIES)
-    return is_location_ok(location, is_priority)
+    return not _NON_TECH_ROLE_RE.search(title)
 
 
 # the dashboard's type names for the shared kinds of role
@@ -196,7 +193,7 @@ def detect_category(company: str, role: str) -> str:
     r = role.lower()
     if any(f in c for f in _FAANG):
         return "FAANG+"
-    if any(q in c for q in _QUANT_COMPANIES) or any(t in r for t in ("quant", "trading", "algorithmic", "derivatives", "fixed income")):
+    if any(q in c for q in _QUANT_COMPANIES) or (re.search(r"\bquant(itative)?\b", r) or any(t in r for t in ("trading", "algorithmic", "derivatives", "fixed income"))):
         return "Quant Developer"
     if (_AI_RE.search(r) or any(t in r for t in ("machine learning", "artificial intelligence", "deep learning", "llm", "generative ai", "nlp", "computer vision", "neural network"))):
         return "AI and Machine Learning"

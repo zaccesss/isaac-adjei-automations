@@ -8,7 +8,7 @@ from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
 from .filters import detect_category
 from .http import is_url_alive
-from .locations import is_uk, normalize_location
+from .locations import MULTI_LOCATION_RE, is_uk, normalize_location
 from .roles import classify, in_cycle
 
 
@@ -121,7 +121,7 @@ SCRAPER_FIELDS = {
     "company", "role", "type", "location", "deadline", "opening_date",
     "salary_range", "work_mode", "source", "sponsors_visa", "category", "last_scraped_at",
     "last_year_opening", "housing_location", "cv_required", "cover_letter_required",
-    "written_answers",
+    "written_answers", "abroad",
 }
 
 
@@ -136,6 +136,9 @@ def _cover_letter_label(v):
         return v
     return None
 
+
+# the kinds of role kept for the Abroad tab when they are outside the UK
+STUDENT_KINDS = {"internship", "placement", "insight", "graduate"}
 
 # boards that list UK roles only, so a listing with no location from them is still a UK role
 UK_ONLY_BOARDS = {
@@ -155,13 +158,21 @@ def gate(job: dict, uk_places=frozenset()):
         return "outside the cycle"
     location = job.get("location") or ""
     known_uk = location.strip().lower() in uk_places
-    if not (is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS)):
-        return "outside the UK"
-    return None
+    if is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS):
+        return None
+    # a named place abroad is kept for a student role, flagged for the Abroad tab
+    # a bare "Remote" or "Worldwide" names no country, so it is unknown rather than abroad
+    vague = re.fullmatch(r"\s*(remote|hybrid|anywhere|worldwide|global|multiple locations)\s*", location, re.IGNORECASE)
+    if location.strip() and not vague and not MULTI_LOCATION_RE.match(location) and classify(role) in STUDENT_KINDS:
+        return "abroad"
+    return "outside the UK"
 
 
 def insert_job(ctx, job: dict) -> bool:
     reason = gate(job, ctx.uk_places)
+    job["abroad"] = reason == "abroad"
+    if reason == "abroad":
+        reason = None
     if reason:
         ctx.gate_rejects[reason] = ctx.gate_rejects.get(reason, 0) + 1
         return False
@@ -267,6 +278,7 @@ def insert_job(ctx, job: dict) -> bool:
         "cv_required":            job.get("cv_required") or "Yes",
         "cover_letter_required":  _cover_letter_label(job.get("cover_letter_required")),
         "written_answers":        job.get("written_answers"),
+        "abroad":       bool(job.get("abroad")),
     }
     # only the scraper-owned columns are written to an existing row. A refresh never overwrites
     # an AI-enriched field with an empty or regex value. category is left untouched (it is set on insert
