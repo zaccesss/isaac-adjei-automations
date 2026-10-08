@@ -36,11 +36,17 @@ def _plain(text: str) -> str:
     return re.sub(r"[ \t]+", " ", re.sub(r"\n\s*\n+", "\n\n", text)).strip()
 
 
+# Greenhouse's own job page hosts, matched exactly so a look-alike such as evilgreenhouse.io never counts
+GREENHOUSE_HOSTS = {
+    "boards.greenhouse.io", "job-boards.greenhouse.io", "boards.eu.greenhouse.io", "job-boards.eu.greenhouse.io",
+}
+
+
 def board_of(url: str):
     """(board, slug, job id) for hiring systems whose public API returns the advert, else None."""
     parts = urlparse(url or "")
     host, path = parts.netloc.lower(), [p for p in parts.path.split("/") if p]
-    if host.endswith("greenhouse.io") and len(path) >= 3 and path[-2] == "jobs":
+    if host in GREENHOUSE_HOSTS and len(path) >= 3 and path[-2] == "jobs":
         return ("greenhouse", path[0], path[-1])
     if host == "jobs.lever.co" and len(path) >= 2:
         return ("lever", path[0], path[1])
