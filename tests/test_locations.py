@@ -43,3 +43,9 @@ def test_uk_only_even_for_priority_companies():
     assert not is_location_ok("US, MA, Chelmsford", False)
     assert is_location_ok("Berlin; London; Munich", False)
     assert is_location_ok("Belfast, Northern Ireland", False)
+
+
+def test_new_york_never_gains_a_uk_suffix():
+    from scraper.locations import normalize_location
+    assert normalize_location("New York") == "New York"
+    assert normalize_location("Bristol") == "Bristol, UK"

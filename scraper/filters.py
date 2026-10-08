@@ -2,7 +2,7 @@
 
 import re
 from .data.companies import PRIORITY_COMPANIES, STUDENT_DEPTS
-from .data.keywords import EVENT_TERMS, TECH_KEYWORDS
+from .data.keywords import EVENT_TERMS
 from .locations import is_location_ok
 from .roles import classify
 
@@ -46,32 +46,48 @@ def _any_word(terms, text: str) -> bool:
     return any(re.search(rf"\b{re.escape(term)}\b", text) for term in terms)
 
 
-# short tech keywords that are common letter runs inside ordinary words get
-# whole-word treatment; the longer keywords stay as substrings so "cybersecurity"
-# still matches "cyber" and "fullstack" still matches "full stack" variants.
-_WHOLE_WORD_TECH = {"ai", "rf", "qa", "swe", "hft", "asic", "vlsi", "soc", "fpga", "test", "quant"}
+# the roles this tracker follows: computing, electronics, data and quant work plus the wider
+# engineering disciplines (mechanical, civil, aerospace, energy). Every term is a whole word, so
+# "ai" never matches inside "maintain" and "it" never inside "with". Broad words that also name
+# non-technical work ("analyst", "product", "research") are deliberately left out.
+_TECH_OR_ENGINEERING_RE = re.compile(
+    r"\b(software|developers?|development engineer|programmer|programming|coding|engineer|engineers|"
+    r"engineering|data|machine learning|ai|ml|artificial intelligence|deep learning|computer vision|"
+    r"nlp|llm|cyber|cybersecurity|security engineer|cloud|devops|devsecops|sre|site reliability|"
+    r"hardware|electronic|electronics|electrical|embedded|firmware|fpga|asic|vlsi|rf|semiconductor|"
+    r"silicon|chip|pcb|photonics|robotics|mechatronics|quant|quants|quantitative|algorithmic|trading|"
+    r"trader|technology|technologies|tech|it|computing|computer|computational|digital|systems|"
+    r"network|networks|infrastructure|platform|web|mobile|ios|android|qa|test|testing|automation|"
+    r"analytics|scientist|physics|mathematics|maths|statistics|mechanical|civil|structural|"
+    r"aerospace|aeronautical|avionics|manufacturing|process|chemical|nuclear|energy|materials|"
+    r"automotive|power|telecoms?|telecommunications|wireless|signal processing|space|satellite|"
+    r"defence|design engineer|cad|simulation|modelling|operational technology|ot|backend|back-end|frontend|"
+    r"front-end|full stack|full-stack|fullstack|soc|verification|validation|nand|dram|memory|reliability|"
+    r"technical|gpu|cpu|compiler|compilers|kernel|linux|database|databases|sql|python|java|"
+    r"research engineer|research scientist|communications engineer|communications engineering|quantum|"
+    r"solutions architect|software architect|cloud architect)\b",
+    re.IGNORECASE,
+)
 
 
 def _has_tech_keyword(title_lower: str) -> bool:
-    for k in TECH_KEYWORDS:
-        if k in _WHOLE_WORD_TECH:
-            if re.search(rf"\b{re.escape(k)}\b", title_lower):
-                return True
-        elif k in title_lower:
-            return True
-    return False
+    """True when the title names computing, electronics, data, quant or engineering work."""
+    return bool(_TECH_OR_ENGINEERING_RE.search(title_lower or ""))
 
 
-# titles that are commercial, people or back-office roles are never tracked,
-# whatever else the title contains - this kills the sales and recruiting noise
-# that priority companies otherwise wash in through the looser location filter.
+# commercial, people and back-office roles are never tracked, whatever else the title says:
+# a technology word next to them ("HR Technology Analyst", "Investment Banking, Technology")
+# does not make the work technical
 _NON_TECH_ROLE_RE = re.compile(
-    r"\b(sales|account (executive|manager)|business development|recruiter|"
-    r"recruiting|talent acquisition|marketing|paralegal|legal counsel|"
-    r"accountant|payroll|procurement|customer success|copywriter|"
-    r"community manager|hr\b|people operations|office manager|civil engineer|civil engineering|structural|"
-    r"bridge|bridges|traffic|highways|geotechnical|drainage|water industry|wastewater|planner|planning|"
-    r"quantity surveyor|building surveyor|surveyor|architectural|landscape|town planning)\b",
+    r"\b(sales|account (executive|manager)|business development|recruiter|recruiting|recruitment|"
+    r"talent acquisition|human resources|hr|people operations|marketing|paralegal|legal|lawyer|"
+    r"solicitor|accountant|accounting|payroll|procurement|sourcing|supply chain|customer success|"
+    r"customer service|copywriter|editorial|editing|journalism|journalist|community manager|"
+    r"office manager|compliance|private equity|investment banking|corporate banking|global banking|"
+    r"banking analyst|investment analyst|financial analyst|finance analyst|wealth|hospitality|"
+    r"food|retail|real estate|events|internal communications|corporate communications|public relations|"
+    r"actuarial|insurance analyst|risk analyst|credit analyst|kyc|capital markets|"
+    r"(?<!technology )audit(?! technology)|(?<!it )auditor|tax(?! technology))\b",
     re.IGNORECASE,
 )
 
@@ -111,14 +127,14 @@ def is_relevant_job(
     company: str = "",
     location: str = "",
 ) -> bool:
-    """True if this is a full-time tech role for the Jobs tab.
+    """True if this is a full-time computing, electronics, data or quant role for the Jobs tab.
 
-    Jobs use the same UK/Europe location filter as internships - no point
-    showing a San Francisco full-time role to someone based in the UK.
+    Full-time roles in the wider engineering disciplines are left out so the Jobs tab stays
+    focused; student roles in them are kept under Other Engineering.
     """
     if is_student_role(title, None):
         return False
-    if not _has_tech_keyword(title.lower()):
+    if not _has_tech_keyword(title.lower()) or detect_category(company, title) == "Other Engineering":
         return False
     if _NON_TECH_ROLE_RE.search(title):
         return False
@@ -188,25 +204,40 @@ _FAANG = {"google", "meta", "amazon", "apple", "microsoft", "netflix", "deepmind
 _QUANT_COMPANIES = {"citadel", "optiver", "jane street", "imc", "jump", "two sigma", "susquehanna", "hudson river", "de shaw", "akuna", "virtu", "sig ", "drw", "flow traders"}
 _AI_RE = re.compile(r'\bai\b')
 
+def _has(pattern: str, text: str) -> bool:
+    return bool(re.search(rf"\b(?:{pattern})\b", text))
+
+
 def detect_category(company: str, role: str) -> str:
-    c = company.lower()
-    r = role.lower()
+    """The dashboard category for a role: the employer first for FAANG+ and the trading firms,
+    then the role's own words, most specific first. Whole words only throughout."""
+    c = (company or "").lower()
+    r = (role or "").lower()
     if any(f in c for f in _FAANG):
         return "FAANG+"
-    if any(q in c for q in _QUANT_COMPANIES) or (re.search(r"\bquant(itative)?\b", r) or any(t in r for t in ("trading", "algorithmic", "derivatives", "fixed income"))):
+    if any(q in c for q in _QUANT_COMPANIES) or _has(r"quant|quants|quantitative|algorithmic trading|trader|trading|market making|derivatives", r):
         return "Quant Developer"
-    if (_AI_RE.search(r) or any(t in r for t in ("machine learning", "artificial intelligence", "deep learning", "llm", "generative ai", "nlp", "computer vision", "neural network"))):
+    if _has(r"ai|ml|machine learning|artificial intelligence|deep learning|llm|generative ai|nlp|computer vision|neural networks?|reinforcement learning", r):
         return "AI and Machine Learning"
-    if any(t in r for t in ("data science", "data scientist", "data analyst", "data engineer", "analytics engineer", "business intelligence", "bi analyst")):
-        return "Data Science"
-    if any(t in r for t in ("embedded", "firmware", "fpga", "vhdl", "rtos", "bare metal", "hardware engineer", "electronics engineer", "circuit", "microcontroller", "iot engineer")):
-        return "Embedded"
-    if any(t in r for t in ("devops", "devsecops", "cloud engineer", "cloud developer", "site reliability", "sre", "platform engineer", "infrastructure engineer", "kubernetes", "terraform", "aws engineer", "azure engineer", "gcp ")):
-        return "DevOps and Infrastructure"
-    if any(t in r for t in ("security", "cyber", "penetration", "pen test", "soc analyst", "information security", "appsec", "threat")):
+    if _has(r"cyber|cybersecurity|security|penetration|pen test|soc analyst|appsec|threat", r):
         return "Cyber Security"
-    if any(t in r for t in ("consult", "advisory", "business analyst", "management information")):
-        return "Tech Consulting"
-    if any(t in r for t in ("it support", "service desk", "it technician", "helpdesk", "1st line", "2nd line")):
+    if _has(r"data science|data scientist|data analyst|data analytics|data engineer|data engineering|analytics engineer|business intelligence|bi analyst|data", r):
+        return "Data Science"
+    if _has(r"embedded|firmware|fpga|vhdl|verilog|rtos|bare metal|microcontroller|iot", r):
+        return "Embedded"
+    if _has(r"hardware|electronic|electronics|electrical|rf|asic|vlsi|semiconductor|silicon|chip|pcb|analogue|analog|photonics|power electronics|wireless|telecoms?|signal processing", r):
+        return "Hardware"
+    if _has(r"devops|devsecops|cloud|site reliability|sre|platform engineer|infrastructure engineer|kubernetes|terraform", r):
+        return "DevOps and Infrastructure"
+    if _has(r"it support|service desk|it technician|helpdesk|it operations|it intern|it engineer|information technology|it|end user", r):
         return "IT"
+    if _has(r"consulting|consultant|advisory|business analyst|technology analyst|change management|management information", r):
+        return "Tech Consulting"
+    if _has(r"mechanical|civil|structural|structures|bridges?|highways|traffic|rail|railway|tunnelling|geotechnical|drainage|water|wastewater|building services|surveying|aerospace|aeronautical|avionics|manufacturing|process engineer|chemical|nuclear|energy|materials|automotive|mechatronics|robotics|systems engineering|systems engineer|design engineer|production engineer|operations engineer|quality engineer|test engineer|landing gear|propulsion|thermal|fluids|space|satellite", r) and not _has(r"software|developer|programmer", r):
+        return "Other Engineering"
+    # an engineering title with no computing word is one of the wider disciplines
+    if _has(r"engineer|engineers|engineering|aerodynamics|lethality|warheads?|propulsion|fuel systems", r) and not _has(
+        r"software|developer|programmer|technology|tech|digital|data|it|cloud|web|computing|computer|systems engineer|devops", r
+    ):
+        return "Other Engineering"
     return "Software Engineering"

@@ -1,7 +1,7 @@
 # cases derived from the inline comments in scraper/filters.py: the whole-word intern
 # match, the Internal exclusions, the senior-title guard on the department fallback and
 # the per-category ordering of infer_type.
-from scraper.filters import detect_category, infer_type, is_relevant, is_student_role, resolve_type
+from scraper.filters import detect_category, infer_type, is_relevant, is_relevant_job, is_student_role, resolve_type
 
 
 def test_internal_titles_are_rejected():
@@ -49,8 +49,10 @@ def test_is_relevant_requires_student_tech_and_location():
     assert not is_relevant("Marketing Intern", "Acme", "London")
     # location no longer decides relevance; the gate files a student role abroad instead
     assert is_relevant("Software Intern", "Acme", "New York")
-    assert not is_relevant("Graduate Civil Engineer", "Acme", "London")
-    assert not is_relevant("Graduate Bridge Structures Engineer", "Acme", "London")
+    # the wider engineering disciplines are kept for student roles, filed under Other Engineering
+    assert is_relevant("Graduate Civil Engineer", "Acme", "London")
+    assert detect_category("Acme", "Graduate Bridge Structures Engineer") == "Other Engineering"
+    assert not is_relevant_job("Senior Civil Engineer", "Acme", "London")
 
 
 def test_whole_word_terms_stop_the_lookalikes():
@@ -94,3 +96,31 @@ def test_resolve_type_sends_signal_free_titles_to_jobs():
     assert resolve_type("Software Engineer Industrial Placement") == "Industrial Placement"
     assert resolve_type("Engineering Open Day", fallback="Internship") == "Event"
     assert resolve_type("Aarhus Networking Event for Students", fallback="Internship") == "Event"
+
+
+def test_non_technical_roles_are_kept_off_whatever_the_title_adds():
+    # real titles from the dashboard that slipped through the old broad keywords
+    for title in [
+        "2027 Human Resources Analyst Summer Internship Programme",
+        "Banking, Investment Banking, Summer Analyst 2027",
+        "Production Editing Internship 2026",
+        "Product - Food Internship",
+        "2027 Compliance Analyst Summer Internship Programme",
+        "Private Equity Investment Intern, Technology",
+        "Product - Supply Chain Internship",
+        "Investment Analyst Internship - Information Technology Sector",
+        "2027 Risk Analyst Summer Internship Programme",
+    ]:
+        assert not is_relevant(title, "Acme", "London"), title
+
+
+def test_categories_follow_the_role():
+    assert detect_category("The Opportunity Hub", "Software Development Intern - Banking Technology") == "Software Engineering"
+    assert detect_category("Babcock", "Mechanical Engineering Undergraduate Summer Internship") == "Other Engineering"
+    assert detect_category("Airbus", "Landing Gear Technical Engineering Intern") == "Other Engineering"
+    assert detect_category("BAE Systems", "Undergraduate Software Engineer") == "Software Engineering"
+    assert detect_category("Riverlane", "Quantum Error Correction Researcher") != "Quant Developer"
+    assert detect_category("Cirrus Logic", "Electronic Engineering Internship") == "Hardware"
+    assert detect_category("Amazon", "Security Specialist Intern, Data Centre Security") == "FAANG+"
+    assert detect_category("Acme", "Security Specialist Intern, Data Centre Security") == "Cyber Security"
+    assert detect_category("Muller", "IT Intern (Infrastructure)") == "IT"
