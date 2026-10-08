@@ -99,6 +99,9 @@ def scrape_reed(ctx) -> int:
                     "source":   "Reed",
                     "deadline": expiry,
                     "description": job.get("jobDescription", ""),
+                    "opening_date": job.get("date"),
+                    "salary_min": job.get("minimumSalary"),
+                    "salary_max": job.get("maximumSalary"),
                 }):
                     count += 1
 

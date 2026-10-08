@@ -8,7 +8,7 @@ from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
 from .filters import _NON_TECH_ROLE_RE, _has_tech_keyword, detect_category, infer_type
 from .http import is_url_alive
-from .locations import MULTI_LOCATION_RE, is_uk, normalize_location
+from .locations import MULTI_LOCATION_RE, is_abroad, is_uk, normalize_location
 from .roles import classify, in_cycle
 
 
@@ -122,7 +122,7 @@ SCRAPER_FIELDS = {
     "company", "role", "type", "location", "deadline", "opening_date",
     "salary_range", "work_mode", "source", "sponsors_visa", "category", "last_scraped_at",
     "last_year_opening", "housing_location", "cv_required", "cover_letter_required",
-    "written_answers", "abroad",
+    "written_answers", "abroad", "description",
 }
 
 
@@ -154,7 +154,7 @@ _TITLE_ABROAD = re.compile(
     r"warsaw|japan|tokyo|china|shanghai|brazil|sao paulo|mexico|dubai)\b",
     re.IGNORECASE,
 )
-_TITLE_UK = re.compile(r"\b(uk|united kingdom|london|england|scotland|wales|glasgow|edinburgh|manchester|belfast)\b", re.IGNORECASE)
+_TITLE_UK = re.compile(r"\b(uk|united kingdom|london|england|scotland|wales|northern ireland|glasgow|edinburgh|manchester|belfast)\b", re.IGNORECASE)
 
 
 def company_key(company: str) -> str:
@@ -163,6 +163,38 @@ def company_key(company: str) -> str:
     name = re.sub(r"\b(plc|ltd|limited|llp|llc|inc|corp|corporation|group|holdings|company|co|the|uk|ireland|"
                   r"bank|international|technologies|technology|semiconductors|industries|lp|l p)\b", " ", name)
     return re.sub(r"\s+", " ", name).strip()
+
+
+def salary_text(job: dict) -> str:
+    """A tidy annual salary from a source's own minimum and maximum; its own text when it has one.
+
+    Figures under 5,000 are daily or hourly rates the boards do not label, so they are left out.
+    """
+    if job.get("salary_range"):
+        return job["salary_range"]
+    vals = []
+    for k in ("salary_min", "salary_max"):
+        try:
+            v = float(job.get(k) or 0)
+        except (TypeError, ValueError):
+            v = 0
+        if v >= 5000:
+            vals.append(round(v))
+    if not vals:
+        return ""
+    lo, hi = min(vals), max(vals)
+    return f"£{lo:,}" if lo == hi else f"£{lo:,} to £{hi:,}"
+
+
+def plain_date(value):
+    """An ISO date from the forms sources use (2026-10-08, 2026-10-08T... and 08/10/2026)."""
+    if not value:
+        return None
+    v = str(value).strip()
+    m = re.match(r"^(\d{2})/(\d{2})/(\d{4})$", v)
+    if m:
+        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}"
+    return v[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", v) else None
 
 
 def gate(job: dict, uk_places=frozenset()):
@@ -179,17 +211,23 @@ def gate(job: dict, uk_places=frozenset()):
     if not in_cycle(role):
         return "outside the cycle"
     location = job.get("location") or ""
-    if _TITLE_ABROAD.search(role) and not _TITLE_UK.search(role):
-        location = _TITLE_ABROAD.search(role).group(0)
+    title_abroad = _TITLE_ABROAD.search(re.sub(r"northern ireland", " ", role, flags=re.IGNORECASE))
+    if title_abroad and not _TITLE_UK.search(role):
+        location = title_abroad.group(0)
     known_uk = location.strip().lower() in uk_places
     if is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS):
         return None
-    # a named place abroad is kept for a student role, flagged for the Abroad tab
-    # a bare "Remote" or "Worldwide" names no country, so it is unknown rather than abroad
-    vague = re.fullmatch(r"\s*(remote|hybrid|anywhere|worldwide|global|multiple locations)\s*", location, re.IGNORECASE)
-    if location.strip() and not vague and not MULTI_LOCATION_RE.match(location) and classify(role) in STUDENT_KINDS:
-        return "abroad"
-    return "outside the UK"
+    # abroad needs positive evidence (a country, a US state, a known foreign city); a student role
+    # there is kept for the Abroad tab
+    if is_abroad(location):
+        return "abroad" if classify(role) in STUDENT_KINDS else "outside the UK"
+    # a bare "Remote", a "2 Locations" placeholder or a blank from a global board names no country
+    vague = re.fullmatch(r"\s*(remote|hybrid|anywhere|worldwide|global|multiple locations)?\s*", location, re.IGNORECASE)
+    if vague or MULTI_LOCATION_RE.match(location):
+        return "outside the UK"
+    # any other named place is most often a small UK town no list can hold (Brixworth, Thursley,
+    # Barrow-in-Furness), since foreign places are caught above
+    return None
 
 
 def insert_job(ctx, job: dict) -> bool:
@@ -291,11 +329,11 @@ def insert_job(ctx, job: dict) -> bool:
         # leave applied_date as None because scraped roles have not been
         # applied to yet - they sit in "scraped" status until someone pursues them.
         "applied_date": None,
-        "deadline":     job.get("deadline"),
-        "opening_date": job.get("opening_date"),
+        "deadline":     plain_date(job.get("deadline")),
+        "opening_date": plain_date(job.get("opening_date")),
         "last_year_opening": job.get("last_year_opening"),
         "housing_location":  normalize_location(job.get("housing_location", "")) or None,
-        "salary_range": job.get("salary_range", ""),
+        "salary_range": salary_text(job),
         "work_mode":    job.get("work_mode", ""),
         "source":       job.get("source", ""),
         # default starred to False; interesting roles are starred by hand later.
@@ -309,6 +347,8 @@ def insert_job(ctx, job: dict) -> bool:
         "cover_letter_required":  _cover_letter_label(job.get("cover_letter_required")),
         "written_answers":        job.get("written_answers"),
         "abroad":       bool(job.get("abroad")),
+        # the advert as the source gives it, capped so one row never carries a whole careers site
+        "description":  (job.get("description") or "")[:20000] or None,
     }
     # only the scraper-owned columns are written to an existing row. A refresh never overwrites
     # an AI-enriched field with an empty or regex value. category is left untouched (it is set on insert

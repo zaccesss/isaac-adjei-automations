@@ -143,6 +143,7 @@ jobs:
     needs: [api-sources, browser-sources]
     if: failure()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Alert on failure
         env:
@@ -158,6 +159,7 @@ jobs:
     needs: [api-sources, browser-sources]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Healthcheck success

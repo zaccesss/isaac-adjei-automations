@@ -146,6 +146,52 @@ GREENHOUSE_COMPANIES = [
     ("psiquantum",         "PsiQuantum"),
     ("figure",             "Figure"),
     ("agilityrobotics",    "Agility Robotics"),
+    # added October 2026, each checked live against its job board
+    ("optiverus", "Optiver"),
+    ("wehrtyou", "Hudson River Trading"),
+    ("drweng", "DRW"),
+    ("fiveringsllc", "Five Rings"),
+    ("squarepointcapital", "Squarepoint Capital"),
+    ("quberesearchandtechnologies", "Qube Research & Technologies"),
+    ("towerresearchcapital", "Tower Research Capital"),
+    ("schonfeld", "Schonfeld"),
+    ("oldmissioncapital", "Old Mission"),
+    ("quadraturecapital", "Quadrature Capital"),
+    ("point72", "Point72"),
+    ("jumptrading", "Jump Trading"),
+    ("gsacapital", "GSA Capital"),
+    ("mangroup", "Man Group"),
+    ("virtu", "Virtu Financial"),
+    ("xtxmarketstechnologies", "XTX Markets"),
+    ("akunacapital", "Akuna Capital"),
+    ("flowtraders", "Flow Traders"),
+    ("deliveroo", "Deliveroo"),
+    ("netcraft", "Netcraft"),
+    ("ionq", "IonQ"),
+    ("isomorphiclabs", "Isomorphic Labs"),
+    ("dexory", "Dexory"),
+    ("mindfoundry", "Mind Foundry"),
+    ("planetlabs", "Planet"),
+    ("purestorage", "Pure Storage"),
+    ("gocardless", "GoCardless"),
+    ("complyadvantage", "ComplyAdvantage"),
+    ("ebury", "Ebury"),
+    ("tide", "Tide"),
+    ("sumup", "SumUp"),
+    ("blockchain", "Blockchain.com"),
+    ("gymshark", "Gymshark"),
+    ("ohme", "Ohme"),
+    ("zscaler", "Zscaler"),
+    ("wizinc", "Wiz"),
+    ("netskope", "Netskope"),
+    ("pingidentity", "Ping Identity"),
+    ("beyondtrust", "BeyondTrust"),
+    ("abnormalsecurity", "Abnormal Security"),
+    ("recordedfuture", "Recorded Future"),
+    ("chainguard", "Chainguard"),
+    ("grafanalabs", "Grafana Labs"),
+    ("tailscale", "Tailscale"),
+    ("bitwarden", "Bitwarden"),
 ]
 
 # Lever slugs confirmed to return HTTP 200 with real listings.
@@ -156,6 +202,16 @@ LEVER_COMPANIES = [
     ("spotify",      "Spotify"),
     # robotic manipulation - verified live July 2026.
     ("dexterity",    "Dexterity"),
+    # added October 2026, each checked live against its job board
+    ("cirrus", "Cirrus Logic"),
+    ("quantinuum", "Quantinuum"),
+    ("octoenergy", "Octopus Energy"),
+    ("zopa", "Zopa"),
+    ("scottlogic", "Scott Logic"),
+    ("sophos", "Sophos"),
+    ("shieldai", "Shield AI"),
+    ("matillion", "Matillion"),
+    ("farfetch", "Farfetch"),
 ]
 
 # (ashby_slug, display_name) - confirmed against live API.
@@ -202,6 +258,43 @@ ASHBY_COMPANIES = [
     ("axelera",             "Axelera AI"),
     ("etched",              "Etched"),
     ("physicalintelligence", "Physical Intelligence"),
+    # added October 2026, each checked live against its job board
+    ("lendable", "Lendable"),
+    ("humanoid", "Humanoid"),
+    ("faculty", "Faculty"),
+    ("fractile", "Fractile"),
+    ("krakentech", "Kraken Technologies"),
+    ("checkout.com", "Checkout.com"),
+    ("cleo-2", "Cleo"),
+    ("trainline", "Trainline"),
+    ("synthesia", "Synthesia"),
+    ("elevenlabs", "ElevenLabs"),
+    ("quantexa", "Quantexa"),
+    ("snyk", "Snyk"),
+    ("1password", "1Password"),
+    ("vanta", "Vanta"),
+    ("cyberhaven", "Cyberhaven"),
+    ("delinea", "Delinea"),
+    ("drata", "Drata"),
+    ("socure", "Socure"),
+    ("lumai", "Lumai"),
+    ("olix", "Olix"),
+    ("salience-labs", "Salience Labs"),
+    ("vertical-aerospace", "Vertical Aerospace"),
+    ("applied", "Applied Intuition"),
+    ("allica-bank", "Allica Bank"),
+    ("oaknorth", "OakNorth"),
+    ("moneybox", "Moneybox"),
+    ("clearbank", "ClearBank"),
+    ("fundingcircle", "Funding Circle"),
+    ("multiverse", "Multiverse"),
+    ("airwallex", "Airwallex"),
+    ("motorway", "Motorway"),
+    ("paddle", "Paddle"),
+    ("pleo", "Pleo"),
+    ("duffel", "Duffel"),
+    ("elliptic", "Elliptic"),
+    ("zilch", "Zilch"),
 ]
 
 # SmartRecruiters, rebuilt July 2026 after a full live sweep: every one of the 26
@@ -216,6 +309,9 @@ EIGHTFOLD_COMPANIES = [
     # (514 positions). Eightfold is a whole ATS platform, so more tenants can join
     # this list once their exact slug is verified.
     ("stmicroelectronics", "stmicroelectronics.com", "STMicroelectronics"),
+    # added October 2026, each checked live against its job board
+    ("mlp", "mlp.com", "Millennium"),
+    ("hsbc", "hsbc.com", "HSBC"),
 ]
 
 # (slug, display_name) for the Workable widget API - the UK deep-tech startups
@@ -232,6 +328,16 @@ WORKABLE_COMPANIES = [
     ("homey",                            "Homey"),
     ("marshmallow",                      "Marshmallow"),
     ("oxa",                              "Oxa"),
+    # added October 2026, each checked live against its job board
+    ("starling-bank", "Starling Bank"),
+    ("universalquantum", "Universal Quantum"),
+    ("nu-quantum", "Nu Quantum"),
+    ("tokamak-energy", "Tokamak Energy"),
+    ("zeroavia", "ZeroAvia"),
+    ("bridewell", "Bridewell"),
+    ("ripjar", "Ripjar"),
+    ("aegiq", "Aegiq"),
+    ("habitat-energy", "Habitat Energy"),
 ]
 
 # (slug, display_name) for the Recruitee offers API, probed live July 2026:
@@ -268,4 +374,11 @@ SMARTRECRUITERS_COMPANIES = [
     ("Ubisoft2",   "Ubisoft"),
     ("Version1",   "Version 1"),
     ("Visa",       "Visa"),
+    # added October 2026, each checked live against its job board
+    ("BoschGroup", "Bosch"),
+    ("RenesasElectronics", "Renesas"),
+    ("Wise", "Wise"),
+    ("WilliamsRacing", "Williams Racing"),
+    ("LegalAndGeneral", "Legal & General"),
+    ("Endava", "Endava"),
 ]

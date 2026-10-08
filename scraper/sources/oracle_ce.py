@@ -19,6 +19,10 @@ from ..stats import record_stat
 ORACLE_COMPANIES = [
     ("jpmc.fa.oraclecloud.com",     "CX_1001", "JPMorgan Chase"),
     ("edbz.fa.us2.oraclecloud.com", "CX",      "Texas Instruments"),
+    # added October 2026, each checked live against its job board
+    ("ekbq.fa.em2.oraclecloud.com", "CX_2", "Schroders"),
+    ("eofe.fa.us2.oraclecloud.com", "BNY-Careers", "BNY"),
+    ("iagtme.fa.ocs.oraclecloud.com", "CX_2", "Red Bull Racing"),
 ]
 
 _KEYWORDS = ("intern", "graduate", "apprentice", "placement")

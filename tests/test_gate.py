@@ -64,3 +64,16 @@ def test_employer_name_variants_share_one_key():
     assert company_key("Man Group plc") == company_key("Man Group")
     assert company_key("Tesco Group") == company_key("Tesco Ireland") == "tesco"
     assert dedupe_key("Snap Inc.", "Machine Learning Engineering Intern") == dedupe_key("Snap", "Machine Learning Engineering Intern")
+
+
+def test_an_unrecognised_place_is_uk_unless_something_says_abroad():
+    for place in ["Brixworth (Northamptonshire)", "Thursley (Surrey) (Hybrid)", "Barrow-in-Furness (Cumbria)", "Bromley", "Cramlington"]:
+        assert gate(job(location=place)) is None, place
+    assert gate(job(location="Hsinchu")) == "abroad"
+    assert gate(job(location="Santa Clara, CA")) == "abroad"
+    assert gate(job(role="Senior Software Engineer", location="Taipei")) == "outside the UK"
+
+
+def test_northern_ireland_is_the_uk():
+    assert gate(job(role="Technology Graduate Programme - Northern Ireland - September 2027 intake", location="Belfast, UK")) is None
+    assert gate(job(location="Belfast, Northern Ireland")) is None
