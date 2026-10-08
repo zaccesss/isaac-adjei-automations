@@ -8,7 +8,7 @@ from .ai import _ai_fill
 from .dates import CYCLE_CUTOFF, JOB_CUTOFF, is_date_relevant
 from .filters import _NON_TECH_ROLE_RE, _has_tech_keyword, detect_category, infer_type
 from .http import is_url_alive
-from .locations import MULTI_LOCATION_RE, is_abroad, is_uk, normalize_location
+from .locations import is_abroad, is_uk, normalize_location
 from .roles import classify, in_cycle
 
 
@@ -92,11 +92,13 @@ def load_existing_keys(ctx) -> None:
         # every place the map has already pinned in Great Britain counts as UK, which covers the
         # towns no fixed list can (Fleet, Bracknell's villages, a business park's own name)
         for start in range(0, 50_000, 1000):
-            res = ctx.supabase.table("location_geocodes").select("location").eq(
-                "country_code", "GB"
+            res = ctx.supabase.table("location_geocodes").select("location,country_code").not_.is_(
+                "country_code", "null"
             ).range(start, start + 999).execute()
             places = res.data or []
-            ctx.uk_places.update((r.get("location") or "").strip().lower() for r in places)
+            for r in places:
+                key = (r.get("location") or "").strip().lower()
+                (ctx.uk_places if r.get("country_code") == "GB" else ctx.abroad_places).add(key)
             if len(places) < 1000:
                 break
         if not ctx.existing_keys:
@@ -197,7 +199,7 @@ def plain_date(value):
     return v[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", v) else None
 
 
-def gate(job: dict, uk_places=frozenset()):
+def gate(job: dict, uk_places=frozenset(), abroad_places=frozenset()):
     """The reason a role is kept off the dashboard; None when it may be stored.
 
     The same rules Vitafolio applies: no apprenticeships, nothing outside the recruitment cycle
@@ -217,21 +219,17 @@ def gate(job: dict, uk_places=frozenset()):
     known_uk = location.strip().lower() in uk_places
     if is_uk(location) or known_uk or (not location.strip() and job.get("source") in UK_ONLY_BOARDS):
         return None
-    # abroad needs positive evidence (a country, a US state, a known foreign city); a student role
-    # there is kept for the Abroad tab
-    if is_abroad(location):
+    # abroad needs positive evidence: a country, a state code, a known foreign city or a place the
+    # map has already pinned outside the UK
+    if is_abroad(location) or location.strip().lower() in abroad_places:
         return "abroad" if classify(role) in STUDENT_KINDS else "outside the UK"
-    # a bare "Remote", a "2 Locations" placeholder or a blank from a global board names no country
-    vague = re.fullmatch(r"\s*(remote|hybrid|anywhere|worldwide|global|multiple locations)?\s*", location, re.IGNORECASE)
-    if vague or MULTI_LOCATION_RE.match(location):
-        return "outside the UK"
-    # any other named place is most often a small UK town no list can hold (Brixworth, Thursley,
-    # Barrow-in-Furness), since foreign places are caught above
-    return None
+    # a remote or region label, a "2 Locations" placeholder or a place with no evidence either way
+    # (Belgrade, Hanoi, Montevideo) stays off rather than being guessed into the UK
+    return "outside the UK"
 
 
 def insert_job(ctx, job: dict) -> bool:
-    reason = gate(job, ctx.uk_places)
+    reason = gate(job, ctx.uk_places, ctx.abroad_places)
     job["abroad"] = reason == "abroad"
     # the tab comes from the title; only a UK student board may call an untitled role an internship
     titled = infer_type(job["role"], default="")
