@@ -1,4 +1,5 @@
-// morning alerts that were missing from the reminder set: university deadlines closing in 7, 3 and 1 days (and today) and
+// morning alerts that were missing from the reminder set: university deadlines closing in 7, 3 and 1 days (and today) or
+// still open after their date (daily for a week, then every 14 days) and
 // library books due back in 3, 1 or 0 days or already overdue. Each section posts to its own
 // webhook and is skipped when that webhook is not set, so a channel can be added without touching the others. Node only.
 import { alreadyRanToday, londonDate } from "./lib/uk-cron.mjs"
@@ -34,17 +35,34 @@ function daysUntil(dateStr, today) {
   return Math.round((Date.parse(dateStr.slice(0, 10)) - Date.parse(today)) / 86_400_000)
 }
 
+// an open deadline past its date is listed every day for its first week, then every 14 days, so a missed one keeps
+// resurfacing without becoming daily noise. it stops once it is marked done, submitted or graded
+function isReminderDay(days) {
+  if (days >= 0) return [0, 1, 3, 7].includes(days)
+  const overdue = -days
+  return overdue <= 7 || overdue % 14 === 0
+}
+
+function dueLabel(days) {
+  if (days < 0) return `Overdue by ${-days} day${days === -1 ? "" : "s"}`
+  return days === 0 ? "Due today" : days === 1 ? "Due tomorrow" : `Due in ${days} days`
+}
+
 async function deadlines(today) {
   if (!HOOKS.deadlines) return console.log("deadlines: no webhook set, skipping")
   const rows = await get("uni_deadlines?select=title,type,due_date,weight_pct,status&status=in.(not_started,in_progress)&order=due_date.asc&limit=200")
-  const due = rows.map((r) => ({ ...r, days: daysUntil(r.due_date, today) })).filter((r) => [0, 1, 3, 7].includes(r.days))
+  const due = rows.map((r) => ({ ...r, days: daysUntil(r.due_date, today) })).filter((r) => isReminderDay(r.days))
   if (!due.length) return console.log("deadlines: nothing due at a reminder point")
   if (await alreadyRanToday("daily-deadlines")) return console.log("deadlines: already sent today")
   const fields = due.map((r) => ({
     name: r.title,
-    value: `${r.days === 0 ? "Due today" : r.days === 1 ? "Due tomorrow" : `Due in ${r.days} days`} (${r.type}${r.weight_pct ? `, ${r.weight_pct}%` : ""})`,
+    value: `${dueLabel(r.days)} (${r.type}${r.weight_pct ? `, ${r.weight_pct}%` : ""})`,
   }))
-  await post(HOOKS.deadlines, { title: `Deadlines - ${due.length} coming up`, color: due.some((r) => r.days <= 1) ? 0xe74c3c : 0xf39c12, fields })
+  const overdue = due.filter((r) => r.days < 0).length
+  const parts = [overdue && `${overdue} overdue`, due.length - overdue && `${due.length - overdue} coming up`].filter(Boolean)
+  const title = `Deadlines - ${parts.join(", ")}`
+  // discord allows 25 fields per embed; open deadlines are ordered by date, so the oldest overdue ones come first
+  await post(HOOKS.deadlines, { title, color: due.some((r) => r.days <= 1) ? 0xe74c3c : 0xf39c12, fields: fields.slice(0, 25) })
   // run logs are public, so only the count is printed
   console.log(`deadlines: sent ${due.length}`)
 }
