@@ -15,7 +15,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`routine.mjs`](routine.mjs) | Node | routine | Reads the day's habits and streaks and posts a morning checklist to Discord |
 | [`send-streak-reminder.mjs`](send-streak-reminder.mjs) | Node | streak-reminder | Posts which active streaks are not yet logged today |
 | [`vault-expiry-check.mjs`](vault-expiry-check.mjs) | Node | vault-expiry-check | Alerts when vault or `inventory_items` entries are near their expiry date |
-| [`daily-alerts.mjs`](daily-alerts.mjs) | Node | none (errors go to `#errors`) | University deadline reminders at 7, 3 and 1 days and library return reminders |
+| [`daily-alerts.mjs`](daily-alerts.mjs) | Node | none (errors go to `#errors`) | University deadline reminders at 7, 3 and 1 days, open deadlines past their date (daily for a week, then every 14 days) and library return reminders |
 | [`daily-analytics.mjs`](daily-analytics.mjs) | Node | daily-analytics | Posts a per-page analytics summary (Applications, Posts, Fitness, Music) to each dashboard analytics channel for the day that just ended |
 | [`medication-reminders.mjs`](medication-reminders.mjs) | Node | reminders (shared with reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
