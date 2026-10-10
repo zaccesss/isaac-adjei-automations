@@ -9,6 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- A Prune Control History workflow that keeps `control_job_runs` and `control_check_snapshots` to the last 90 days. It ships disabled and is turned on only when the database needs the room. A manual run is a dry run unless told otherwise
 - Daily Alerts lists university deadlines still open after their date: every day for the first week, then every 14 days until each is marked done, submitted or graded. The title counts overdue and upcoming separately.
 - The scripts README and `.env.example` cover `push-vitafolio-jobs.py`: what it sends, the `VITAFOLIO_JOBS_URL` and `VITAFOLIO_JOBS_TOKEN` it needs and the `VITAFOLIO_DRY_RUN` flag.
 - About 160 more employers, each checked live against its job board: quant and trading firms, UK banks and fintechs, semiconductors and electronics, defence and aerospace, energy and cyber security. Lever falls back to its EU server for European employers.

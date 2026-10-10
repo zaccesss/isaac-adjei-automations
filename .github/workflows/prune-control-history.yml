@@ -1,0 +1,39 @@
+# keeps the Ops history tables to the last 90 days so they stop growing without limit. The workflow is disabled in
+# GitHub for now and only exists ready for when the database needs the room: enable it in the Actions tab (or with
+# gh workflow enable prune-control-history.yml) and the weekly schedule starts. A manual run defaults to a dry run that
+# only reports how many rows would go.
+
+name: Prune Control History
+
+on:
+  schedule:
+    - cron: "40 3 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report how many rows would be deleted"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: Prune history older than 90 days
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_ERRORS: ${{ secrets.DISCORD_WEBHOOK_ERRORS }}
+          KEEP_DAYS: "90"
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+        run: node scripts/prune-control-history.mjs
