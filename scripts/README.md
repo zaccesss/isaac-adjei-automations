@@ -46,7 +46,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 
 | Script | Additional secrets |
 | --- | --- |
-| `wakatime-sync.py` | `WAKATIME_API_KEY` |
+| `wakatime-sync.py` | `WAKATIME_ACCESS_TOKEN` |
 | `daily-coding-summary.mjs` | `DISCORD_WEBHOOK_CODING` |
 | `routine.mjs` | `DISCORD_WEBHOOK_ROUTINE` |
 | `send-streak-reminder.mjs` | `DISCORD_WEBHOOK_STREAKS` |

@@ -3,7 +3,7 @@ Fetches WakaTime daily summaries and per-hour durations for the last FETCH_DAYS
 days and upserts each day into the wakatime_daily table.
 
 Env vars required:
-  WAKATIME_API_KEY          -- WakaTime secret API key
+  WAKATIME_ACCESS_TOKEN     -- WakaTime OAuth access token (read_summaries, read_heartbeats)
   SUPABASE_URL              -- Supabase project URL
   SUPABASE_SERVICE_ROLE_KEY -- Supabase service-role key (bypasses RLS)
 """
@@ -25,19 +25,42 @@ FETCH_DAYS = 14
 BACKFILL_DAYS = int(os.environ.get("BACKFILL_DAYS", "90") or 90)
 MAX_BACKFILL_PER_RUN = int(os.environ.get("MAX_BACKFILL_PER_RUN", "120") or 120)
 
-WAKATIME_API_KEY = os.environ.get("WAKATIME_API_KEY", "").strip()
+WAKATIME_ACCESS_TOKEN = os.environ.get("WAKATIME_ACCESS_TOKEN", "").strip()
+WAKATIME_API = "https://api.wakatime.com/api/v1"
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
 
+class WakaTimeAuthError(RuntimeError):
+    pass
+
+
+def wakatime_get(path: str, params: dict) -> requests.Response:
+    """GET a WakaTime endpoint with the OAuth token.
+
+    API keys stop working for reads on 1 November 2026, so reads use an OAuth access token. A
+    rejected token is raised rather than logged, so an expired token fails the run instead of
+    quietly syncing nothing.
+    """
+    resp = requests.get(
+        f"{WAKATIME_API}{path}",
+        params=params,
+        headers={"Authorization": f"Bearer {WAKATIME_ACCESS_TOKEN}"},
+        timeout=30,
+    )
+    if resp.status_code in (401, 403):
+        raise WakaTimeAuthError(f"WakaTime rejected the access token ({resp.status_code})")
+    resp.raise_for_status()
+    return resp
+
+
 def fetch_summaries(start: date, end: date) -> list[dict]:
     """Call the WakaTime summaries endpoint for a date range."""
-    url = "https://wakatime.com/api/v1/users/current/summaries"
     params = {"start": start.isoformat(), "end": end.isoformat()}
     try:
-        resp = requests.get(url, params=params, auth=(WAKATIME_API_KEY, ""), timeout=30)
-        resp.raise_for_status()
-        return resp.json().get("data", [])
+        return wakatime_get("/users/current/summaries", params).json().get("data", [])
+    except WakaTimeAuthError:
+        raise
     except Exception as exc:
         print(f"WakaTime summaries error: {exc}", file=sys.stderr)
         return []
@@ -45,12 +68,11 @@ def fetch_summaries(start: date, end: date) -> list[dict]:
 
 def fetch_durations(day: date) -> list[dict]:
     """Call the WakaTime durations endpoint for a single day."""
-    url = "https://wakatime.com/api/v1/users/current/durations"
     params = {"date": day.isoformat()}
     try:
-        resp = requests.get(url, params=params, auth=(WAKATIME_API_KEY, ""), timeout=30)
-        resp.raise_for_status()
-        return resp.json().get("data", [])
+        return wakatime_get("/users/current/durations", params).json().get("data", [])
+    except WakaTimeAuthError:
+        raise
     except Exception as exc:
         print(f"WakaTime durations error for {day}: {exc}", file=sys.stderr)
         return []
@@ -158,8 +180,8 @@ def build_row(day: dict, hours: list[int] | None = None, ai: dict | None = None)
 
 
 def main() -> None:
-    if not WAKATIME_API_KEY:
-        print("WAKATIME_API_KEY not set - skipping sync", file=sys.stderr)
+    if not WAKATIME_ACCESS_TOKEN:
+        print("WAKATIME_ACCESS_TOKEN not set - skipping sync", file=sys.stderr)
         sys.exit(0)
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("Supabase credentials not set - skipping sync", file=sys.stderr)
