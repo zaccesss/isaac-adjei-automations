@@ -29,9 +29,11 @@ const nowMin = hh * 60 + mm
 const today = now.toLocaleDateString("en-CA", { timeZone: TZ })
 
 async function db(path, opts) {
+  // opts is spread first so a caller's own headers (Prefer on a PATCH) add to the auth headers instead of
+  // replacing them, which dropped the apikey and failed every PATCH.
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", ...(opts?.headers || {}) },
     ...opts,
+    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", ...(opts?.headers || {}) },
   })
   if (!res.ok) throw new Error(`${res.status} ${await res.text()} (${path})`)
   // a POST insert returns 201 with an empty body, so parse only when there is one.
