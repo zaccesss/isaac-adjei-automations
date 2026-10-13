@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The WakaTime sync reads with an OAuth access token (`WAKATIME_ACCESS_TOKEN`) instead of the API key, which WakaTime limits to sending activity from 1 November 2026. A rejected token now fails the run instead of syncing nothing. The token lasts a year and is renewed by authorising the app again.
+
 ### Added
 
 - A Prune Control History workflow that keeps `control_job_runs` and `control_check_snapshots` to the last 90 days. It ships disabled and is turned on only when the database needs the room. A manual run is a dry run unless told otherwise
