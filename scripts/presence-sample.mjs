@@ -33,7 +33,9 @@ const headers = {
 async function db(path, init = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...init, headers: { ...headers, ...(init.headers || {}) } })
   if (!res.ok) throw new Error(`${init.method || "GET"} ${path.split("?")[0]} ${res.status} ${await res.text()}`)
-  return res.status === 204 ? null : res.json()
+  // a write without Prefer: return=representation answers 201 with an empty body
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 
 async function lanyard() {
