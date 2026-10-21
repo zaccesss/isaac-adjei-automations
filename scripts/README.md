@@ -21,6 +21,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`medication-reminders.mjs`](medication-reminders.mjs) | Node | reminders (shared with reminders.mjs) | Sends due medication reminders to Discord, email or SMS, de-duplicated against a dose log |
 | [`reminders.mjs`](reminders.mjs) | Node | reminders | Sends one-off appointment and meeting reminders at their lead times, each stamped so none repeats |
 | [`spotify-history.mjs`](spotify-history.mjs) | Node | spotify-history | Records recent Spotify plays into `listening_history` for the listening analytics |
+| [`presence-sample.mjs`](presence-sample.mjs) | Node | presence-sample | Records Discord presence from Lanyard into `presence_samples` and `presence_sessions` for the Presence analytics |
 | [`github-contributions-sync.mjs`](github-contributions-sync.mjs) | Node | github-contributions-sync | Tops up the current year's row in `github_contributions_days`/`_years` between the portfolio's own once-daily sync |
 | [`control-status-sync.mjs`](control-status-sync.mjs) | Node | control-status-sync | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's `control_job_runs`/`control_check_snapshots` tables, so `/dashboard/ops` can chart real history |
 | [`backfill-control-history.mjs`](backfill-control-history.mjs) | Node | backfill-control-history | Manual-only deep backfill of the same two tables, paging further back than the regular sync ever sees |
@@ -55,6 +56,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `daily-analytics.mjs` | `DISCORD_WEBHOOK_APPLICATIONS`, `DISCORD_WEBHOOK_POSTS`, `DISCORD_WEBHOOK_FITNESS`, `DISCORD_WEBHOOK_MUSIC` (each optional; a channel is skipped if its webhook is unset) |
 | `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
+| `presence-sample.mjs` | `DISCORD_USER_ID` |
 | `github-contributions-sync.mjs` | `GH_PAT` |
 | `control-status-sync.mjs` | `GH_PAT`, `CRON_SECRET`, `PORTFOLIO_URL` (optional, defaults to isaacadjei.me), `HEALTHCHECKS_API_KEY`, `HEALTHCHECKS_FLEET_API_KEY`, `HEALTHCHECKS_PORTFOLIO_API_KEY` |
 | `backfill-control-history.mjs` | same as `control-status-sync.mjs`, but all 3 Healthchecks keys need read/write (the regular sync only needs read-only) |
