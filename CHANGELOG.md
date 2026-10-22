@@ -7,6 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.0.1] - 2026-10-22
+
 ### Changed
 
 - The WakaTime sync reads with an OAuth access token (`WAKATIME_ACCESS_TOKEN`) instead of the API key, which WakaTime limits to sending activity from 1 November 2026. A rejected token now fails the run instead of syncing nothing. The token lasts a year and is renewed by authorising the app again.
