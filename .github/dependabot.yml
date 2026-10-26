@@ -11,6 +11,12 @@ updates:
       time: "07:00"
       timezone: "Europe/London"
     open-pull-requests-limit: 5
+    # every github/codeql-action step moves in one PR: the action refuses to run when init and
+    # analyze are on different versions, which a one-step bump on 26 October 2026 showed
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
     labels:
       - "dependencies"
     commit-message:
