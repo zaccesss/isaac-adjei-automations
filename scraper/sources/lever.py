@@ -50,11 +50,12 @@ def scrape_lever(
     url = f"https://api.lever.co/v0/postings/{slug}?mode=json"
     # European employers (Cirrus Logic, Quantinuum) live on Lever's EU host, which the US host
     # answers with 404
-    probe = SESSION.get(url, headers=HEADERS, timeout=15)
-    if probe.status_code == 404:
-        url = f"https://api.eu.lever.co/v0/postings/{slug}?mode=json"
     count = 0
     try:
+        # the probe sits inside the try as well since a timeout here escaped and stopped the run
+        probe = SESSION.get(url, headers=HEADERS, timeout=15)
+        if probe.status_code == 404:
+            url = f"https://api.eu.lever.co/v0/postings/{slug}?mode=json"
         resp = SESSION.get(url, headers=HEADERS, timeout=15)
         if resp.status_code != 200:
             print(f"  Lever {company_name}: HTTP {resp.status_code}")

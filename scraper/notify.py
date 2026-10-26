@@ -5,6 +5,25 @@ from . import config
 
 # ─── DISCORD ALERT ──────────────────────────────────────────────────────────
 
+def send_discord_note(text: str) -> None:
+    """Post one plain line to the Discord webhook for a run that skipped a source."""
+    if config.DRY_RUN:
+        print(f"[dry run] would post a Discord note: {text}")
+        return
+    webhook_url = config.DISCORD_WEBHOOK_URL
+    if not webhook_url:
+        return
+    try:
+        requests.post(
+            webhook_url,
+            json={"content": text[:1900]},
+            headers={"Content-Type": "application/json"},
+            timeout=10,
+        )
+    except Exception as e:
+        print(f"Discord note failed: {e}")
+
+
 def send_discord_alert(new_jobs: list[dict]) -> None:
     if config.DRY_RUN:
         print(f"[dry run] would post a Discord alert for {len(new_jobs)} new student roles.")
