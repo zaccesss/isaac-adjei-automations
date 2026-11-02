@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in this repository, its scripts or its workflows, please **do not** open a public issue or pull request.
 
-Report it privately to: **contact@isaacadjei.me**
+Report it privately to: **security@isaacadjei.me**
 
 Please include:
 - A description of the vulnerability
