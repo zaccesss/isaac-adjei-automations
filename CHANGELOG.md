@@ -7,6 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-03
+
+### Added
+
+- CI, CodeQL, Gitleaks, Markdown Lint, release and licence badges and a diagram of how a job runs.
+
+### Changed
+
+- Routine tidy-up.
+
 ## [0.0.2] - 2026-11-03
 
 ### Changed
