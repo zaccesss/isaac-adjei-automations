@@ -7,6 +7,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The scraper saves one label per work mode (Hybrid, Remote or Onsite) whatever spelling a board sends, so the app no longer
+  counts "hybrid" and "Hybrid" as two modes. A job with no type saves as "Internship" rather than "internship".
+
 ## [0.1.0] - 2026-11-03
 
 ### Added
