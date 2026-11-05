@@ -17,8 +17,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Infinitesima on Greenhouse, Codasip, EnSilica and Cosmic Semiconductor on BambooHR, Infineon and Qualcomm on
   Eightfold's newer search plus Blighter, CML Micro, Viper Innovations and MK Test Systems from their own careers pages.
 - These newer sources keep UK student roles only, need an electronics or computing word in the title, skip roles whose
-  closing date has passed and stop adding new rows once a source reaches its limit for the run (`MAX_NEW_PER_SOURCE`).
-  Rows they already hold still refresh.
+  closing date has passed. Every role that passes is kept: `MAX_NEW_PER_SOURCE` lists these sources with no limit
+  and only applies a cap where a number is set.
 - The new-roles Discord alert lists a FAANG+ role in London first, then London, then Birmingham, Stevenage and Milton
   Keynes. Each of those lines starts with a written label as well as sitting higher in the list.
 

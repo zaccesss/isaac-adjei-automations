@@ -243,12 +243,13 @@ def gate(job: dict, uk_places=frozenset(), abroad_places=frozenset()):
 def cap_reached(ctx, job: dict) -> bool:
     """True when the job's capped source has already inserted its quota of new rows this run.
 
-    Only jobs carrying a cap_key are capped; every other source is unlimited as before.
+    Only jobs carrying a cap_key with a number set are capped; None and every other source are unlimited.
     """
     cap_key = job.get("cap_key")
-    if not cap_key or cap_key not in config.MAX_NEW_PER_SOURCE:
+    limit = config.MAX_NEW_PER_SOURCE.get(cap_key) if cap_key else None
+    if limit is None:
         return False
-    return ctx.new_by_cap.get(cap_key, 0) >= config.MAX_NEW_PER_SOURCE[cap_key]
+    return ctx.new_by_cap.get(cap_key, 0) >= limit
 
 
 def _count_capped_insert(ctx, job: dict) -> None:
