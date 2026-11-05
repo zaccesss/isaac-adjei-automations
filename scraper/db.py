@@ -11,6 +11,18 @@ from .http import is_url_alive
 from .locations import is_abroad, is_uk, normalize_location
 from .roles import classify, in_cycle
 
+# boards send the work mode in their own spelling ("hybrid", "on-site", "ONSITE"), which the app then counts as
+# different modes. Every row is saved with one label per mode; anything unrecognised is kept as sent.
+_WORK_MODES = {
+    "hybrid": "Hybrid", "remote": "Remote", "onsite": "Onsite", "on-site": "Onsite", "on_site": "Onsite",
+    "on site": "Onsite", "in-office": "Onsite", "in office": "Onsite", "office": "Onsite",
+}
+
+
+def normalize_work_mode(value: str | None) -> str:
+    text = (value or "").strip()
+    return _WORK_MODES.get(text.lower(), text)
+
 
 
 # ─── DEDUPLICATION ──────────────────────────────────────────────────────────
@@ -317,7 +329,7 @@ def insert_job(ctx, job: dict) -> bool:
     record = {
         "company":  job["company"],
         "role":     job["role"],
-        "type":     job.get("type", "internship"),
+        "type":     job.get("type") or "Internship",
         # use "scraped" so auto-discovered roles can be filtered from ones
         # added by hand in the app.
         "status":       "scraped",
@@ -332,7 +344,7 @@ def insert_job(ctx, job: dict) -> bool:
         "last_year_opening": job.get("last_year_opening"),
         "housing_location":  normalize_location(job.get("housing_location", "")) or None,
         "salary_range": salary_text(job),
-        "work_mode":    job.get("work_mode", ""),
+        "work_mode":    normalize_work_mode(job.get("work_mode")),
         "source":       job.get("source", ""),
         # default starred to False; interesting roles are starred by hand later.
         "starred":      False,
