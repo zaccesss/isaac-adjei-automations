@@ -233,3 +233,26 @@ def is_location_ok(location: str, is_priority: bool = False) -> bool:
     if not location:
         return True
     return is_uk(location)
+
+
+# the places worth seeing first in the new-roles alert, in order after a FAANG+
+# role in London: London itself, then the Midlands and Hertfordshire hubs.
+_LONDON_RE = re.compile(r"\blondon\b", re.IGNORECASE)
+_PRIORITY_PLACES_RE = re.compile(r"\b(birmingham|stevenage|milton keynes)\b", re.IGNORECASE)
+
+
+def priority_rank(location: str, company: str = "", role: str = "") -> int:
+    """How high a role sits in the alert: 0 is first.
+
+    0 for a FAANG+ company in London, 1 for London, 2 for Birmingham, Stevenage or Milton
+    Keynes and 3 for everywhere else. FAANG+ uses the dashboard's own category detection.
+    """
+    # imported here because filters imports this module at load time
+    from .filters import detect_category
+
+    loc = location or ""
+    if _LONDON_RE.search(loc) and not _NOT_UK.search(loc):
+        return 0 if detect_category(company, role) == "FAANG+" else 1
+    if _PRIORITY_PLACES_RE.search(loc) and not _NOT_UK.search(loc):
+        return 2
+    return 3

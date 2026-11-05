@@ -1,10 +1,11 @@
 """Source: greenhouse."""
 
 import time
+from .. import config
 from ..dates import _parse_greenhouse_date
 from ..db import insert_job
 from ..detect import _strip_html, detect_cover_letter_required, detect_sponsors_visa
-from ..filters import resolve_type, is_relevant, is_relevant_job
+from ..filters import resolve_type, is_relevant, is_relevant_job, passes_new_source_guard
 from ..http import HEADERS
 from ..budget import over_budget
 from ..data.companies import GREENHOUSE_COMPANIES
@@ -101,6 +102,25 @@ def scrape_greenhouse(
             opening_date = _parse_greenhouse_date(job.get("first_published"))
             deadline = _parse_greenhouse_date(job.get("application_deadline"))
 
+            # the newer, capped employers keep UK student electronics and computing roles only
+            if company_name in config.MAX_NEW_PER_SOURCE:
+                if passes_new_source_guard(title, company_name, location, deadline, dept_names):
+                    if insert_job(ctx, {
+                        "company":              company_name,
+                        "role":                 title,
+                        "type":                 resolve_type(title),
+                        "url":                  job_url,
+                        "location":             location,
+                        "source":               "Greenhouse",
+                        "opening_date":         opening_date,
+                        "deadline":             deadline,
+                        "sponsors_visa":        detect_sponsors_visa(description_text),
+                        "cover_letter_required": detect_cover_letter_required(description_text),
+                        "description":          description_text,
+                        "cap_key":              company_name,
+                    }):
+                        count += 1
+                continue
             if is_relevant(title, company_name, location, dept_names):
                 if insert_job(ctx, {
                     "company":              company_name,

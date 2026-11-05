@@ -240,6 +240,23 @@ def gate(job: dict, uk_places=frozenset(), abroad_places=frozenset()):
     return "outside the UK"
 
 
+def cap_reached(ctx, job: dict) -> bool:
+    """True when the job's capped source has already inserted its quota of new rows this run.
+
+    Only jobs carrying a cap_key are capped; every other source is unlimited as before.
+    """
+    cap_key = job.get("cap_key")
+    if not cap_key or cap_key not in config.MAX_NEW_PER_SOURCE:
+        return False
+    return ctx.new_by_cap.get(cap_key, 0) >= config.MAX_NEW_PER_SOURCE[cap_key]
+
+
+def _count_capped_insert(ctx, job: dict) -> None:
+    cap_key = job.get("cap_key")
+    if cap_key:
+        ctx.new_by_cap[cap_key] = ctx.new_by_cap.get(cap_key, 0) + 1
+
+
 def insert_job(ctx, job: dict) -> bool:
     reason = gate(job, ctx.uk_places, ctx.abroad_places)
     job["abroad"] = reason == "abroad"
@@ -264,6 +281,15 @@ def insert_job(ctx, job: dict) -> bool:
     # thing eating the time budget and a known URL is never deleted even if it
     # 404s now, so that check was wasted work.
     url = job.get("url", "")
+    # a capped source that is full skips a role the table has never seen before any
+    # liveness check or AI call is spent on it; a known URL or company+role still
+    # takes the refresh paths below.
+    if cap_reached(ctx, job) and url not in ctx.existing_urls and \
+            dedupe_key(job["company"], job["role"], url) not in ctx.existing_keys and \
+            dedupe_key(job["company"], job["role"], "") not in ctx.existing_keys and \
+            dedupe_key(job["company"], job["role"], "") not in ctx.url_by_bare_key:
+        ctx.gate_rejects["over its source cap"] = ctx.gate_rejects.get("over its source cap", 0) + 1
+        return False
     if url and url not in ctx.existing_urls and not is_url_alive(url):
         return False
 
@@ -408,6 +434,10 @@ def insert_job(ctx, job: dict) -> bool:
                 ctx.existing_urls.add(url)
         return False
 
+    if cap_reached(ctx, job):
+        ctx.gate_rejects["over its source cap"] = ctx.gate_rejects.get("over its source cap", 0) + 1
+        return False
+
     if config.DRY_RUN:
         ctx.existing_keys.add(key)
         if url:
@@ -418,6 +448,7 @@ def insert_job(ctx, job: dict) -> bool:
                 ctx.url_by_bare_key[bare_key] = url
         if record.get("type") != "Full-time Job":
             ctx.new_jobs.append(job)
+        _count_capped_insert(ctx, job)
         ctx.dry_run_actions.append(("insert", job["company"], job["role"]))
         print(f"  [dry run] would insert {job['company']} | {job['role']} {url}")
         return True
@@ -435,6 +466,7 @@ def insert_job(ctx, job: dict) -> bool:
                 ctx.url_by_bare_key[bare_key] = url
         if record.get("type") != "Full-time Job":
             ctx.new_jobs.append(job)
+        _count_capped_insert(ctx, job)
         print(f"  + {job['company']} | {job['role']} {url}")
         return True
     except Exception as e:

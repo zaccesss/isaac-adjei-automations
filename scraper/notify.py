@@ -2,6 +2,26 @@
 
 import requests
 from . import config
+from .locations import priority_rank
+
+# a text label as well as the order, so the priority never rests on colour alone.
+PRIORITY_LABELS = {0: "Top priority: ", 1: "Priority location: ", 2: "Priority location: "}
+
+
+def order_for_alert(new_jobs: list[dict]) -> list[dict]:
+    """The new jobs with the priority places first; the run's own order is kept within a rank."""
+    return sorted(new_jobs, key=lambda j: priority_rank(j.get("location", ""), j.get("company", ""), j.get("role", "")))
+
+
+def alert_line(job: dict) -> str:
+    """One alert line: the priority label (if any), the type in bold and the linked role."""
+    company = job.get("company", "")
+    role = job.get("role", "")
+    url = job.get("url", "")
+    jtype = job.get("type", "")
+    label = f"[{company} - {role}]({url})" if url else f"{company} - {role}"
+    prefix = PRIORITY_LABELS.get(priority_rank(job.get("location", ""), company, role), "")
+    return f"- {prefix}**{jtype}** {label}"
 
 # ─── DISCORD ALERT ──────────────────────────────────────────────────────────
 
@@ -36,16 +56,10 @@ def send_discord_alert(new_jobs: list[dict]) -> None:
 
     # batch into chunks of 20 to stay under Discord's embed field limit.
     CHUNK = 20
-    for i in range(0, len(new_jobs), CHUNK):
-        chunk = new_jobs[i:i + CHUNK]
-        lines = []
-        for j in chunk:
-            company = j.get("company", "")
-            role = j.get("role", "")
-            url = j.get("url", "")
-            jtype = j.get("type", "")
-            label = f"[{company} - {role}]({url})" if url else f"{company} - {role}"
-            lines.append(f"- **{jtype}** {label}")
+    ordered = order_for_alert(new_jobs)
+    for i in range(0, len(ordered), CHUNK):
+        chunk = ordered[i:i + CHUNK]
+        lines = [alert_line(j) for j in chunk]
 
         payload = {
             "embeds": [{

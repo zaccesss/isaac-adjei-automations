@@ -205,63 +205,12 @@ def scrape_company_sites_playwright(ctx) -> int:
         record_stat(ctx, "Meta Careers", count)
 
         # ── ARM Careers ─────────────────────────────────────────────────────
-        # ARM's old Coveo search page is gone (it 404s now). Their Radancy careers
-        # site answers plain JSON without a browser: the results endpoint returns
-        # rendered rows in a "results" field, the city sits in the /job/{city}/...
-        # path and the titles come from the anchors. No Playwright needed.
+        # read from the careers site's sitemap since November 2026: robots.txt
+        # disallows /search-jobs/, which the old results endpoint sat under.
         count = 0
         try:
             print("  -> ARM Careers")
-            seen_hrefs = set()
-            for page_no in range(1, 7):
-                resp = SESSION.get(
-                    "https://careers.arm.com/search-jobs/results",
-                    params={
-                        "ActiveFacetID": 0,
-                        "CurrentPage": page_no,
-                        "RecordsPerPage": 50,
-                        "SearchResultsModuleName": "Search Results",
-                        "SearchFiltersModuleName": "Search Filters",
-                        "SearchType": 5,
-                    },
-                    headers={**HEADERS, "Accept": "application/json"},
-                    timeout=20,
-                )
-                if resp.status_code != 200:
-                    break
-                payload = resp.json()
-                soup = BeautifulSoup(payload.get("results", ""), "html.parser")
-                anchors = soup.select("a[href^='/job/']")
-                if not payload.get("hasJobs") or not anchors:
-                    break
-                for a in anchors:
-                    href = a.get("href") or ""
-                    m = re.match(r"^/job/([^/]+)/", href)
-                    if not m or href in seen_hrefs:
-                        continue
-                    seen_hrefs.add(href)
-                    title = " ".join(a.get_text(" ", strip=True).split())
-                    if not title:
-                        continue
-                    city = m.group(1).replace("-", " ").title()
-                    url = f"https://careers.arm.com{href}"
-                    if not is_relevant(title, "ARM", city):
-                        continue
-                    key = dedupe_key("ARM", title, url)
-                    if key in ctx.existing_keys:
-                        continue
-                    insert_job(ctx, {
-                        "company": "ARM",
-                        "role": title,
-                        "location": normalize_location(city),
-                        "url": url,
-                        "type": resolve_type(title),
-                        "cv_required": True,
-                    })
-                    ctx.existing_keys.add(key)
-                    count += 1
-                if len(anchors) < 5:
-                    break
+            count = scrape_arm_sitemap(ctx)
         except Exception as exc:
             print(f"     ARM error: {exc}")
 
@@ -411,6 +360,73 @@ def scrape_company_sites_playwright(ctx) -> int:
 
     print(f"  Company sites total: {total} new")
     return total
+
+
+# ─── ARM SITEMAP ────────────────────────────────────────────────────────────
+
+ARM_SITEMAP = "https://careers.arm.com/sitemap.xml"
+_ARM_JOB_RE = re.compile(r"^https://careers\.arm\.com/job/([^/]+)/([^/]+)/\d+/\d+/?$")
+# words a slug lower-cases that read wrongly in title case
+_ARM_ACRONYMS = {
+    "ai", "ml", "gpu", "cpu", "npu", "soc", "ip", "qa", "fpga", "rtl", "rf", "dft", "eda", "hpc",
+    "it", "uk", "ui", "ux", "hr", "pr", "os", "sw", "hw", "ic", "asic", "vlsi", "devops",
+}
+
+
+def _slug_words(slug: str) -> str:
+    return " ".join(
+        w.upper() if w in _ARM_ACRONYMS else w.capitalize()
+        for w in slug.split("-") if w
+    )
+
+
+def parse_arm_sitemap(xml_text: str) -> list[tuple[str, str, str]]:
+    """(title, city, url) for every job page the sitemap lists, in sitemap order.
+
+    Job pages sit at /job/{city}/{title-slug}/{org}/{id}; the category and landing
+    pages the sitemap also carries are skipped.
+    """
+    jobs = []
+    seen = set()
+    for loc in re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", xml_text or ""):
+        m = _ARM_JOB_RE.match(loc)
+        if not m or loc in seen:
+            continue
+        seen.add(loc)
+        jobs.append((_slug_words(m.group(2)), _slug_words(m.group(1)), loc))
+    return jobs
+
+
+def scrape_arm_sitemap(ctx) -> int:
+    """Read Arm's job pages from its sitemap and keep the UK student tech roles.
+
+    The same rule as the old results-page reader: is_relevant on the title and city,
+    a role whose URL is already stored is left alone and new rows stop at the
+    Arm cap in config.MAX_NEW_PER_SOURCE.
+    """
+    resp = SESSION.get(ARM_SITEMAP, headers=HEADERS, timeout=20)
+    if resp.status_code != 200:
+        print(f"     ARM sitemap: HTTP {resp.status_code}")
+        return 0
+    count = 0
+    for title, city, url in parse_arm_sitemap(resp.content.decode("utf-8-sig", "replace")):
+        if not is_relevant(title, "ARM", city):
+            continue
+        key = dedupe_key("ARM", title, url)
+        if key in ctx.existing_keys:
+            continue
+        if insert_job(ctx, {
+            "company": "ARM",
+            "role": title,
+            "location": normalize_location(city),
+            "url": url,
+            "type": resolve_type(title),
+            "cv_required": True,
+            "cap_key": "Arm",
+        }):
+            count += 1
+        ctx.existing_keys.add(key)
+    return count
 
 
 def run(ctx) -> int:

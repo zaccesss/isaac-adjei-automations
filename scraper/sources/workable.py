@@ -9,10 +9,11 @@ UK student tech roles with the shared classifier.
 """
 import time
 
+from .. import config
 from ..budget import over_budget
 from ..data.companies import WORKABLE_COMPANIES
 from ..db import insert_job
-from ..filters import is_relevant, is_relevant_job, resolve_type
+from ..filters import is_relevant, is_relevant_job, passes_new_source_guard, resolve_type
 from ..http import HEADERS, SESSION
 from ..stats import record_stat
 
@@ -49,6 +50,20 @@ def scrape_workable(ctx, slug: str, company_name: str) -> int:
         location = _location(job)
         job_url = job.get("url") or job.get("application_url") or ""
         depts = [job.get("department", "")] if job.get("department") else None
+        # the newer, capped employers keep UK student electronics and computing roles only
+        if company_name in config.MAX_NEW_PER_SOURCE:
+            if passes_new_source_guard(title, company_name, location, None, depts):
+                if insert_job(ctx, {
+                    "company":  company_name,
+                    "role":     title,
+                    "type":     resolve_type(title),
+                    "url":      job_url,
+                    "location": location,
+                    "source":   "Workable",
+                    "cap_key":  company_name,
+                }):
+                    count += 1
+            continue
         if is_relevant(title, company_name, location, depts):
             if insert_job(ctx, {
                 "company":  company_name,
