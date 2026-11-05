@@ -7,6 +7,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Gradcracker's electronic-electrical placements, internships and graduate jobs are read alongside the computing listings.
+  Avionics, defence systems and controls roles count there while purely mechanical, civil and chemical ones are left out.
+- Thales UK on Workday, searched for internships, placements and graduate roles in the UK only.
+- Imagination Technologies from its careers feed and Raspberry Pi on Workable.
+- UKESF partner companies with a public job feed: Collins Aerospace, Teledyne, Sensata and Spectrum Control on Workday,
+  Infinitesima on Greenhouse, Codasip, EnSilica and Cosmic Semiconductor on BambooHR, Infineon and Qualcomm on
+  Eightfold's newer search plus Blighter, CML Micro, Viper Innovations and MK Test Systems from their own careers pages.
+- These newer sources keep UK student roles only, need an electronics or computing word in the title, skip roles whose
+  closing date has passed and stop adding new rows once a source reaches its limit for the run (`MAX_NEW_PER_SOURCE`).
+  Rows they already hold still refresh.
+- The new-roles Discord alert lists a FAANG+ role in London first, then London, then Birmingham, Stevenage and Milton
+  Keynes. Each of those lines starts with a written label as well as sitting higher in the list.
+
+### Changed
+
+- Arm roles are read from the careers site's sitemap rather than its search results page, which the site asks crawlers
+  not to use.
+
 ### Fixed
 
 - The scraper saves one label per work mode (Hybrid, Remote or Onsite) whatever spelling a board sends, so the app no longer

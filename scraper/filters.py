@@ -3,7 +3,7 @@
 import re
 from .data.companies import PRIORITY_COMPANIES, STUDENT_DEPTS
 from .data.keywords import EVENT_TERMS
-from .locations import is_location_ok
+from .locations import is_location_ok, is_uk
 from .roles import classify
 
 # use whole-word matching for "intern" so words like "internal" and
@@ -241,3 +241,81 @@ def detect_category(company: str, role: str) -> str:
     ):
         return "Other Engineering"
     return "Software Engineering"
+
+
+# ─── NEW-SOURCE GUARD ───────────────────────────────────────────────────────
+
+# the newer sources (Gradcracker's electronics listings, Thales, Arm, Imagination,
+# Raspberry Pi and the UKESF partner companies) read whole employer feeds and a
+# wider board discipline, so a role must also name electronics or computing work
+# in its title. Whole words only, so "rf" never matches inside "perform".
+_ENGINEERING_TITLE_RE = re.compile(
+    r"\b(electronic|electronics|electrical|embedded|firmware|fpga|asic|silicon|hardware|software|"
+    r"systems engineer|systems engineering|verification|rf|dsp|signal|signals|controls?|robotics|"
+    r"mechatronics|avionics|data|cyber|computer|computing|power electronics|test engineer)\b",
+    re.IGNORECASE,
+)
+# the terms that on their own name electronics or computing work, as opposed to
+# the shared ones ("systems engineer", "controls", "data") that a mechanical or
+# process title can also carry.
+_STRONG_ENGINEERING_RE = re.compile(
+    r"\b(electronic|electronics|electrical|embedded|firmware|fpga|asic|silicon|hardware|software|rf|dsp|"
+    r"avionics|cyber|computer|computing|power electronics|robotics|mechatronics)\b",
+    re.IGNORECASE,
+)
+# disciplines and functions these sources also post that are out of scope
+_OTHER_DISCIPLINE_RE = re.compile(
+    r"\b(civil|structural|mechanical|chemical|process|manufacturing|materials|quantity|commercial|"
+    r"finance|procurement|hr|bid|project management)\b",
+    re.IGNORECASE,
+)
+
+
+def has_engineering_title(title: str) -> bool:
+    """True when a title names electronics or computing work and not only another discipline.
+
+    A title naming another discipline ("Mechanical Test Engineer", "Manufacturing Systems
+    Engineer") passes only with a term that is electronics or computing in its own right.
+    """
+    t = title or ""
+    if not _ENGINEERING_TITLE_RE.search(t):
+        return False
+    if _OTHER_DISCIPLINE_RE.search(t) and not _STRONG_ENGINEERING_RE.search(t):
+        return False
+    return True
+
+
+def is_expired(date_value, today=None) -> bool:
+    """True when a closing or expiry date (ISO or ISO-prefixed) is before today."""
+    from datetime import date
+
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", str(date_value or "").strip())
+    if not m:
+        return False
+    try:
+        closing = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return False
+    return closing < (today or date.today())
+
+
+def passes_new_source_guard(
+    title: str,
+    company: str,
+    location: str,
+    closing=None,
+    dept_names: list[str] | None = None,
+    today=None,
+) -> bool:
+    """The stricter check for the newer sources: a UK student role in electronics or computing.
+
+    Student roles only (is_relevant, never the full-time is_relevant_job), an electronics or
+    computing title, a location that names the UK and a closing date not already past.
+    """
+    if not is_relevant(title, company, location, dept_names):
+        return False
+    if not has_engineering_title(title):
+        return False
+    if not is_uk(location or ""):
+        return False
+    return not is_expired(closing, today)

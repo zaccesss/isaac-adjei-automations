@@ -20,14 +20,17 @@ from . import (
     amazon,
     apple,
     arbeitnow,
+    bamboohr,
     ashby,
     brightnetwork,
     company_sites,
     e4s,
     eightfold,
+    eightfold_pcsx,
     faang,
     gradcracker,
     greenhouse,
+    imagination,
     jibe,
     jobicy,
     jooble,
@@ -48,6 +51,7 @@ from . import (
     trackr,
     workable,
     workday,
+    wordpress_jobs,
 )
 
 SOURCES = [
@@ -83,4 +87,11 @@ SOURCES = [
     ("Arbeitnow", "api", True, arbeitnow.run),
     ("Jobicy", "api", True, jobicy.run),
     ("Remotive", "api", True, remotive.run),
+    # added November 2026: Imagination's PageUp feed and the UKESF partner companies
+    # on BambooHR, Eightfold's newer search and their own WordPress pages. Each runs
+    # after every existing source, capped and guarded as a newer source.
+    ("Imagination Technologies", "api", True, imagination.run),
+    ("BambooHR", "api", True, bamboohr.run),
+    ("Eightfold PCSX", "api", True, eightfold_pcsx.run),
+    ("WordPress careers", "api", True, wordpress_jobs.run),
 ]

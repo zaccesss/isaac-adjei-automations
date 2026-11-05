@@ -192,6 +192,9 @@ GREENHOUSE_COMPANIES = [
     ("grafanalabs", "Grafana Labs"),
     ("tailscale", "Tailscale"),
     ("bitwarden", "Bitwarden"),
+    # a UKESF partner (atomic force microscopy, Abingdon), added November 2026 and
+    # checked live; capped and guarded as a newer source
+    ("infinitesima", "Infinitesima"),
 ]
 
 # Lever slugs confirmed to return HTTP 200 with real listings.
@@ -338,6 +341,8 @@ WORKABLE_COMPANIES = [
     ("ripjar", "Ripjar"),
     ("aegiq", "Aegiq"),
     ("habitat-energy", "Habitat Energy"),
+    # added November 2026, checked live; capped and guarded as a newer source
+    ("raspberrypi", "Raspberry Pi"),
 ]
 
 # (slug, display_name) for the Recruitee offers API, probed live July 2026:

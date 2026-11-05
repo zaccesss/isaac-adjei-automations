@@ -16,8 +16,9 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
+from .. import config
 from ..db import insert_job
-from ..filters import _NON_TECH_ROLE_RE, _SENIOR_ROLE_RE, _has_tech_keyword, infer_type
+from ..filters import _NON_TECH_ROLE_RE, _SENIOR_ROLE_RE, _has_tech_keyword, infer_type, passes_new_source_guard
 from ..http_browser import browser_get
 from ..locations import normalize_location
 from ..stats import record_stat
@@ -42,6 +43,26 @@ _NON_COMPUTING_RE = re.compile(
     r"m&e|human factors|webinar)\b",
     re.I,
 )
+# the electronic-electrical discipline, read alongside the computing listings above:
+# its placements and internships plus its graduate jobs, the paths the site's own
+# discipline menu links to. Added November 2026.
+EE_LISTINGS = [
+    "/search/electronic-electrical/engineering-work-placements-internships",
+    "/search/electronic-electrical/engineering-graduate-jobs",
+]
+# the electronics listings' own reject list. It is looser than _NON_COMPUTING_RE:
+# aerospace and automotive stay in because avionics, defence systems and vehicle
+# electronics roles are filed under them, while purely mechanical, civil, chemical
+# and building roles are still dropped. passes_new_source_guard adds the title check.
+_NON_ELECTRONICS_RE = re.compile(
+    r"\b(civil|structural|mechanical|chemical|mining|geotechnical|marine|"
+    r"architectur|quantity survey|hvac|building services|m&e|human factors|webinar)\b",
+    re.I,
+)
+# the URL segment is the board's own classification, so it stands in for a student
+# department when a title carries no student term ("Electronics Engineer").
+_SEGMENT_DEPT = {"graduate-job": ["early career"], "work-placement-internship": ["placement"]}
+EE_CAP_KEY = "Gradcracker EE"
 _ORDINAL_RE = re.compile(r"(\d+)(?:st|nd|rd|th)", re.I)
 _DEADLINE_RE = re.compile(r"Deadline:\s*(.+?)(?:\s+Salary|\s+Location|\s+Degree|\s+Starting|$)", re.I)
 _LOCATION_RE = re.compile(r"Location\s+(.+?)(?:\s+Degree|\s+Starting|\s+Salary|$)", re.I)
@@ -134,6 +155,75 @@ def parse_listing(html: str, ctx) -> int:
     return count
 
 
+def parse_ee_listing(html: str, ctx) -> int:
+    """Insert the UK student electronics roles on one electronic-electrical listing page."""
+    soup = BeautifulSoup(html, "html.parser")
+    count = 0
+    seen: set[str] = set()
+    for a in soup.find_all("a", href=True):
+        m = _JOB_RE.search(a["href"])
+        if not m:
+            continue
+        href = urljoin(BASE, a["href"].split("?")[0])
+        if href in seen:
+            continue
+        role = " ".join(a.get_text(" ", strip=True).split())
+        if not role:
+            continue
+        seen.add(href)
+        card = _card_of(a)
+        logo = card.find("img", alt=True) if card else None
+        company = (logo.get("alt") or "").strip() if logo else ""
+        if not company or _NON_ELECTRONICS_RE.search(role):
+            continue
+        card_text = " ".join(card.get_text(" ", strip=True).split()) if card else ""
+        dl = _DEADLINE_RE.search(card_text)
+        loc = _LOCATION_RE.search(card_text)
+        location = loc.group(1).strip() if loc else ""
+        deadline = _parse_deadline(dl.group(1).strip() if dl else "")
+        if not passes_new_source_guard(role, company, location, deadline, _SEGMENT_DEPT[m.group(1)]):
+            continue
+        job_type = (
+            "Graduate" if m.group(1) == "graduate-job"
+            else infer_type(role, default="Internship")
+        )
+        if insert_job(ctx, {
+            "company":  company,
+            "role":     role,
+            "type":     job_type,
+            "url":      href,
+            "location": normalize_location(location),
+            "deadline": deadline,
+            "source":   "Gradcracker",
+            "cap_key":  EE_CAP_KEY,
+        }):
+            count += 1
+    return count
+
+
+def scrape_gradcracker_ee(ctx) -> int:
+    """Page through the electronic-electrical listings until a page adds nothing or the cap is hit."""
+    print("\nScraping Gradcracker electronics...")
+    total = 0
+    for path in EE_LISTINGS:
+        count = 0
+        for page in range(1, 21):
+            if ctx.new_by_cap.get(EE_CAP_KEY, 0) >= config.MAX_NEW_PER_SOURCE[EE_CAP_KEY]:
+                break
+            html = browser_get(f"{BASE}{path}", params={"page": page})
+            if not html:
+                break
+            added = parse_ee_listing(html, ctx)
+            count += added
+            if added == 0:
+                break
+        if count:
+            print(f"  {path.rsplit('/', 1)[-1]}: {count} new")
+        total += count
+    print(f"  Gradcracker electronics total: {total} new")
+    return total
+
+
 def scrape_gradcracker(ctx) -> int:
     """Page through each computing-technology listing until a page is empty."""
     print("\nScraping Gradcracker...")
@@ -162,8 +252,17 @@ def run(ctx) -> int:
     try:
         n = scrape_gradcracker(ctx)
         record_stat(ctx, "Gradcracker", n)
-        return n
     except Exception as e:
         print(f"  Error Gradcracker: {e}")
         record_stat(ctx, "Gradcracker", 0, str(e))
-        return 0
+        n = 0
+    # the electronics listings run after the computing ones, in their own try so a
+    # failure in either never costs the other its rows.
+    try:
+        ee = scrape_gradcracker_ee(ctx)
+        record_stat(ctx, "Gradcracker EE", ee)
+    except Exception as e:
+        print(f"  Error Gradcracker electronics: {e}")
+        record_stat(ctx, "Gradcracker EE", 0, str(e))
+        ee = 0
+    return n + ee

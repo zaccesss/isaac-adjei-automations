@@ -1,9 +1,10 @@
 """Source: workday."""
 
 import time
+from .. import config
 from ..data.companies import PRIORITY_COMPANIES
 from ..db import insert_job
-from ..filters import _has_tech_keyword, is_relevant, is_relevant_job, is_student_role, resolve_type
+from ..filters import _has_tech_keyword, is_relevant, is_relevant_job, is_student_role, passes_new_source_guard, resolve_type
 from ..http import HEADERS
 from ..locations import MULTI_LOCATION_RE, is_location_ok
 from ..budget import over_budget
@@ -78,7 +79,32 @@ WORKDAY_COMPANIES = [
     ("sonyglobal", "1", "sonyglobal", "sonyglobalcareers", "Sony"),
     ("moog", "5", "moog", "Moog_External_Career_Site", "Moog"),
     ("aviva", "1", "aviva", "External", "Aviva"),
+    # added November 2026, each checked live: Thales UK plus the UKESF partner
+    # companies on Workday. They are capped and pass the stricter new-source guard
+    # (see config.MAX_NEW_PER_SOURCE), with the searches in WORKDAY_OPTIONS.
+    ("thales", "3", "thales", "Careers", "Thales"),
+    ("globalhr", "5", "globalhr", "REC_RTX_Ext_Gateway", "Collins Aerospace"),
+    ("flir", "1", "flir", "flircareers", "Teledyne"),
+    ("sensata", "1", "sensata", "Sensata-Careers", "Sensata"),
+    ("spectrumcontrol", "1", "spectrumcontrol", "SpectrumControl", "Spectrum Control"),
 ]
+
+# Workday's id for the United Kingdom in the locationCountry facet, the same on every tenant checked
+UK_COUNTRY_FACET = "29247e57dbaf46fb855b224e03170bc7"
+
+# per-employer search settings for the newer tenants; every tenant not named here keeps the
+# single "intern" search with no facets. A global employer answers "intern" with thousands of
+# loose matches, so the UK facet (where the tenant has one) keeps the 200-result read on UK
+# roles and the extra terms reach placement and graduate titles that never say "intern".
+# RTX has no country facet, so Collins Aerospace is searched by its Solihull site instead.
+WORKDAY_OPTIONS = {
+    "Thales": {"searches": ["intern", "graduate", "placement"],
+               "facets": {"locationCountry": [UK_COUNTRY_FACET]}},
+    "Collins Aerospace": {"searches": ["Solihull"]},
+    "Teledyne": {"searches": ["intern", "graduate", "placement"],
+                 "facets": {"locationCountry": [UK_COUNTRY_FACET]}},
+    "Sensata": {"searches": [""], "facets": {"locationCountry": [UK_COUNTRY_FACET]}},
+}
 
 
 def _posting_locations(base: str, external_path: str) -> str:
@@ -98,7 +124,7 @@ def _posting_locations(base: str, external_path: str) -> str:
 
 def scrape_workday(
     ctx, subdomain: str, wdnum: str, tenant: str, site_id: str,
-    company_name: str
+    company_name: str, search_text: str = "intern", facets: "dict | None" = None,
 ) -> int:
     """Scrape a Workday-hosted career site via their internal CXS API.
 
@@ -118,9 +144,12 @@ def scrape_workday(
     max_results = 200
     while (total is None or offset < total) and offset < max_results:
         try:
+            payload = {"limit": 20, "offset": offset, "searchText": search_text}
+            if facets:
+                payload["appliedFacets"] = facets
             resp = SESSION.post(
                 url,
-                json={"limit": 20, "offset": offset, "searchText": "intern"},
+                json=payload,
                 headers={**HEADERS, "Content-Type": "application/json"},
                 timeout=15,
             )
@@ -158,6 +187,21 @@ def scrape_workday(
                     f"https://{subdomain}.wd{wdnum}.myworkdayjobs.com"
                     f"/en-US/{site_id}{ext_url}"  # externalPath already starts with /job/
                 ) if ext_url else ""
+                # the newer, capped tenants keep UK student electronics and computing
+                # roles only and never take the full-time branch below
+                if company_name in config.MAX_NEW_PER_SOURCE:
+                    if passes_new_source_guard(title, company_name, location_text):
+                        if insert_job(ctx, {
+                            "company":  company_name,
+                            "role":     title,
+                            "type":     resolve_type(title),
+                            "url":      job_url,
+                            "location": location_text,
+                            "source":   "Workday",
+                            "cap_key":  company_name,
+                        }):
+                            count += 1
+                    continue
                 if is_relevant(title, company_name, location_text):
                     if insert_job(ctx, {
                         "company":  company_name,
@@ -195,8 +239,16 @@ def run(ctx) -> int:
     for subdomain, wdnum, tenant, site_id, name in WORKDAY_COMPANIES:
         if over_budget(ctx):
             break
+        options = WORKDAY_OPTIONS.get(name)
         try:
-            total += scrape_workday(ctx, subdomain, wdnum, tenant, site_id, name)
+            if options is None:
+                total += scrape_workday(ctx, subdomain, wdnum, tenant, site_id, name)
+            else:
+                for search in options["searches"]:
+                    total += scrape_workday(
+                        ctx, subdomain, wdnum, tenant, site_id, name,
+                        search_text=search, facets=options.get("facets"),
+                    )
         except Exception as e:
             print(f"  Error {name} Workday: {e}")
     record_stat(ctx, "Workday", total)

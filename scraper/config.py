@@ -33,3 +33,31 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 # SCRAPER_DRY_RUN=1 rehearses a run: everything scrapes and filters as normal but the
 # database writes and the Discord alert are printed instead of sent.
 DRY_RUN = os.environ.get("SCRAPER_DRY_RUN", "").strip() == "1"
+
+# the most new rows each newer source may insert in one run. These sources reach
+# well beyond the student boards, so a cap stops one noisy feed from flooding the
+# dashboard; rows it already holds are still refreshed once a cap is reached. A
+# company named here also gets the stricter discipline and UK checks in
+# filters.passes_new_source_guard.
+MAX_NEW_PER_SOURCE = {
+    "Gradcracker EE": 30,
+    "Thales": 15,
+    "Arm": 10,
+    "Imagination Technologies": 5,
+    "Raspberry Pi": 5,
+    # UKESF partner companies with a public feed, added November 2026
+    "Collins Aerospace": 10,
+    "Teledyne": 10,
+    "Sensata": 5,
+    "Spectrum Control": 5,
+    "Infinitesima": 5,
+    "Codasip": 5,
+    "EnSilica": 5,
+    "Cosmic Semiconductor": 5,
+    "Infineon": 10,
+    "Qualcomm": 10,
+    "Blighter": 5,
+    "CML Micro": 5,
+    "Viper Innovations": 5,
+    "MK Test Systems": 5,
+}
