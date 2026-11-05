@@ -119,6 +119,14 @@ def test_cap_stops_new_rows_but_existing_urls_still_refresh(monkeypatch):
     assert ("update", "Thales", "Software Engineer Intern 9") in ctx.dry_run_actions
 
 
+def test_no_cap_by_default_keeps_every_valid_role(monkeypatch):
+    ctx = _dry_ctx(monkeypatch)
+    assert config.MAX_NEW_PER_SOURCE["Thales"] is None
+    for n in range(1, 41):
+        assert insert_job(ctx, _job(n)) is True
+    assert ctx.gate_rejects.get("over its source cap", 0) == 0
+
+
 def test_cap_counts_each_source_separately_and_leaves_uncapped_jobs_alone(monkeypatch):
     ctx = _dry_ctx(monkeypatch)
     monkeypatch.setitem(config.MAX_NEW_PER_SOURCE, "Thales", 1)
@@ -129,13 +137,12 @@ def test_cap_counts_each_source_separately_and_leaves_uncapped_jobs_alone(monkey
         assert insert_job(ctx, _job(n, cap_key=None)) is True
 
 
-def test_every_cap_named_in_the_brief_is_set():
+def test_newer_sources_keep_the_guard_with_no_cap():
+    # every newer source stays listed so the stricter UK and discipline guard still applies to it
     caps = config.MAX_NEW_PER_SOURCE
-    assert caps["Gradcracker EE"] == 30
-    assert caps["Thales"] == 15
-    assert caps["Arm"] == 10
-    assert caps["Imagination Technologies"] == 5
-    assert caps["Raspberry Pi"] == 5
+    for name in ("Gradcracker EE", "Thales", "Arm", "Imagination Technologies", "Raspberry Pi"):
+        assert name in caps
+        assert caps[name] is None
 
 
 # ─── The alert's priority order ─────────────────────────────────────────────

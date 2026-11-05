@@ -202,13 +202,13 @@ def parse_ee_listing(html: str, ctx) -> int:
 
 
 def scrape_gradcracker_ee(ctx) -> int:
-    """Page through the electronic-electrical listings until a page adds nothing or the cap is hit."""
+    """Page through the electronic-electrical listings until a page adds nothing or a cap, if one is set, is hit."""
     print("\nScraping Gradcracker electronics...")
     total = 0
     for path in EE_LISTINGS:
         count = 0
         for page in range(1, 21):
-            if ctx.new_by_cap.get(EE_CAP_KEY, 0) >= config.MAX_NEW_PER_SOURCE[EE_CAP_KEY]:
+            if (limit := config.MAX_NEW_PER_SOURCE.get(EE_CAP_KEY)) is not None and ctx.new_by_cap.get(EE_CAP_KEY, 0) >= limit:
                 break
             html = browser_get(f"{BASE}{path}", params={"page": page})
             if not html:
