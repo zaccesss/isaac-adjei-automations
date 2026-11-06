@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/codeql.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/codeql.yml)
 [![Gitleaks](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/gitleaks.yml)
 [![Markdown Lint](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/markdownlint.yml)
-[![Release](https://img.shields.io/github/v/release/zaccesss/isaac-adjei-automations?label=release)](https://github.com/zaccesss/isaac-adjei-automations/releases/latest)
+[![Release](https://img.shields.io/github/v/release/zaccesss/isaac-adjei-automations?label=release&sort=semver)](https://github.com/zaccesss/isaac-adjei-automations/releases/latest)
 [![Licence: PolyForm Noncommercial](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-green.svg)](LICENSE)
 [![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](STATUS.md)
 
