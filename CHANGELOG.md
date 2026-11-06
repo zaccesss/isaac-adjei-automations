@@ -7,6 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-06
+
 ### Added
 
 - Gradcracker's electronic-electrical placements, internships and graduate jobs are read alongside the computing listings.
@@ -16,14 +18,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - UKESF partner companies with a public job feed: Collins Aerospace, Teledyne, Sensata and Spectrum Control on Workday,
   Infinitesima on Greenhouse, Codasip, EnSilica and Cosmic Semiconductor on BambooHR, Infineon and Qualcomm on
   Eightfold's newer search plus Blighter, CML Micro, Viper Innovations and MK Test Systems from their own careers pages.
-- These newer sources keep UK student roles only, need an electronics or computing word in the title, skip roles whose
-  closing date has passed. Every role that passes is kept: `MAX_NEW_PER_SOURCE` lists these sources with no limit
+- These newer sources keep UK student roles only, need an electronics or computing word in the title and skip roles
+  whose closing date has passed. Every role that passes is kept: `MAX_NEW_PER_SOURCE` lists these sources with no limit
   and only applies a cap where a number is set.
 - The new-roles Discord alert lists a FAANG+ role in London first, then London, then Birmingham, Stevenage and Milton
   Keynes. Each of those lines starts with a written label as well as sitting higher in the list.
 
 ### Changed
 
+- Routine tidy-up.
 - Arm roles are read from the careers site's sitemap rather than its search results page, which the site asks crawlers
   not to use.
 
