@@ -42,7 +42,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_REMINDERS: ${{ secrets.DISCORD_WEBHOOK_REMINDERS }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          REMINDER_FROM_EMAIL: ${{ secrets.REMINDER_FROM_EMAIL }}
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_FROM_NUMBER: ${{ secrets.TWILIO_FROM_NUMBER }}
