@@ -7,6 +7,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- One-off reminders no longer arrive as "Medication Reminder": both jobs shared one sender secret and one Discord webhook name. Reminder mail now comes from `automation@isaacadjei.me` as Reminders, medication mail as Medication Reminder. Each Discord post names its sender. A general reminder's subject reads "Reminder: ..." instead of "Reminder reminder: ...".
+
 ## [0.2.0] - 2026-11-06
 
 ### Added

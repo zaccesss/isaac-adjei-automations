@@ -15,7 +15,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const discordWebhook = process.env.DISCORD_WEBHOOK_REMINDERS
 const resendKey = process.env.RESEND_API_KEY
-const fromEmail = process.env.REMINDER_FROM_EMAIL || "Reminders <hello@isaacadjei.me>"
+// automated mail comes from the automation address, never the personal hello one. Each job names itself
+const fromEmail = "Reminders <automation@isaacadjei.me>"
 const TZ = "Europe/London"
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -67,7 +68,8 @@ function humanUntil(ms) {
 
 async function sendDiscord(content) {
   if (!discordWebhook) return false
-  const res = await fetch(discordWebhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) })
+  // the webhook is shared with the medication job, so each post names its sender
+  const res = await fetch(discordWebhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content, username: "Reminders" }) })
   return res.ok
 }
 
@@ -77,7 +79,8 @@ async function sendEmail(to, r) {
   const when = fmtWhen(r.event_at)
   const until = humanUntil(new Date(r.event_at).getTime() - Date.now())
   const emoji = KIND_EMOJI[r.kind] || "\u{1F514}"
-  const subject = `${kindLabel} reminder: ${r.title} - ${when}`
+  // a general reminder's label is already "Reminder", so it is not said twice
+  const subject = `${kindLabel === "Reminder" ? "Reminder" : `${kindLabel} reminder`}: ${r.title} - ${when}`
   const html = [
     `<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;color:#111">`,
     `<h2 style="margin:0 0 12px">${emoji} ${kindLabel} ${until}</h2>`,

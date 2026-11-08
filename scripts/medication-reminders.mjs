@@ -13,7 +13,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 const discordWebhook = process.env.DISCORD_WEBHOOK_REMINDERS
 const resendKey = process.env.RESEND_API_KEY
-const fromEmail = process.env.REMINDER_FROM_EMAIL || "Medication Reminder <hello@isaacadjei.me>"
+// automated mail comes from the automation address, never the personal hello one
+const fromEmail = "Medication Reminder <automation@isaacadjei.me>"
 const TZ = "Europe/London"
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -48,7 +49,8 @@ const toMin = (t) => {
 
 async function sendDiscord(content) {
   if (!discordWebhook) return false
-  const res = await fetch(discordWebhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content }) })
+  // the webhook is shared with the reminders job, so each post names its sender
+  const res = await fetch(discordWebhook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content, username: "Medication Reminder" }) })
   return res.ok
 }
 

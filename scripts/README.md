@@ -54,7 +54,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `vault-expiry-check.mjs` | `DISCORD_WEBHOOK_VAULT` |
 | `daily-alerts.mjs` | `DISCORD_WEBHOOK_DEADLINES`, `DISCORD_WEBHOOK_LIBRARY` (each optional) |
 | `daily-analytics.mjs` | `DISCORD_WEBHOOK_APPLICATIONS`, `DISCORD_WEBHOOK_POSTS`, `DISCORD_WEBHOOK_FITNESS`, `DISCORD_WEBHOOK_MUSIC` (each optional; a channel is skipped if its webhook is unset) |
-| `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY`, `REMINDER_FROM_EMAIL` and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
+| `medication-reminders.mjs`, `reminders.mjs` | `DISCORD_WEBHOOK_REMINDERS`, `RESEND_API_KEY` (mail goes from automation@isaacadjei.me, as Reminders or Medication Reminder) and `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` for SMS |
 | `spotify-history.mjs` | `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REFRESH_TOKEN` |
 | `presence-sample.mjs` | `DISCORD_USER_ID` |
 | `github-contributions-sync.mjs` | `GH_PAT` |
