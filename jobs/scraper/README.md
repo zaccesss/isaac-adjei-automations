@@ -30,13 +30,17 @@ applied date) on an existing row.
 
 ## Running
 
+The package sits in `jobs/scraper` and keeps the module name `scraper`. Run it from the repo
+root with `jobs` on the Python path, which is what the workflow does:
+
 ```sh
+export PYTHONPATH=jobs
 python -m scraper                 # full run (needs the env below)
 SCRAPER_MODE=api python -m scraper       # API sources only
 SCRAPER_MODE=browser python -m scraper   # Playwright sources only
 SCRAPER_DRY_RUN=1 python -m scraper      # rehearse: print would-be writes, touch nothing
 SCRAPER_AI_TEST=1 python -m scraper      # AI extraction self-test, no scrape
-python -m pytest tests/                  # the pure-logic test suite
+python -m pytest tests/                  # the pure-logic test suite (sets its own path)
 ```
 
 `scripts/job-scraper.py` remains as a thin shim running the identical entry point.

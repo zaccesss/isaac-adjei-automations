@@ -6,7 +6,7 @@ repo-automation workflows that keep the repository itself healthy.
 
 ## Scheduled jobs
 
-Every scheduled job has two trigger paths. The primary is a **dispatch from the cron-ops worker**, which
+Every scheduled job except `job-scraper` has two trigger paths. The primary is a **dispatch from the cron-ops worker**, which
 lands at the job's exact UK wall-clock time. Behind it sits a thin **GitHub Actions cron backup** in the
 workflow file, kept because a worker outage should never silence a job. GitHub Actions is UTC only, does
 not observe British Summer Time and delays or drops scheduled runs (worst at the top of the hour), so the
@@ -36,7 +36,7 @@ is what the workflow file holds).
 | [control-status-sync](control-status-sync.yml) | every 15 min | hourly (:37) | [`control-status-sync.mjs`](../../scripts/control-status-sync.mjs) | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's history tables, so `/dashboard/ops` can chart real trends |
 | [geocode-locations](geocode-locations.yml) | hourly | hourly (:17) | [`geocode-locations.mjs`](../../scripts/geocode-locations.mjs) | Geocodes new application locations into the portfolio's `location_geocodes` cache for the Applications map |
 | [vitafolio-jobs](vitafolio-jobs.yml) | after each Job Scraper run | after each Job Scraper run | [`push-vitafolio-jobs.py`](../../scripts/push-vitafolio-jobs.py) | Sends the fresh UK roles from employers' own hiring systems (Greenhouse, Lever, Ashby, Recruitee and Personio) to Vitafolio's Jobs page, with each advert for its CV check |
-| [job-scraper](job-scraper.yml) | 03:00 | 01:23 + 04:41 (two tries) | [`scraper/`](../../scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
+| [job-scraper](job-scraper.yml) | 03:00 | none, dispatch only | [`jobs/scraper/`](../../jobs/scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
 
 [sync-forks](sync-forks.yml) runs on GitHub's own cron only, every six hours at :47 past the hour (UTC), matching the bot account's fork sync, since nothing depends on its exact time. It fast-forwards the main branch of every fork on my account to its upstream and leaves any fork whose main has commits of its own alone.
 
@@ -69,8 +69,9 @@ dispatch through) but still claims the day, so a dispatch cannot double-post aga
 The all-day jobs (medication, reminders, Spotify) do not gate to an hour: they run through the day and
 de-duplicate their own work, with their crons as the safety net (the reminder pair keeps a half-hourly
 cron so its tight health checks stay honest; Spotify's is hourly, which the API's 50-play history absorbs
-easily). `job-scraper` fires from two off-peak UTC crons (a dropped one does not cost
-a day and the scrape upserts so running twice is harmless).
+easily). `job-scraper` has no cron of its own: it is `workflow_dispatch` only and the cron-ops
+worker starts it at 03:00 UK. Its old backup crons ran late, landed on top of the dispatched run
+and cancelled it, so they were removed.
 
 ## Monitoring
 

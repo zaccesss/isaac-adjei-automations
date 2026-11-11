@@ -7,6 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-11
+
+### Changed
+
+- The job scraper package moved from `scraper` at the top of the repo to `jobs/scraper`, so the front page shows the
+  jobs rather than one job's source. The module name is still `scraper`: the workflow, the scripts that import it and
+  the tests put `jobs` on the Python path, so `python -m scraper` runs as before.
+- The READMEs no longer list backup cron times for `job-scraper`. That workflow is `workflow_dispatch` only and an
+  outside scheduler starts it at 03:00 UK. The paths they show point at `jobs/scraper`.
+- Dependabot checks at 18:00 UK on the 1st and 15th of each month instead of every Monday morning. The Python
+  dependencies are grouped, so one run opens at most one pull request for them.
+
 ### Fixed
 
 - One-off reminders no longer arrive as "Medication Reminder": both jobs shared one sender secret and one Discord webhook name. Reminder mail now comes from `automation@isaacadjei.me` as Reminders, medication mail as Medication Reminder. Each Discord post names its sender. A general reminder's subject reads "Reminder: ..." instead of "Reminder reminder: ...".

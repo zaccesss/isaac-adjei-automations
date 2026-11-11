@@ -30,7 +30,7 @@ Overall: ![automations](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f
 
 | Job | Status | Cadence | What it does |
 |---|---|---|---|
-| Job scraper | ![job-scraper](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/osSSm2dX/job-scraper.svg) | daily, two off-peak tries | Scrapes the job boards and career sites and posts new roles to `#jobs` |
+| Job scraper | ![job-scraper](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/osSSm2dX/job-scraper.svg) | daily at 03:00 UK, dispatch only | Scrapes the job boards and career sites and posts new roles to `#jobs` |
 | Spotify history | ![spotify-history](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/VYd-foem/spotify-history.svg) | every 30 min | Records my Spotify plays into `listening_history` for the analytics pages |
 | Recategorise | ![recategorise](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/rpqZYXYy/recategorise.svg) | 05-08 UK | Re-tags scraped applications, idempotently |
 | Control status sync | ![control-status-sync](https://healthchecks.io/b/2/d7b9e721-9293-4a4b-8478-4581e0a9adcd.svg) | every 15 min | Snapshots every dispatchable job's GitHub Actions runs and Healthchecks status into isaac-adjei-portfolio's Ops page history |

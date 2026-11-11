@@ -1,4 +1,4 @@
-# cases derived from the inline comments in scraper/filters.py: the whole-word intern
+# cases derived from the inline comments in jobs/scraper/filters.py: the whole-word intern
 # match, the Internal exclusions, the senior-title guard on the department fallback and
 # the per-category ordering of infer_type.
 from scraper.filters import detect_category, infer_type, is_relevant, is_relevant_job, is_student_role, resolve_type

@@ -2,9 +2,9 @@
 import os
 import sys
 
-# the shared failure guard lives in scripts/lib and running as python -m scraper from
-# the repo root does not put scripts/ on the path, so add it before the import.
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "scripts"))
+# the shared failure guard lives in scripts/lib and running as python -m scraper with
+# jobs/ on the path does not put scripts/ there, so add it before the import.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts"))
 
 from lib.report_failure import guard  # noqa: E402
 

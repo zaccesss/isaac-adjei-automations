@@ -1,4 +1,4 @@
-# cases derived from the inline comments in scraper/db.py: URL-based keys beat
+# cases derived from the inline comments in jobs/scraper/db.py: URL-based keys beat
 # company+role, the Greenhouse domain migration hashes identically and the no-URL
 # fallback is case-insensitive.
 from scraper.db import dedupe_key
