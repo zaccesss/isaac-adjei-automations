@@ -1,5 +1,5 @@
 # scrapes graduate and internship sources and upserts them into the applications table.
-# runs daily at midnight UTC. API sources and the Playwright browser source run as two
+# dispatched daily at 03:00 UK. API sources and the Playwright browser source run as two
 # parallel jobs so the browser install never holds up the faster API job.
 
 name: Job Scraper
@@ -55,6 +55,8 @@ jobs:
       - name: Run API scrapers
         # secrets are scoped to this step so the setup and cache actions never see them.
         env:
+          # the package lives in jobs/scraper, so jobs/ goes on the path and the module name stays scraper.
+          PYTHONPATH: ${{ github.workspace }}/jobs
           SCRAPER_MODE: api
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -124,6 +126,7 @@ jobs:
 
       - name: Run browser scrapers
         env:
+          PYTHONPATH: ${{ github.workspace }}/jobs
           SCRAPER_MODE: browser
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

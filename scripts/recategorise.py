@@ -23,7 +23,7 @@ import requests
 # keeping a second copy here that could drift out of step with what the scraper
 # stamps on insert. filters and ai import nothing heavier than requests, so this
 # adds no dependency to the recategorise workflow.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "jobs"))
 from scraper.ai import AI_CATEGORIES as CATEGORIES  # noqa: E402
 from scraper.filters import _FAANG, _QUANT_COMPANIES  # noqa: E402
 

@@ -1,4 +1,4 @@
-# cases derived from the inline comments in scraper/dates.py: the 14 day grace window
+# cases derived from the inline comments in jobs/scraper/dates.py: the 14 day grace window
 # for freshly closed roles, the per-type cutoffs and every Trackr date format.
 from datetime import datetime, timedelta
 
