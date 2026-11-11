@@ -6,7 +6,7 @@ repo-automation workflows that keep the repository itself healthy.
 
 ## Scheduled jobs
 
-Every scheduled job except `job-scraper` has two trigger paths. The primary is a **dispatch from the cron-ops worker**, which
+Every scheduled job except `job-scraper` has two trigger paths. The primary is a **dispatch from the scheduler worker**, which
 lands at the job's exact UK wall-clock time. Behind it sits a thin **GitHub Actions cron backup** in the
 workflow file, kept because a worker outage should never silence a job. GitHub Actions is UTC only, does
 not observe British Summer Time and delays or drops scheduled runs (worst at the top of the hour), so the
@@ -69,7 +69,7 @@ dispatch through) but still claims the day, so a dispatch cannot double-post aga
 The all-day jobs (medication, reminders, Spotify) do not gate to an hour: they run through the day and
 de-duplicate their own work, with their crons as the safety net (the reminder pair keeps a half-hourly
 cron so its tight health checks stay honest; Spotify's is hourly, which the API's 50-play history absorbs
-easily). `job-scraper` has no cron of its own: it is `workflow_dispatch` only and the cron-ops
+easily). `job-scraper` has no cron of its own: it is `workflow_dispatch` only and the scheduler
 worker starts it at 03:00 UK. Its old backup crons ran late, landed on top of the dispatched run
 and cancelled it, so they were removed.
 
