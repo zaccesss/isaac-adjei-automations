@@ -38,7 +38,7 @@ flowchart LR
 - Time-of-day jobs hold a fixed UK wall-clock time year-round: each fires across a morning window, gates to its target UK hour and claims the day so it acts once; see the [workflows README](.github/workflows/README.md#uk-time-and-the-windowed-schedule).
 - Every scheduled job pings [Healthchecks.io](https://healthchecks.io) on start, success and fail, so a job that stops running or fails alerts instead of failing silently; see [Monitoring](.github/workflows/README.md#monitoring).
 - A gitleaks scan runs on every push and pull request.
-- Dependabot keeps the action versions and the Python dependencies current, checking on the 1st and 15th of each month.
+- Dependabot keeps the action versions and the Python dependencies current, checking every Sunday at 18:00 UK time.
 
 ## Licence
 

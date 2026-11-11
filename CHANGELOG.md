@@ -16,8 +16,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the tests put `jobs` on the Python path, so `python -m scraper` runs as before.
 - The READMEs no longer list backup cron times for `job-scraper`. That workflow is `workflow_dispatch` only and an
   outside scheduler starts it at 03:00 UK. The paths they show point at `jobs/scraper`.
-- Dependabot checks at 18:00 UK on the 1st and 15th of each month instead of every Monday morning. The Python
-  dependencies are grouped, so one run opens at most one pull request for them.
+- Dependabot checks every Sunday at 18:00 UK time instead of every Monday morning. The Python dependencies are
+  grouped, so one run opens at most one pull request for them.
 
 ### Fixed
 
