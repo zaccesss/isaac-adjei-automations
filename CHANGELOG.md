@@ -7,6 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-13
+
+### Added
+
+- A README in `jobs` that says what the folder holds and how a job there runs.
+
+### Changed
+
+- Routine dependency updates.
+
 ## [0.3.0] - 2026-11-11
 
 ### Changed
