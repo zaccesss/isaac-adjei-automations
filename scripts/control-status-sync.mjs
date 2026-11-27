@@ -7,8 +7,8 @@
 // the previous cycle, the accumulated history underneath just keeps growing. A one-time backfill
 // (see backfill-control-history.mjs) seeds deeper history than a fresh sync would ever see on its
 // own, since GitHub's own API and Healthchecks' pings endpoint both cap how far back a single call
-// can look. Reads the job list from the portfolio's own CONTROL_JOBS via its control-jobs route, so
-// this script never keeps its own copy that could drift. Node only, no deps.
+// can look. Reads the job list from the portfolio's own CONTROL_JOBS via its control-jobs route, so this script never
+// keeps a hand-written copy that could drift. The answer is reused for up to 6 hours (see fetchJobs). Node only, no deps.
 
 import { guard } from "./lib/report-failure.mjs"
 
@@ -45,7 +45,52 @@ async function retry(fn, attempts = 3) {
   throw lastErr
 }
 
+// the job list only changes when the portfolio deploys, yet asking for it every 15 minutes ran a Vercel function 96
+// times a day, which Vercel bills as Fluid Active CPU against the Hobby allowance (about 2 minutes a week in November
+// 2026). The last copy is kept in the portfolio's config table and the route is asked again only once it is 6 hours old,
+// so a new job shows on the Ops page within 6 hours of the deploy that adds it. Any fault reading or writing the copy
+// falls back to the route, so the sync never stops because of it
+const JOBS_CACHE_KEY = "control_jobs_cache"
+const JOBS_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000
+
+function supabaseHeaders(extra = {}) {
+  return { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, "Content-Type": "application/json", ...extra }
+}
+
+async function cachedJobs() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config?key=eq.${JOBS_CACHE_KEY}&select=value`, { headers: supabaseHeaders() })
+    if (!res.ok) return null
+    const value = (await res.json())[0]?.value
+    if (!value?.jobs?.length || !value.fetched_at) return null
+    return Date.now() - new Date(value.fetched_at).getTime() < JOBS_CACHE_MAX_AGE_MS ? value.jobs : null
+  } catch {
+    return null
+  }
+}
+
+async function saveJobs(jobs) {
+  try {
+    const now = new Date().toISOString()
+    await fetch(`${SUPABASE_URL}/rest/v1/config?on_conflict=key`, {
+      method: "POST",
+      headers: supabaseHeaders({ Prefer: "resolution=merge-duplicates" }),
+      body: JSON.stringify([{ key: JOBS_CACHE_KEY, value: { jobs, fetched_at: now }, updated_at: now }]),
+    })
+  } catch {
+    // the next run asks the route again
+  }
+}
+
 async function fetchJobs() {
+  const cached = await cachedJobs()
+  if (cached) return cached
+  const jobs = await fetchJobsFromPortfolio()
+  if (jobs?.length) await saveJobs(jobs)
+  return jobs
+}
+
+async function fetchJobsFromPortfolio() {
   const res = await retry(async () => {
     const r = await fetch(`${PORTFOLIO_URL}/api/dashboard/control-jobs`, {
       headers: { Authorization: `Bearer ${CRON_SECRET}` },

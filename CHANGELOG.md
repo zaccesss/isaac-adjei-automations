@@ -7,6 +7,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The control status sync reuses the portfolio's job list for up to 6 hours, kept in the portfolio's `config` table, instead of asking for it every 15 minutes. That was 96 function runs a day on the portfolio's host for a list that only changes when it deploys.
+- The README is a short summary of the repository and the other READMEs describe each job in less detail.
+
 ## [0.3.1] - 2026-11-13
 
 ### Added

@@ -27,7 +27,7 @@ are `.mjs` with no dependencies (global `fetch`); the Python scripts install fro
 | [`backfill-control-history.mjs`](backfill-control-history.mjs) | Node | backfill-control-history | Manual-only deep backfill of the same two tables, paging further back than the regular sync ever sees |
 | [`geocode-locations.mjs`](geocode-locations.mjs) | Node | none (see STATUS.md) | Geocodes new `applications.location` strings through OpenCage (Nominatim fallback) into the portfolio's `location_geocodes` cache, feeding the Applications map |
 | [`recategorise.py`](recategorise.py) | Python | recategorise | Re-categorises "Software Engineering" catch-all applications with the AI (dry-run by default on manual runs) |
-| [`job-scraper.py`](job-scraper.py) | Python | job-scraper | A thin shim for the [`jobs/scraper`](../jobs/scraper) package, which the workflow runs as `python -m scraper`. Scrapes graduate and internship sources (ATS REST APIs including Workable, Recruitee, Personio and Jibe, the LinkedIn guest search, HTML boards via curl_cffi with a Scrapling Camoufox fallback that solves Cloudflare, rendered boards like Prospects and TARGETjobs, plus a Playwright pass) and upserts them into the applications table, collapsing the same job from two sources onto one row |
+| [`job-scraper.py`](job-scraper.py) | Python | job-scraper | A thin shim for the [`jobs/scraper`](../jobs/scraper) package, which the workflow runs as `python -m scraper`: a daily data sync |
 | [`push-vitafolio-jobs.py`](push-vitafolio-jobs.py) | Python | vitafolio-jobs | Sends the fresh UK roles from employers' own hiring systems (Greenhouse, Lever, Ashby, Recruitee and Personio) to Vitafolio's Jobs page after each scrape. Job-board rows are never sent, since their terms do not allow republishing. Each link is checked before it goes |
 
 ## Shared helper
@@ -62,7 +62,7 @@ service-role key bypasses RLS). The secrets each script additionally needs:
 | `backfill-control-history.mjs` | same as `control-status-sync.mjs`, but all 3 Healthchecks keys need read/write (the regular sync only needs read-only) |
 | `geocode-locations.mjs` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENCAGE_API_KEY` |
 | `recategorise.py` | one of `GROQ_API_KEY` / `GOOGLE_AI_API_KEY` / `OPENROUTER_API_KEY` |
-| `job-scraper.py` | job-board keys (`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`, `REED_API_KEY`, `JOOBLE_API_KEY`), an AI key for categorisation (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
+| `job-scraper.py` | the keys its workflow passes in, an AI key (as above) and `DISCORD_WEBHOOK_URL` for the run summary |
 | `push-vitafolio-jobs.py` | `VITAFOLIO_JOBS_URL`, `VITAFOLIO_JOBS_TOKEN` (without both the script does nothing) |
 
 Some scripts also read **optional behaviour flags** that are not secrets and that you do not provision:

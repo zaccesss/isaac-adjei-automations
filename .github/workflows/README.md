@@ -36,7 +36,7 @@ is what the workflow file holds).
 | [control-status-sync](control-status-sync.yml) | every 15 min | hourly (:37) | [`control-status-sync.mjs`](../../scripts/control-status-sync.mjs) | Snapshots every dispatchable job's GitHub Actions runs and every Healthchecks check's status into the portfolio's history tables, so `/dashboard/ops` can chart real trends |
 | [geocode-locations](geocode-locations.yml) | hourly | hourly (:17) | [`geocode-locations.mjs`](../../scripts/geocode-locations.mjs) | Geocodes new application locations into the portfolio's `location_geocodes` cache for the Applications map |
 | [vitafolio-jobs](vitafolio-jobs.yml) | after each Job Scraper run | after each Job Scraper run | [`push-vitafolio-jobs.py`](../../scripts/push-vitafolio-jobs.py) | Sends the fresh UK roles from employers' own hiring systems (Greenhouse, Lever, Ashby, Recruitee and Personio) to Vitafolio's Jobs page, with each advert for its CV check |
-| [job-scraper](job-scraper.yml) | 03:00 | none, dispatch only | [`jobs/scraper/`](../../jobs/scraper/) (`python -m scraper`) | Scrapes graduate and internship sources and upserts them into the applications table |
+| [job-scraper](job-scraper.yml) | 03:00 | none, dispatch only | [`jobs/scraper/`](../../jobs/scraper/) (`python -m scraper`) | A daily data sync |
 
 [sync-forks](sync-forks.yml) runs on GitHub's own cron only, every six hours at :47 past the hour (UTC), matching the bot account's fork sync, since nothing depends on its exact time. It fast-forwards the main branch of every fork on my account to its upstream and leaves any fork whose main has commits of its own alone.
 
