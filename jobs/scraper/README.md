@@ -1,55 +1,16 @@
 # scraper
 
-The job scraper as a package: 20+ sources of student tech roles scraped daily and
-upserted into the Supabase `applications` table. It only ever inserts and updates,
-never deletes and never touches user-owned columns (status, notes, starred,
-applied date) on an existing row.
-
-## Layout
-
-| Module | What lives there |
-|---|---|
-| `__main__.py` | Entry point: the failure guard, the `SCRAPER_AI_TEST` self-test and the run |
-| `config.py` | Every environment read in one place |
-| `context.py` | `RunContext`, the per-run state threaded through every call |
-| `runner.py` | Orchestrates the sources in their long-standing order |
-| `budget.py` | The wall-clock budget check |
-| `http.py` | Browser headers, the shared session and the URL liveness check |
-| `models.py` | The `Job` shape the database layer consumes |
-| `roles.py` | The shared role rules: the kind of student role a title names and whether it is in the 2026 to 2027 cycle. Vitafolio's `RoleType` mirrors it term for term |
-| `filters.py` | Student-role detection and type inference built on `roles.py`, plus category detection |
-| `locations.py` | Location vocabulary and the UK-only filter, with US and Australian places that share UK town names ruled out |
-| `dates.py` | Season cutoffs, the 14 day grace window and the source date parsers |
-| `db.py` | Dedupe keys, existing-row loading, the final gate every role passes, the insert-or-refresh upsert, the freshness stamp and the archiving of stale and closed roles |
-| `ai.py` | Optional field extraction: Groq, Gemini, OpenRouter, each trying several free models, with rate-limited providers benched per run |
-| `detect.py` | Plain-text detectors: visa sponsorship and cover letter mentions |
-| `notify.py` | The end-of-run Discord alert for new student roles |
-| `stats.py` | Per-source stats and the `source-stats.md` summary |
-| `data/` | Static lists: ATS company slugs, priority companies, keyword vocabularies |
-| `sources/` | One file per scraper plus the ordered registry in `__init__.py` |
+A daily data sync, run as a package by its workflow. It only inserts and updates
+rows; it never deletes anything.
 
 ## Running
 
-The package sits in `jobs/scraper` and keeps the module name `scraper`. Run it from the repo
-root with `jobs` on the Python path, which is what the workflow does:
+From the repo root, with `jobs` on the Python path, which is what the workflow does:
 
 ```sh
 export PYTHONPATH=jobs
-python -m scraper                 # full run (needs the env below)
-SCRAPER_MODE=api python -m scraper       # API sources only
-SCRAPER_MODE=browser python -m scraper   # Playwright sources only
-SCRAPER_DRY_RUN=1 python -m scraper      # rehearse: print would-be writes, touch nothing
-SCRAPER_AI_TEST=1 python -m scraper      # AI extraction self-test, no scrape
-python -m pytest tests/                  # the pure-logic test suite (sets its own path)
+python -m scraper
+python -m pytest tests/   # the pure-logic tests (they set their own path)
 ```
 
-`scripts/job-scraper.py` remains as a thin shim running the identical entry point.
-
-## Environment
-
-`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are required for a real run.
-Optional: `SCRAPER_MODE`, `SCRAPER_BUDGET_MIN`, `SCRAPER_DRY_RUN`, `SCRAPER_AI_TEST`,
-`SCRAPER_AI_BUDGET`, the AI keys (`GROQ_API_KEY`, `GOOGLE_AI_API_KEY`,
-`OPENROUTER_API_KEY`), the board keys (`REED_API_KEY`,
-`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `JOOBLE_API_KEY`) and `DISCORD_WEBHOOK_URL` for
-the new-roles alert. A missing optional key skips its feature; nothing crashes.
+Every setting comes from the environment. A missing optional setting skips its feature; nothing crashes.

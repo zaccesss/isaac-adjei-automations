@@ -5,7 +5,7 @@ The larger jobs, each a Python package in a folder of its own. A job that fits i
 
 | Job | What it does | Started by |
 | --- | --- | --- |
-| [`scraper`](scraper/README.md) | Reads 20+ sources of student tech roles each day and upserts them into the Supabase `applications` table | [`job-scraper.yml`](../.github/workflows/job-scraper.yml), by dispatch only |
+| [`scraper`](scraper/README.md) | A daily data sync | [`job-scraper.yml`](../.github/workflows/job-scraper.yml), by dispatch only |
 
 ## How a job here runs
 

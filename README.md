@@ -8,16 +8,15 @@
 [![Licence: PolyForm Noncommercial](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-green.svg)](LICENSE)
 [![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](STATUS.md)
 
-A collection of scheduled jobs - data syncs, timed reminders and digests - that run on GitHub Actions.
-
-Each job is a scheduled workflow in [`.github/workflows`](.github/workflows) wrapping a short, self-contained script in [`scripts`](scripts). The one larger job, the job scraper, is a Python package in [`jobs/scraper`](jobs/scraper). The scripts are deliberately generic and take all of their runtime settings from the environment, so the repository can stay public (and free to run) without carrying anything sensitive.
+Scheduled jobs that run on GitHub Actions: data syncs, timed reminders and digests. Each one is a thin workflow in
+[`.github/workflows`](.github/workflows) around a short script in [`scripts`](scripts). Every setting comes from the
+environment, so the repository can stay public without carrying anything sensitive.
 
 ## Contents
 
-- [`STATUS.md`](STATUS.md) - live per-job health badges (click the badge above), each job's cadence and what it does.
+- [`STATUS.md`](STATUS.md) - live health badges for every job, with its cadence and what it does.
 - [`.github/workflows/README.md`](.github/workflows/README.md) - every workflow, its schedule, the UK-time windowed schedule and the Healthchecks.io monitoring.
 - [`scripts/README.md`](scripts/README.md) - what each script does and the environment it needs.
-- [`jobs/scraper/README.md`](jobs/scraper/README.md) - the job scraper package, its layout and how to run it.
 
 ## How a job runs
 
