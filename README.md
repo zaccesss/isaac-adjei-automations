@@ -4,7 +4,7 @@
 [![CodeQL](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/codeql.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/codeql.yml)
 [![Gitleaks](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/gitleaks.yml)
 [![Markdown Lint](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/zaccesss/isaac-adjei-automations/actions/workflows/markdownlint.yml)
-[![Release](https://img.shields.io/github/v/release/zaccesss/isaac-adjei-automations?label=release&sort=semver)](https://github.com/zaccesss/isaac-adjei-automations/releases/latest)
+[![Release v0.4.0](https://img.shields.io/badge/release-v0.4.0-blue.svg)](https://github.com/zaccesss/isaac-adjei-automations/releases/latest)
 [![Licence: PolyForm Noncommercial](https://img.shields.io/badge/licence-PolyForm%20Noncommercial-green.svg)](LICENSE)
 [![Automations health](https://healthchecks.io/badge/40ef3b24-9e3e-460f-b735-7f71dd0bc0e1/xK0dp-9G.svg)](STATUS.md)
 
@@ -17,18 +17,6 @@ environment, so the repository can stay public without carrying anything sensiti
 - [`STATUS.md`](STATUS.md) - live health badges for every job, with its cadence and what it does.
 - [`.github/workflows/README.md`](.github/workflows/README.md) - every workflow, its schedule, the UK-time windowed schedule and the Healthchecks.io monitoring.
 - [`scripts/README.md`](scripts/README.md) - what each script does and the environment it needs.
-
-## How a job runs
-
-```mermaid
-flowchart LR
-    CRON["Cron schedule<br/>or a manual run"] --> WF["Workflow in .github/workflows<br/>a thin wrapper"]
-    WF --> ENV["Secrets and variables<br/>read from the environment"]
-    ENV --> SCRIPT["Script in scripts/<br/>Node or Python"]
-    SCRIPT --> OUT["Discord, email, SMS<br/>and the database"]
-    SCRIPT -- "start, success, fail" --> HC["Healthchecks.io"]
-    HC -- "a check goes down" --> ALERT["#automation-errors on Discord"]
-```
 
 ## Conventions
 
